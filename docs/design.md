@@ -59,6 +59,130 @@ When studying Mandarin Chinese, it is crucial to master reading, writing, and un
 
 ## Concept Specifications & Reactions
 
+### Concepts
+
+```
+concept Authenticating [User]
+
+purpose confirm a user's claimed identity
+
+principle after a user registers with a username and password, they are able to authenticate with those same credentials and be treated as the same user
+
+state
+    a set of Users with
+        a username String
+        a password String
+
+actions
+    register (username: String, password: String) : return (user: User)
+        where a user with this username does not exist
+        then create a new user with this username and password, and return it
+
+    authenticate (username: String, password: String) : return (user: User)
+        where the username exists and the password matches
+        then return the corresponding user
+```
+
+```
+concept Tagging [User, Tag, Item]
+
+purpose label items to indicate the groups it belongs to for personal convenience
+
+principle when a user tags items, it implies a common grouping between the tagged items
+
+state
+    a set of Users with
+        a set of Tags
+    a set of Tags with
+        a name String
+        a set of Items
+
+actions
+    createTag (user: User, name: String)
+        where the user exists and there does not exist a tag under the user with the given name
+        then create a new tag with the given name and an empty set of items; assign it under the given user
+
+    renameTag (user: User, tag: Tag, newName: String)
+        where the user exists and the tag exists under the given user
+        then rename the tag with the new name
+
+    deleteTag (user: User, tag: Tag)
+        where the user exists and the tag exists under the given user
+        then delete the tag
+
+    addItemTag (user: User, tag: Tag, item: Item)
+        where the user exists, the tag exists under the user, the item exists, and the tag does not have the given item in its current item set
+        then adds the given item to the given tag's item set under the given user
+
+    removeItemTag (user: User, tag: Tag, item: Item)
+        where the user exists, the tag exists under the user, and the item exists in the tag's  item set
+        then removes the given item from the given tag's item set under the given user
+```
+
+<!-- ```
+concept InformationTemplateCreating
+
+purpose create a template info field to store information for related items
+
+principle after specifying what info fields an item type needs, the template lists the required fields to prevent manual user input
+
+state
+    a set of Templates
+``` -->
+
+```
+concept InformationCollecting [Item, InfoField, Information]
+
+purpose store information about an item, separated by fields
+
+principle the author specifies desired info fields and information for each item
+
+state
+    a set of Items with
+        a set of InfoFields
+
+    a set of InfoFields with
+        a name String
+        a description Information
+
+actions
+    addInfoField (item: Item, fieldName: String, description: Information)
+        where the item exists and the field name does not already exist under the item
+        then create a new info field under the given item with the given field name and information
+
+    editInfoField (item: Item, infoField: InfoField, description: Information)
+        where the item exists and the info field exists under the item
+        then edit the info field under the given item with the new information
+
+    deleteInfoField (item: Item, infoField: InfoField)
+        where the item exists and the info field exists under the item
+        then delete the info field under the given item
+```
+
+```
+concept Sharing [Item, User]
+
+purpose share an item with others for viewing purposes
+
+principle the author selects the audience they want to share an item to, who can now view the item
+
+state
+    a set of Items with
+        an author User
+        a set of shared Users
+
+actions
+    shareItem (user: User, item: Item, audience: set of Users)
+        where the user and item exists
+        then share the item with the given audience
+```
+
+### Reactions
+
+### Note
+
+Tagging can be used for both collections & confidence ...
+
 ## UI Sketches
 
 ## User Journey
