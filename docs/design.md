@@ -177,11 +177,54 @@ actions
         then share the item with the given audience
 ```
 
+```
+concept PersonalRating [User, Item, Rating]
+
+purpose identify how well an item fulfills a parameter for private use
+
+principle raters rate items on a scale, depending on where they believe it belongs best
+
+state
+    a set of defined Ratings
+
+    a set of Users with
+        a set of Items
+
+    a set of Items with
+        a Rating
+
+actions
+    addDefinedRatings (ratings: set of Ratings)
+        then union the exsiting defined ratings set with the new given set
+
+    removeDefinedRating (rating: Rating)
+        where the rating exists in the defined ratings set
+        then remove the rating from the set and from all items with this rating
+
+    addRating (user: User, item: Item, rating: Rating)
+        where the user exists, item exists, and rating exists in the defined ratings set
+        then add the given rating to the item
+
+    changeRating (user: User, item: Item, rating: Rating)
+        where the user exists, item exists with a rating, and the given rating is different than the current item rating and exists in the defined ratings set
+        then modify the given rating of the item
+
+    deleteRating (user: User, item: Item)
+        where the user exists and the item exists with a rating
+        then remove the rating from the item
+```
+
 ### Reactions
+
+When item added tagged, default share & rating settings
+
+```
+reaction create
+```
 
 ### Note
 
-Tagging can be used for both collections & confidence ...
+For the `PersonalRating` concept, the user is not allowed to access the `defineRatings` action.
 
 ## UI Sketches
 
