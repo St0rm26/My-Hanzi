@@ -94,7 +94,9 @@ state
     a set of Users with
         a set of Tags with
             a name String
-            a set of Items
+            a set of TaggedItems with
+                an identifier ID
+                an Item
 
 actions
     createTag (user: User, name: String) : return (tag: Tag)
@@ -111,11 +113,23 @@ actions
 
     addItemTag (user: User, tag: Tag, item: Item)
         where the user exists, the tag exists under the user, the item exists, and the tag does not have the given item in its current item set
-        then adds the given item to the given tag's item set under the given user
+        then adds the given item to the given tag's tagged item set under the given user
 
     removeItemTag (user: User, tag: Tag, item: Item)
         where the user exists, the tag exists under the user, and the item exists in the tag's  item set
         then removes the given item from the given tag's item set under the given user
+
+    generateTaggedItemID (user: User, tag: Tag, item: Item) : return (id: ID)
+        where the user exists, the tag exists under the user, and the item exists in the tag's item set
+        then randomly generate a unique ID for the tagged item, paired with the given item, under the user's tag's tagged items set
+
+    findTaggedItemId (user: User, tag: Tag, item: Item) : return (id: ID)
+        where the user exists, the tag exists under the user, and the item and ID exists in the tag's item set
+        then return the ID of the given item
+
+    findTaggedItemsId (user: User, tag: Tag) : return (ids: set of IDs)
+        where the user exists, the tag exists under the user, and tag's item set exists
+        then return a set of all IDs of items in the tagged items set
 ```
 
 <!-- ```
@@ -171,6 +185,14 @@ state
 actions
     shareItem (user: User, item: Item, audience: set of Users)
         then create a new author user and item if needed, and share the item with the given audience
+
+    deleteItem (user: User, item: Item)
+        where the user and item exists under the user
+        then remove the item and revoke access for shared users
+
+    deleteItems (user: User, items: set of Items)
+        where the user and set of items exist under the user
+        then remove the items and revoke accesses for shared users
 ```
 
 ```
@@ -210,16 +232,59 @@ actions
 
 ### Reactions
 
-When item added tagged, default share & rating settings
+```
+reaction generateCharacterID
+
+when Requesting.addCharacterToCollection (user, collection: Tag, character: Item)
+
+then Tagging.generateTaggedItemID (user, collection: Tag, character: Item) : (ID)
+```
 
 ```
-reaction saveItem
+reaction addCharacter
 
-when Tagging.addItemTag (user, tag, item)
+when Tagging.generateTaggedItemID (user, collection: Tag, character: Item) : (ID)
 
 then
-    Sharing.shareItem (user, item, {})
-    Rating.
+    Tagging.addItemTag (user, collection: Tag, character: Item)
+    Sharing.shareItem (user, ID, {})
+```
+
+```
+reaction findCharacterID
+
+when Requesting.removeCharacterFromCollection (user, collection: Tag, character: Item)
+
+then Tagging.findTaggedItemId (user, collection: Tag, character: Item) : (ID)
+```
+
+```
+reaction removeCharacter
+
+when Tagging.findTaggedItemID (user, collection: Tag, character: Item) : (ID)
+
+then
+    Tagging.removeItemTag (user, collection: Tag, character: Item)
+    Sharing.deleteItem (user, ID)
+```
+
+```
+reaction findTaggedCharactersIds
+
+when Requesting.deleteCollection (user, collection: Tag)
+
+then
+    Tagging.findTaggedItemsId (user, collection: Tag) : (IDs)
+```
+
+```
+reaction deleteCollection
+
+when Tagging.findTaggedItemsId (user, collection: Tag) : (IDs)
+
+then
+    Tagging.deleteTag (user, collection: Tag)
+    Sharing.deleteItems (user, IDs)
 ```
 
 ### Note
