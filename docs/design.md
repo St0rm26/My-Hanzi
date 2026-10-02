@@ -62,7 +62,7 @@ When studying Mandarin Chinese, it is crucial to master reading, writing, and un
 ### Concepts
 
 ```
-concept Authenticating [User]
+concept Authenticating
 
 purpose confirm a user's claimed identity
 
@@ -84,7 +84,7 @@ actions
 ```
 
 ```
-concept Tagging [User, Tag, Item]
+concept Tagging [User, Item]
 
 purpose label items to indicate the groups it belongs to for personal convenience
 
@@ -92,17 +92,16 @@ principle when a user tags items, it implies a common grouping between the tagge
 
 state
     a set of Users with
-        a set of Tags
-    a set of Tags with
-        a name String
-        a set of Items
+        a set of Tags with
+            a name String
+            a set of Items
 
 actions
-    createTag (user: User, name: String)
+    createTag (user: User, name: String) : return (tag: Tag)
         where the user exists and there does not exist a tag under the user with the given name
         then create a new tag with the given name and an empty set of items; assign it under the given user
 
-    renameTag (user: User, tag: Tag, newName: String)
+    renameTag (user: User, tag: Tag, newName: String) : return (tag: Tag)
         where the user exists and the tag exists under the given user
         then rename the tag with the new name
 
@@ -131,7 +130,7 @@ state
 ``` -->
 
 ```
-concept InformationCollecting [Item, InfoField, Information]
+concept InformationCollecting [Item, Information]
 
 purpose store information about an item, separated by fields
 
@@ -139,18 +138,16 @@ principle the author specifies desired info fields and information for each item
 
 state
     a set of Items with
-        a set of InfoFields
-
-    a set of InfoFields with
-        a name String
-        a description Information
+        a set of InfoFields with
+            a name String
+            a description Information
 
 actions
-    addInfoField (item: Item, fieldName: String, description: Information)
+    addInfoField (item: Item, fieldName: String, description: Information) : return (infoField: InfoField)
         where the item exists and the field name does not already exist under the item
         then create a new info field under the given item with the given field name and information
 
-    editInfoField (item: Item, infoField: InfoField, description: Information)
+    editInfoField (item: Item, infoField: InfoField, description: Information) : return (infoField: InfoField)
         where the item exists and the info field exists under the item
         then edit the info field under the given item with the new information
 
@@ -160,21 +157,20 @@ actions
 ```
 
 ```
-concept Sharing [Item, User]
+concept Sharing [User, Item]
 
 purpose share an item with others for viewing purposes
 
 principle the author selects the audience they want to share an item to, who can now view the item
 
 state
-    a set of Items with
-        an author User
-        a set of shared Users
+    a set of author Users with
+        a set of Items with
+            a set of shared Users
 
 actions
     shareItem (user: User, item: Item, audience: set of Users)
-        where the user and item exists
-        then share the item with the given audience
+        then create a new author user and item if needed, and share the item with the given audience
 ```
 
 ```
@@ -188,13 +184,11 @@ state
     a set of defined Ratings
 
     a set of Users with
-        a set of Items
-
-    a set of Items with
-        a Rating
+        a set of Items with
+            a Rating
 
 actions
-    addDefinedRatings (ratings: set of Ratings)
+    addDefinedRatings (ratings: set of Ratings) : return (ratings: set of Ratings)
         then union the exsiting defined ratings set with the new given set
 
     removeDefinedRating (rating: Rating)
@@ -202,8 +196,8 @@ actions
         then remove the rating from the set and from all items with this rating
 
     addRating (user: User, item: Item, rating: Rating)
-        where the user exists, item exists, and rating exists in the defined ratings set
-        then add the given rating to the item
+        where the rating exists in the defined ratings set
+        then add the given rating to the item under the user, creating a new user and item if needed
 
     changeRating (user: User, item: Item, rating: Rating)
         where the user exists, item exists with a rating, and the given rating is different than the current item rating and exists in the defined ratings set
@@ -219,7 +213,13 @@ actions
 When item added tagged, default share & rating settings
 
 ```
-reaction create
+reaction saveItem
+
+when Tagging.addItemTag (user, tag, item)
+
+then
+    Sharing.shareItem (user, item, {})
+    Rating.
 ```
 
 ### Note
