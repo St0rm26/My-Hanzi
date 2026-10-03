@@ -235,6 +235,14 @@ actions
 ### Reactions
 
 ```
+reaction initialize
+
+when Authenticating.register () : (user)
+
+then Tagging.createTag (user, "Studied")
+```
+
+```
 reaction generateCharacterID
 
 when Requesting.addCharacterToCollection (user, collection: Tag, character: Item)
@@ -299,14 +307,15 @@ After the user successfully registers through the `Authenticating` concept, they
 
 The actions registered users cannot access is for the server only. In the context of the app, the excluded `Tagging` actions are used to store and share hidden IDs that are used to communicate changes in shared collections so that access can be revoked/granted as needed. For the excluded `Rating` actions, the server defines ratings, which is character confidence level, for every user. Finally, the `InformationCollecting` concept is server-only as the server populates character data with information (e.g. pronunciation and meaning).
 
-How the concepts work together in the app:
+How the concepts and reactions work together in the app:
 
 - `Authenticating` allows personalizable character collections and sharing them with people you know
 - `Tagging` represents storing characters in collection. Each collection is a tag, allowing characters to be a part of multiple collections
 - `InformationCollecting`, as stated earlier, provides detailed information about each character
 - `Sharing` allows users to share their collections with each other
 - `PersonalRating` lets users mark each character with a confidence level on a predefined scale
-- The reactions handle modifying collections and might be a little bit more complicated than expected for synchronization purposes for shared collections. When the author adds or removes a character, there must be some way to update what items are shared in `Sharing` concept. This is handled with unique item IDs
+- The first reaction initializes the user with a "Studied" collection. Although users are free to make their own collections, the main purpose of the app is to track studied characters. In addition, the studied collection is solely how the app's built-in benchmarks determines where the user is. For the app, the `Tagging` concept will not allow `deleteTag` for the default studied collection and not allow `createTag` to create an equivalent studied collection. This is left out of the concept to keep its generality
+- Most of the reactions handle modifying collections and might be a little bit more complicated than expected for synchronization purposes for shared collections. When the author adds or removes a character, there must be some way to update what items are shared in `Sharing` concept. This is handled with unique item IDs
 
 ## UI Sketches
 
