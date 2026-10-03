@@ -91,6 +91,8 @@ purpose label items to indicate the groups it belongs to for personal convenienc
 principle when a user tags items, it implies a common grouping between the tagged items
 
 state
+    a set of identifier IDs
+
     a set of Users with
         a set of Tags with
             a name String
@@ -123,11 +125,11 @@ actions
         where the user exists, the tag exists under the user, and the item exists in the tag's item set
         then randomly generate a unique ID for the tagged item, paired with the given item, under the user's tag's tagged items set
 
-    findTaggedItemId (user: User, tag: Tag, item: Item) : return (id: ID)
+    findTaggedItemID (user: User, tag: Tag, item: Item) : return (id: ID)
         where the user exists, the tag exists under the user, and the item and ID exists in the tag's item set
         then return the ID of the given item
 
-    findTaggedItemsId (user: User, tag: Tag) : return (ids: set of IDs)
+    findTaggedItemsID (user: User, tag: Tag) : return (ids: set of IDs)
         where the user exists, the tag exists under the user, and tag's item set exists
         then return a set of all IDs of items in the tagged items set
 ```
@@ -255,7 +257,7 @@ reaction findCharacterID
 
 when Requesting.removeCharacterFromCollection (user, collection: Tag, character: Item)
 
-then Tagging.findTaggedItemId (user, collection: Tag, character: Item) : (ID)
+then Tagging.findTaggedItemID (user, collection: Tag, character: Item) : (ID)
 ```
 
 ```
@@ -289,7 +291,22 @@ then
 
 ### Note
 
-For the `PersonalRating` concept, the user is not allowed to access the `defineRatings` action.
+After the user successfully registers through the `Authenticating` concept, they gain access to:
+
+- All actions of the `Tagging` concept except for `generateTaggedItemID`, `findTaggedItemID`, and `findTaggedItemsID`
+- All actions of the `Sharing` concept
+- All actions of the `Rating` concept except for `addDefinedRatings` and `removeDefinedRating`
+
+The actions registered users cannot access is for the server only. In the context of the app, the excluded `Tagging` actions are used to store and share hidden IDs that are used to communicate changes in shared collections so that access can be revoked/granted as needed. For the excluded `Rating` actions, the server defines ratings, which is character confidence level, for every user. Finally, the `InformationCollecting` concept is server-only as the server populates character data with information (e.g. pronunciation and meaning).
+
+How the concepts work together in the app:
+
+- `Authenticating` allows personalizable character collections and sharing them with people you know
+- `Tagging` represents storing characters in collection. Each collection is a tag, allowing characters to be a part of multiple collections
+- `InformationCollecting`, as stated earlier, provides detailed information about each character
+- `Sharing` allows users to share their collections with each other
+- `PersonalRating` lets users mark each character with a confidence level on a predefined scale
+- The reactions handle modifying collections and might be a little bit more complicated than expected for synchronization purposes for shared collections. When the author adds or removes a character, there must be some way to update what items are shared in `Sharing` concept. This is handled with unique item IDs
 
 ## UI Sketches
 
