@@ -98,6 +98,7 @@ state
             a name String
             a set of TaggedItems with
                 an identifier ID
+                an added date Date
                 an Item
 
 actions
@@ -113,9 +114,9 @@ actions
         where the user exists and the tag exists under the given user
         then delete the tag
 
-    addItemTag (user: User, tag: Tag, item: Item)
+    addItemTag (user: User, tag: Tag, item: Item, date: Date)
         where the user exists, the tag exists under the user, the item exists, and the tag does not have the given item in its current item set
-        then adds the given item to the given tag's tagged item set under the given user
+        then adds the given item to the given tag's tagged item set under the given user with the current date
 
     removeItemTag (user: User, tag: Tag, item: Item)
         where the user exists, the tag exists under the user, and the item exists in the tag's  item set
@@ -310,7 +311,7 @@ The actions registered users cannot access is for the server only. In the contex
 How the concepts and reactions work together in the app:
 
 - `Authenticating` allows personalizable character collections and sharing them with people you know
-- `Tagging` represents storing characters in collection. Each collection is a tag, allowing characters to be a part of multiple collections
+- `Tagging` represents storing characters in collection. Each collection is a tag, allowing characters to be a part of multiple collections. The date is stored for every tagged item for sorting purposes within the collection
 - `InformationCollecting`, as stated earlier, provides detailed information about each character
 - `Sharing` allows users to share their collections with each other
 - `PersonalRating` lets users mark each character with a confidence level on a predefined scale
