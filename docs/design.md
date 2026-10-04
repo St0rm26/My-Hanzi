@@ -314,7 +314,7 @@ How the concepts and reactions work together in the app:
 - `Tagging` represents storing characters in collection. Each collection is a tag, allowing characters to be a part of multiple collections. The date is stored for every tagged item for sorting purposes within the collection
 - `InformationCollecting`, as stated earlier, provides detailed information about each character
 - `Sharing` allows users to share their collections with each other
-- `PersonalRating` lets users mark each character with a confidence level on a predefined scale
+- `PersonalRating` lets users mark each character with a confidence level on a predefined scale. Ratings are universal; same across all collections
 - The first reaction initializes the user with a "Studied" collection. Although users are free to make their own collections, the main purpose of the app is to track studied characters. In addition, the studied collection is solely how the app's built-in benchmarks determines where the user is. For the app, the `Tagging` concept will not allow `deleteTag` for the default studied collection and not allow `createTag` to create an equivalent studied collection. This is left out of the concept to keep its generality
 - Most of the reactions handle modifying collections and might be a little bit more complicated than expected for synchronization purposes for shared collections. When the author adds or removes a character, there must be some way to update what items are shared in `Sharing` concept. This is handled with unique item IDs
 
