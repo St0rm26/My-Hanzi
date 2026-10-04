@@ -320,4 +320,6 @@ How the concepts and reactions work together in the app:
 
 ## UI Sketches
 
+<img src="low-fi sketch.png" alt="Low-Fidelity Sketches" />
+
 ## User Journey
