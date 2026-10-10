@@ -13,26 +13,33 @@ After a user registers with a username and password, they are able to authentica
 ```types
 external User
     The person a username and password belongs to.
+
+opaque Secret
+    A password verifier derived with a random salt; the implementer chooses how to represent it.
 ```
 
 ## State
 
 ```state
 a set of Users with
-    a username String
-    a password String
+    a verifier Secret
+
+Rule: Authenticating stores only a verifier derived from the password, never the password itself.
 ```
 
 ## Actions
 
 ```actions
-register (username: String, password: String) : returns (user: User)
+register (user: User, password: String) : returns (user: User)
+    where the user already has a verifier
+    then
+        refuses PASSWORD_SET "This account already has a password."
     where a user with this username does not exist
     then
         create a new user with this username and password
         returns user
 
-authenticate (username: String, password: String) : returns (user: User)
+authenticate (user: User, password: String) : returns (user: User)
     where the username exists and the password matches
     then
         returns user
