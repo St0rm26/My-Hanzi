@@ -55,6 +55,6 @@ deleteInfoField (item: Item, infoField: InfoField) : returns ()
 _allInformation(item: Item) : many (information: Information)
     Returns all information about an item in alphabetical order of their info field name
 
-_information(item: Item, category: String) : one (information: Information)
+_information(item: Item, fieldName: String) : one (information: Information)
     Returns the information under an item's particular info field/category
 ```
