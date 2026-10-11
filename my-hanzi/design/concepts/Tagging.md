@@ -48,7 +48,7 @@ createTag (user: User, name: String) : returns (tag: Tag)
         returns tag
 
 renameTag (user: User, tag: Tag, newName: String) : returns (tag: Tag)
-    where the tag exists with the given user and the new name isn't the name of a tag the user already has
+    where the tag exists with the given user and the new name isn't the name of another tag the user already has
     then
         rename the tag with the new name
         returns tag
