@@ -3,7 +3,6 @@ import { type Collection, type Db, MongoServerError } from "mongodb";
 export class RatingNotDefined extends Error {}
 export class AlreadyRated extends Error {}
 export class PersonalRatingNotFound extends Error {}
-export class RatingUnchanged extends Error {}
 
 interface DefinedRatingDocument<Rating> {
   _id: Rating;
@@ -122,15 +121,12 @@ export class PersonalRatingConcept<
     await this.#ready();
     await this.#requireDefined(rating);
 
-    const { matchedCount, modifiedCount } =
-      await this.personalRatings.updateOne(
-        { user, item },
-        { $set: { rating } },
-      );
+    const { matchedCount } = await this.personalRatings.updateOne(
+      { user, item },
+      { $set: { rating } },
+    );
     if (matchedCount === 0)
       throw new PersonalRatingNotFound("User has not rated this item.");
-    if (modifiedCount === 0)
-      throw new RatingUnchanged("The item already has that rating.");
     return;
   }
 

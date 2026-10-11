@@ -55,7 +55,7 @@ addRating (user: User, item: Item, rating: Rating) : returns ()
         returns
 
 changeRating (user: User, item: Item, rating: Rating) : returns ()
-    where a personal rating exists with the user, item, and a rating; the given rating is different than the current rating and exists in the defined ratings set
+    where a personal rating exists with the user, item, and a rating; the given rating exists in the defined ratings set
     then
         modify the given rating of the item
         returns
