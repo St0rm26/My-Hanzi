@@ -37,10 +37,10 @@ describe("Authenticating", () => {
     const { authenticating } = await setup();
     await authenticating.register({ user: "alice", password: "original" });
 
-    await expect(
+    expect(
       authenticating.register({ user: "alice", password: "replacement" }),
     ).rejects.toBeInstanceOf(PasswordSet);
-    await expect(
+    expect(
       authenticating.authenticate({ user: "alice", password: "replacement" }),
     ).rejects.toBeInstanceOf(InvalidCredentials);
     expect(
@@ -69,10 +69,10 @@ describe("Authenticating", () => {
     const { authenticating } = await setup();
     await authenticating.register({ user: "alice", password: "correct" });
 
-    await expect(
+    expect(
       authenticating.authenticate({ user: "missing", password: "correct" }),
     ).rejects.toBeInstanceOf(InvalidCredentials);
-    await expect(
+    expect(
       authenticating.authenticate({ user: "alice", password: "incorrect" }),
     ).rejects.toBeInstanceOf(InvalidCredentials);
   });
@@ -82,7 +82,7 @@ describe("Authenticating", () => {
     await authenticating.register({ user: "Alice", password: "Secret" });
     await authenticating.register({ user: "alice", password: "Secret" });
 
-    await expect(
+    expect(
       authenticating.authenticate({ user: "Alice", password: "secret" }),
     ).rejects.toBeInstanceOf(InvalidCredentials);
     expect(

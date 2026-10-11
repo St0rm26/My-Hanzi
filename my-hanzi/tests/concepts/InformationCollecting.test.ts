@@ -55,7 +55,7 @@ describe("InformationCollecting", () => {
       fieldName: "meaning",
       description: "you",
     });
-    await expect(
+    expect(
       informationCollecting.addInfoField({
         item: "你",
         fieldName: "meaning",
@@ -108,7 +108,7 @@ describe("InformationCollecting", () => {
         fieldName: "meaning",
       }),
     ).toEqual({ information: "you" });
-    await expect(
+    expect(
       informationCollecting.editInfoField({
         item: "我",
         infoField,
@@ -133,13 +133,13 @@ describe("InformationCollecting", () => {
     expect(
       await informationCollecting.deleteInfoField({ item: "你", infoField }),
     ).toEqual({});
-    await expect(
+    expect(
       informationCollecting._information({ item: "你", fieldName: "meaning" }),
     ).rejects.toBeInstanceOf(InfoFieldNotFound);
     expect(await informationCollecting._allInformation({ item: "你" })).toEqual(
       [{ information: "nǐ" }],
     );
-    await expect(
+    expect(
       informationCollecting.deleteInfoField({ item: "你", infoField }),
     ).rejects.toBeInstanceOf(InfoFieldNotFound);
     await informationCollecting.addInfoField({
@@ -152,10 +152,10 @@ describe("InformationCollecting", () => {
   test("queries and edits reject unknown fields", async () => {
     const { informationCollecting } = await setup();
 
-    await expect(
+    expect(
       informationCollecting._information({ item: "你", fieldName: "missing" }),
     ).rejects.toBeInstanceOf(InfoFieldNotFound);
-    await expect(
+    expect(
       informationCollecting.editInfoField({
         item: "你",
         infoField: "missing" as InfoField,

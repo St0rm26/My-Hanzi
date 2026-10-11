@@ -52,7 +52,7 @@ describe("PersonalRating", () => {
   test("addRating refuses an undefined rating without creating a personal rating", async () => {
     const { personalRating, database } = await setup();
 
-    await expect(
+    expect(
       personalRating.addRating({
         user: "maya",
         item: "item-1",
@@ -117,14 +117,14 @@ describe("PersonalRating", () => {
       rating: "easy",
     });
 
-    await expect(
+    expect(
       personalRating.addRating({
         user: "maya",
         item: "item-1",
         rating: "hard",
       }),
     ).rejects.toBeInstanceOf(AlreadyRated);
-    await expect(
+    expect(
       personalRating.addRating({
         user: "maya",
         item: "item-1",
@@ -148,7 +148,7 @@ describe("PersonalRating", () => {
       rating: "easy",
     });
 
-    await expect(
+    expect(
       personalRating.changeRating({
         user: "maya",
         item: "item-1",
@@ -168,7 +168,7 @@ describe("PersonalRating", () => {
     await personalRating.addDefinedRatings({
       ratings: new Set(["easy", "hard"]),
     });
-    await expect(
+    expect(
       personalRating.changeRating({
         user: "maya",
         item: "item-1",
@@ -239,10 +239,10 @@ describe("PersonalRating", () => {
     expect(
       await personalRating.deleteRating({ user: "maya", item: "item-1" }),
     ).toEqual({});
-    await expect(
+    expect(
       personalRating._rating({ user: "maya", item: "item-1" }),
     ).rejects.toBeInstanceOf(PersonalRatingNotFound);
-    await expect(
+    expect(
       personalRating.deleteRating({ user: "maya", item: "item-1" }),
     ).rejects.toBeInstanceOf(PersonalRatingNotFound);
     expect(
@@ -279,23 +279,23 @@ describe("PersonalRating", () => {
       ["maya", "item-1"],
       ["leo", "item-2"],
     ]) {
-      await expect(
-        personalRating._rating({ user, item }),
-      ).rejects.toBeInstanceOf(PersonalRatingNotFound);
+      expect(personalRating._rating({ user, item })).rejects.toBeInstanceOf(
+        PersonalRatingNotFound,
+      );
     }
     expect(
       await personalRating._rating({ user: "maya", item: "item-3" }),
     ).toEqual({
       rating: "hard",
     });
-    await expect(
+    expect(
       personalRating.addRating({
         user: "maya",
         item: "item-4",
         rating: "easy",
       }),
     ).rejects.toBeInstanceOf(RatingNotDefined);
-    await expect(
+    expect(
       personalRating.removeDefinedRating({ rating: "easy" }),
     ).rejects.toBeInstanceOf(RatingNotDefined);
   });

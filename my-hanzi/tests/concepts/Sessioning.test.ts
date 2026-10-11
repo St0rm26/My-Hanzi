@@ -46,9 +46,7 @@ describe("Sessioning", () => {
     expect(await sessioning.end({ session: browser })).toEqual({
       session: browser,
     });
-    await expect(sessioning.use({ session: browser })).rejects.toThrow(
-      NotSignedIn,
-    );
+    expect(sessioning.use({ session: browser })).rejects.toThrow(NotSignedIn);
 
     const { session: library } = await sessioning.start({ subject: "maya" });
     for (let day = 1; day < 90; day += 1) {
@@ -58,17 +56,15 @@ describe("Sessioning", () => {
       });
       if (day === 7) {
         const refusal = sessioning.use({ session: library });
-        await expect(refusal).rejects.toThrow(NotSignedIn);
-        await expect(refusal).rejects.toThrow(
+        expect(refusal).rejects.toThrow(NotSignedIn);
+        expect(refusal).rejects.toThrow(
           "Your session has ended. Sign in again.",
         );
       }
     }
 
     advance(DAY);
-    await expect(sessioning.use({ session: laptop })).rejects.toThrow(
-      NotSignedIn,
-    );
+    expect(sessioning.use({ session: laptop })).rejects.toThrow(NotSignedIn);
   });
 
   test("a session's identity is 32 random bytes in base64url", async () => {
@@ -97,7 +93,7 @@ describe("Sessioning", () => {
     advance(7 * DAY - MINUTE);
     expect(await sessioning.use({ session })).toEqual({ subject: "maya" });
     advance(7 * DAY);
-    await expect(sessioning.use({ session })).rejects.toThrow(NotSignedIn);
+    expect(sessioning.use({ session })).rejects.toThrow(NotSignedIn);
   });
 
   test("a refused use or end changes no session", async () => {
@@ -108,31 +104,25 @@ describe("Sessioning", () => {
     const before = await sessions.find().sort({ _id: 1 }).toArray();
 
     advance(7 * DAY);
-    await expect(sessioning.use({ session: idle })).rejects.toThrow(
-      NotSignedIn,
-    );
-    await expect(sessioning.end({ session: forgotten })).rejects.toThrow(
-      NotSignedIn,
-    );
-    await expect(sessioning.end({ session: idle })).rejects.toThrow(
-      NotSignedIn,
-    );
+    expect(sessioning.use({ session: idle })).rejects.toThrow(NotSignedIn);
+    expect(sessioning.end({ session: forgotten })).rejects.toThrow(NotSignedIn);
+    expect(sessioning.end({ session: idle })).rejects.toThrow(NotSignedIn);
     expect(await sessions.find().sort({ _id: 1 }).toArray()).toEqual(before);
   });
 
   test("Sessioning refuses to use or end an unknown or ended session", async () => {
     const { sessioning } = await setup();
-    await expect(
-      sessioning.use({ session: "missing" as Session }),
-    ).rejects.toThrow(NotSignedIn);
-    await expect(
-      sessioning.end({ session: "missing" as Session }),
-    ).rejects.toThrow(NotSignedIn);
+    expect(sessioning.use({ session: "missing" as Session })).rejects.toThrow(
+      NotSignedIn,
+    );
+    expect(sessioning.end({ session: "missing" as Session })).rejects.toThrow(
+      NotSignedIn,
+    );
 
     const { session } = await sessioning.start({ subject: "maya" });
     await sessioning.end({ session });
-    await expect(sessioning.end({ session })).rejects.toThrow(NotSignedIn);
-    await expect(sessioning.use({ session })).rejects.toThrow(NotSignedIn);
+    expect(sessioning.end({ session })).rejects.toThrow(NotSignedIn);
+    expect(sessioning.use({ session })).rejects.toThrow(NotSignedIn);
   });
 
   test("of two ends of one session at once, Sessioning accepts one and refuses the other with NOT_SIGNED_IN", async () => {

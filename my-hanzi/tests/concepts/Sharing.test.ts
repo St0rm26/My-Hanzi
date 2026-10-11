@@ -63,7 +63,7 @@ describe("Sharing", () => {
       audience: new Set(["bob"]),
     });
 
-    await expect(
+    expect(
       sharing.revokeItem({
         author: "alice",
         item: "book",
@@ -116,7 +116,7 @@ describe("Sharing", () => {
     expect(await sharing._sharedItems({ user: "carol" })).toEqual([
       { item: "book" },
     ]);
-    await expect(
+    expect(
       sharing.deleteItem({ author: "alice", item: "book" }),
     ).rejects.toBeInstanceOf(SharedItemNotFound);
   });
@@ -131,7 +131,7 @@ describe("Sharing", () => {
         audience: new Set(["bob"]),
       });
     }
-    await expect(
+    expect(
       sharing.deleteItems({ author: "alice", items: ["book", "missing"] }),
     ).rejects.toBeInstanceOf(SharedItemNotFound);
     expect(await sharing._sharedItems({ user: "bob" })).toEqual([
