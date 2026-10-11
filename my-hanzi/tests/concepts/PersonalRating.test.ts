@@ -21,16 +21,20 @@ describe("PersonalRating", () => {
 
     expect(
       await personalRating.addDefinedRatings({
-        ratings: ["easy", "hard", "easy"],
+        ratings: new Set(["easy", "hard", "easy"]),
       }),
-    ).toEqual({ ratings: ["easy", "hard", "easy"] });
+    ).toEqual({ ratings: new Set(["easy", "hard", "easy"]) });
     expect(
-      await personalRating.addDefinedRatings({ ratings: ["hard", "medium"] }),
+      await personalRating.addDefinedRatings({
+        ratings: new Set(["hard", "medium"]),
+      }),
     ).toEqual({
-      ratings: ["hard", "medium"],
+      ratings: new Set(["hard", "medium"]),
     });
-    expect(await personalRating.addDefinedRatings({ ratings: [] })).toEqual({
-      ratings: [],
+    expect(
+      await personalRating.addDefinedRatings({ ratings: new Set() }),
+    ).toEqual({
+      ratings: new Set(),
     });
 
     const definitions = await database
@@ -65,7 +69,9 @@ describe("PersonalRating", () => {
   test("addRating stores one defined rating per user and item and _rating returns it", async () => {
     const { personalRating } = await setup();
 
-    await personalRating.addDefinedRatings({ ratings: ["easy", "hard"] });
+    await personalRating.addDefinedRatings({
+      ratings: new Set(["easy", "hard"]),
+    });
     await personalRating.addRating({
       user: "maya",
       item: "item-1",
@@ -102,7 +108,9 @@ describe("PersonalRating", () => {
   test("the user-item index rejects a second rating even if its value differs", async () => {
     const { personalRating } = await setup();
 
-    await personalRating.addDefinedRatings({ ratings: ["easy", "hard"] });
+    await personalRating.addDefinedRatings({
+      ratings: new Set(["easy", "hard"]),
+    });
     await personalRating.addRating({
       user: "maya",
       item: "item-1",
@@ -133,7 +141,7 @@ describe("PersonalRating", () => {
   test("changeRating refuses an undefined new rating and leaves the old one intact", async () => {
     const { personalRating } = await setup();
 
-    await personalRating.addDefinedRatings({ ratings: ["easy"] });
+    await personalRating.addDefinedRatings({ ratings: new Set(["easy"]) });
     await personalRating.addRating({
       user: "maya",
       item: "item-1",
@@ -157,7 +165,9 @@ describe("PersonalRating", () => {
   test("changeRating refuses a missing pair", async () => {
     const { personalRating } = await setup();
 
-    await personalRating.addDefinedRatings({ ratings: ["easy", "hard"] });
+    await personalRating.addDefinedRatings({
+      ratings: new Set(["easy", "hard"]),
+    });
     await expect(
       personalRating.changeRating({
         user: "maya",
@@ -170,7 +180,9 @@ describe("PersonalRating", () => {
   test("changeRating changes only the requested user's item", async () => {
     const { personalRating } = await setup();
 
-    await personalRating.addDefinedRatings({ ratings: ["easy", "hard"] });
+    await personalRating.addDefinedRatings({
+      ratings: new Set(["easy", "hard"]),
+    });
     await personalRating.addRating({
       user: "maya",
       item: "item-1",
@@ -212,7 +224,7 @@ describe("PersonalRating", () => {
   test("deleteRating removes exactly one pair and refuses a missing pair", async () => {
     const { personalRating } = await setup();
 
-    await personalRating.addDefinedRatings({ ratings: ["easy"] });
+    await personalRating.addDefinedRatings({ ratings: new Set(["easy"]) });
     await personalRating.addRating({
       user: "maya",
       item: "item-1",
@@ -243,7 +255,9 @@ describe("PersonalRating", () => {
   test("removeDefinedRating removes the definition and every use of it", async () => {
     const { personalRating } = await setup();
 
-    await personalRating.addDefinedRatings({ ratings: ["easy", "hard"] });
+    await personalRating.addDefinedRatings({
+      ratings: new Set(["easy", "hard"]),
+    });
     await personalRating.addRating({
       user: "maya",
       item: "item-1",

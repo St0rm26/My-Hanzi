@@ -53,7 +53,7 @@ export class PersonalRatingConcept<
     return this.indexes;
   }
 
-  async addDefinedRatings({ ratings }: { ratings: Rating[] }) {
+  async addDefinedRatings({ ratings }: { ratings: Set<Rating> }) {
     const uniqueRatings = [...new Set(ratings)];
     await Promise.all(
       uniqueRatings.map(async (rating) => {
