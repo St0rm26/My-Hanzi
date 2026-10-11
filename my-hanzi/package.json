@@ -18,6 +18,7 @@
   "scripts": {
     "generate": "sync-engine artifacts pin",
     "check": "sync-engine check && sync-engine artifacts check && tsc --noEmit",
+    "test:concepts": "bun test tests/concepts",
     "start": "bun run --parallel start:backend start:frontend",
     "start:backend": "HOST=127.0.0.1 PORT=4000 bun src/main.ts",
     "start:frontend": "HOST=0.0.0.0 BACKEND_URL=http://127.0.0.1:4000 bun web/server.ts",
