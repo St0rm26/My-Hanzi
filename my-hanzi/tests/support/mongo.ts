@@ -1,36 +1,18 @@
-import { randomUUID } from "node:crypto";
-import { MongoClient } from "mongodb";
+import { type Db, MongoClient } from "mongodb";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
-let shared: Promise<{ client: MongoClient; server: MongoMemoryServer }> | undefined;
+let shared: Promise<MongoClient> | undefined;
+let databases = 0;
 
 async function connect() {
   const server = await MongoMemoryServer.create();
-  try {
-    const client = await new MongoClient(server.getUri()).connect();
-    return { client, server };
-  } catch (error) {
-    await server.stop();
-    throw error;
-  }
+  return new MongoClient(server.getUri()).connect();
 }
 
-/** Give each test a fresh database on one in-memory MongoDB. */
-export async function createTestDatabase() {
-  shared ??= connect().catch((error: unknown) => {
-    shared = undefined;
-    throw error;
-  });
-  const { client } = await shared;
-  const db = client.db(`my_hanzi_test_${randomUUID().replaceAll("-", "")}`);
-  let closed = false;
-
-  return {
-    db,
-    async close() {
-      if (closed) return;
-      closed = true;
-      await db.dropDatabase();
-    },
-  };
+/** A fresh, empty database on one in-memory MongoDB shared by the test run. */
+export async function testDatabase(): Promise<Db> {
+  shared ??= connect();
+  const client = await shared;
+  databases += 1;
+  return client.db(`test-${databases}`);
 }
