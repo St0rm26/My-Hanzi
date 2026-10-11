@@ -44,7 +44,7 @@ export class SharingConcept<User extends string, Item extends string> {
   }: {
     author: User;
     item: Item;
-    audience: User[];
+    audience: Set<User>;
   }) {
     await this.#ready();
 
@@ -72,7 +72,7 @@ export class SharingConcept<User extends string, Item extends string> {
   }: {
     author: User;
     item: Item;
-    audience: User[];
+    audience: Set<User>;
   }) {
     await this.#ready();
     const users = [...new Set(audience)];
