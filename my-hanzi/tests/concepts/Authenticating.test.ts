@@ -1,100 +1,104 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { password as passwordHash } from "bun";
 import {
   AuthenticatingConcept,
   InvalidCredentials,
   PasswordSet,
 } from "../../src/concepts/Authenticating/Authenticating.ts";
-import { createTestDatabase } from "../support/mongo.ts";
+import { testDatabase } from "../support/mongo.ts";
 import { expectOneWinner } from "../support/race.ts";
 
+async function setup() {
+  const database = await testDatabase();
+  return {
+    authenticating: new AuthenticatingConcept<string>(database),
+    database,
+  };
+}
+
 describe("Authenticating", () => {
-  let database: Awaited<ReturnType<typeof createTestDatabase>>;
-
-  beforeEach(async () => {
-    database = await createTestDatabase();
-  });
-
-  afterEach(async () => {
-    if (database) await database.close();
-  });
-
   test("register returns the user and the same credentials authenticate", async () => {
-    const concept = new AuthenticatingConcept<string>(database.db);
+    const { authenticating } = await setup();
 
     expect(
-      await concept.register({ user: "alice", password: "swordfish" }),
+      await authenticating.register({ user: "alice", password: "swordfish" }),
     ).toEqual({
       user: "alice",
     });
     expect(
-      await concept.authenticate({ user: "alice", password: "swordfish" }),
+      await authenticating.authenticate({
+        user: "alice",
+        password: "swordfish",
+      }),
     ).toEqual({ user: "alice" });
   });
 
   test("register refuses an existing user without changing their password", async () => {
-    const concept = new AuthenticatingConcept<string>(database.db);
-    await concept.register({ user: "alice", password: "original" });
+    const { authenticating } = await setup();
+    await authenticating.register({ user: "alice", password: "original" });
 
     await expect(
-      concept.register({ user: "alice", password: "replacement" }),
+      authenticating.register({ user: "alice", password: "replacement" }),
     ).rejects.toBeInstanceOf(PasswordSet);
     await expect(
-      concept.authenticate({ user: "alice", password: "replacement" }),
+      authenticating.authenticate({ user: "alice", password: "replacement" }),
     ).rejects.toBeInstanceOf(InvalidCredentials);
     expect(
-      await concept.authenticate({ user: "alice", password: "original" }),
+      await authenticating.authenticate({
+        user: "alice",
+        password: "original",
+      }),
     ).toEqual({ user: "alice" });
   });
 
   test("two simultaneous registrations for one user create one account", async () => {
-    const concept = new AuthenticatingConcept<string>(database.db);
+    const { authenticating, database } = await setup();
     await expectOneWinner(
       [
-        concept.register({ user: "alice", password: "first" }),
-        concept.register({ user: "alice", password: "second" }),
+        authenticating.register({ user: "alice", password: "first" }),
+        authenticating.register({ user: "alice", password: "second" }),
       ],
       PasswordSet,
     );
     expect(
-      await database.db.collection("authenticating.users").countDocuments(),
+      await database.collection("authenticating.users").countDocuments(),
     ).toBe(1);
   }, 20_000);
 
   test("authenticate rejects an unknown user and an incorrect password", async () => {
-    const concept = new AuthenticatingConcept<string>(database.db);
-    await concept.register({ user: "alice", password: "correct" });
+    const { authenticating } = await setup();
+    await authenticating.register({ user: "alice", password: "correct" });
 
     await expect(
-      concept.authenticate({ user: "missing", password: "correct" }),
+      authenticating.authenticate({ user: "missing", password: "correct" }),
     ).rejects.toBeInstanceOf(InvalidCredentials);
     await expect(
-      concept.authenticate({ user: "alice", password: "incorrect" }),
+      authenticating.authenticate({ user: "alice", password: "incorrect" }),
     ).rejects.toBeInstanceOf(InvalidCredentials);
   });
 
   test("usernames and passwords are case sensitive", async () => {
-    const concept = new AuthenticatingConcept<string>(database.db);
-    await concept.register({ user: "Alice", password: "Secret" });
-    await concept.register({ user: "alice", password: "Secret" });
+    const { authenticating } = await setup();
+    await authenticating.register({ user: "Alice", password: "Secret" });
+    await authenticating.register({ user: "alice", password: "Secret" });
 
     await expect(
-      concept.authenticate({ user: "Alice", password: "secret" }),
+      authenticating.authenticate({ user: "Alice", password: "secret" }),
     ).rejects.toBeInstanceOf(InvalidCredentials);
     expect(
-      await concept.authenticate({ user: "Alice", password: "Secret" }),
+      await authenticating.authenticate({ user: "Alice", password: "Secret" }),
     ).toEqual({ user: "Alice" });
     expect(
-      await concept.authenticate({ user: "alice", password: "Secret" }),
+      await authenticating.authenticate({ user: "alice", password: "Secret" }),
     ).toEqual({ user: "alice" });
   });
 
   test("stores salted password verifiers rather than passwords", async () => {
-    const concept = new AuthenticatingConcept<string>(database.db);
-    await concept.register({ user: "alice", password: "shared-secret" });
-    await concept.register({ user: "bob", password: "shared-secret" });
+    const { authenticating, database } = await setup();
+    await authenticating.register({ user: "alice", password: "shared-secret" });
+    await authenticating.register({ user: "bob", password: "shared-secret" });
 
-    const users = database.db.collection<{
+    const users = database.collection<{
       _id: string;
       verifier: string;
     }>("authenticating.users");
