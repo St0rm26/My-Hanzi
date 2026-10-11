@@ -33,7 +33,7 @@ a set of Tags with
 
 a set of TaggedItems with
     a tag Tag
-    a unique identifier ID
+    an optional unique identifier ID
     an addedDate Date
     an item Item
 ```
@@ -48,7 +48,7 @@ createTag (user: User, name: String) : returns (tag: Tag)
         returns tag
 
 renameTag (user: User, tag: Tag, newName: String) : returns (tag: Tag)
-    where the tag exists with the given user
+    where the tag exists with the given user and the new name isn't the name of a tag the user already has
     then
         rename the tag with the new name
         returns tag
