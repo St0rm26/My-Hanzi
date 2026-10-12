@@ -82,7 +82,7 @@ export class PersonalRatingConcept<
       throw new RatingNotDefined("This rating is not defined.");
 
     await this.personalRatings.deleteMany({ rating });
-    return;
+    return {};
   }
 
   async addRating({
@@ -106,7 +106,7 @@ export class PersonalRatingConcept<
         );
       throw error;
     }
-    return;
+    return {};
   }
 
   async changeRating({
@@ -127,7 +127,7 @@ export class PersonalRatingConcept<
     );
     if (matchedCount === 0)
       throw new PersonalRatingNotFound("User has not rated this item.");
-    return;
+    return {};
   }
 
   async deleteRating({ user, item }: { user: User; item: Item }) {

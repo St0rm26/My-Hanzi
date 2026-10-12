@@ -113,7 +113,7 @@ export class TaggingConcept<
     if (deleted === null) throw new TagNotFound("There is no such tag.");
 
     await this.taggedItems.deleteMany({ tag });
-    return;
+    return {};
   }
 
   async addItemTag({
@@ -143,7 +143,7 @@ export class TaggingConcept<
       throw error;
     }
 
-    return;
+    return {};
   }
 
   async removeItemTag({
@@ -162,7 +162,7 @@ export class TaggingConcept<
     if (deletedCount === 0) {
       throw new TaggedItemNotFound("This item does not have the given tag.");
     }
-    return;
+    return {};
   }
 
   async generateTaggedItemID({

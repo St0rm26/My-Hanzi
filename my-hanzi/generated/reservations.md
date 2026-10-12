@@ -8,6 +8,114 @@ _specifications and composition source, then regenerate this file._
 
 ## Concepts
 
+### Authenticating
+
+Defined in [Authenticating](../design/concepts/Authenticating.md), line 1.
+
+#### Actions
+
+- `set(user: User, password: String) : returns (user: User)`
+  - Refuses `INVALID_PASSWORD`: A password must have 8 to 128 characters.
+  - Refuses `PASSWORD_SET`: This account already has a password.
+- `authenticate(user: User, password: String) : returns (user: User)`
+  - Refuses `INVALID_CREDENTIALS`: The username or password is incorrect.
+
+#### Queries
+
+- `_acceptable(password: String) : one (acceptable: Flag)`
+
+#### Instances
+
+- `Authenticating` — instance of `Authenticating` — [Application types](../design/types.md), line 28.
+  - `User` is `Name` — [Application types](../design/types.md), line 29.
+
+### Federating
+
+Defined in [Federating](../design/concepts/Federating.md), line 1.
+
+#### Actions
+
+- `start() : returns (attempt: Attempt, expiresAt: DateTime, address: String)`
+- `finish(attempt: Attempt, nonce: String, code: String) : returns (username: String)`
+  - Refuses `SIGN_IN_EXPIRED`: This sign-in has expired. Start again.
+  - Refuses `SIGN_IN_REFUSED`: The other site didn't confirm this sign-in. Start again.
+- `link(attempt: Attempt, user: User) : returns (user: User)`
+  - Refuses `NOT_CONFIRMED`: This sign-in hasn't been confirmed.
+  - Refuses `ALREADY_LINKED`: This account on the other site is already linked.
+
+#### Queries
+
+- `_user(attempt: Attempt) : optional (user: User)`
+- `_linkable(attempt: Attempt) : one (linkable: Flag)`
+
+#### Instances
+
+- `CommonsFederating` — instance of `Federating` — [Application types](../design/types.md), line 31.
+  - `User` is `Name` — [Application types](../design/types.md), line 32.
+
+### InformationCollecting
+
+Defined in [InformationCollecting](../design/concepts/InformationCollecting.md), line 1.
+
+#### Actions
+
+- `addInfoField(item: Item, fieldName: String, description: Information) : returns (infoField: InfoField)`
+- `editInfoField(item: Item, infoField: InfoField, description: Information) : returns (infoField: InfoField)`
+- `deleteInfoField(item: Item, infoField: InfoField) : returns ()`
+
+#### Queries
+
+- `_allInformation(item: Item) : many (information: Information)`
+- `_information(item: Item, fieldName: String) : one (information: Information)`
+
+#### Instances
+
+- `InformationCollecting` — instance of `InformationCollecting` — [Application types](../design/types.md), line 34.
+  - `Information` is `InformationText` — [Application types](../design/types.md), line 36.
+  - `Item` is `ItemName` — [Application types](../design/types.md), line 35.
+
+### PersonalRating
+
+Defined in [PersonalRating](../design/concepts/PersonalRating.md), line 1.
+
+#### Actions
+
+- `addDefinedRatings(ratings: Ratings) : returns (ratings: Ratings)`
+- `removeDefinedRating(rating: Rating) : returns ()`
+- `addRating(user: User, item: Item, rating: Rating) : returns ()`
+- `changeRating(user: User, item: Item, rating: Rating) : returns ()`
+- `deleteRating(user: User, item: Item) : returns ()`
+
+#### Queries
+
+- `_rating(user: User, item: Item) : one (rating: Rating)`
+
+#### Instances
+
+- `PersonalRating` — instance of `PersonalRating` — [Application types](../design/types.md), line 38.
+  - `Item` is `ItemName` — [Application types](../design/types.md), line 40.
+  - `Rating` is `RatingName` — [Application types](../design/types.md), line 41.
+  - `User` is `Name` — [Application types](../design/types.md), line 39.
+
+### Registering
+
+Defined in [Registering](../design/concepts/Registering.md), line 1.
+
+#### Actions
+
+- `register(username: String) : returns (user: User)`
+  - Refuses `INVALID_USERNAME`: A username must have 3 to 32 letters, digits, underscores, or hyphens.
+  - Refuses `USERNAME_TAKEN`: That username is taken.
+
+#### Queries
+
+- `_byUsername(username: String) : optional (user: User)`
+- `_username(user: User) : optional (username: String)`
+
+#### Instances
+
+- `Registering` — instance of `Registering` — [Application types](../design/types.md), line 26.
+
 ### Reserving
 
 Defined in [Reserving](../design/concepts/Reserving.md), line 1.
@@ -25,16 +133,84 @@ Defined in [Reserving](../design/concepts/Reserving.md), line 1.
 
 #### Instances
 
-- `Reserving` — instance of `Reserving` — [Application types](../design/types.md), line 14.
-  - `Resource` is `Table` — [Application types](../design/types.md), line 16.
-  - `User` is `Name` — [Application types](../design/types.md), line 15.
+- `Reserving` — instance of `Reserving` — [Application types](../design/types.md), line 55.
+  - `Resource` is `Table` — [Application types](../design/types.md), line 57.
+  - `User` is `Name` — [Application types](../design/types.md), line 56.
+
+### Sessioning
+
+Defined in [Sessioning](../design/concepts/Sessioning.md), line 1.
+
+#### Actions
+
+- `start(subject: Subject) : returns (session: Session, expiresAt: DateTime)`
+- `use(session: Session) : returns (subject: Subject)`
+  - Refuses `NOT_SIGNED_IN`: Your session has ended. Sign in again.
+- `end(session: Session) : returns (session: Session)`
+  - Refuses `NOT_SIGNED_IN`: Your session has ended. Sign in again.
+
+#### Instances
+
+- `Sessioning` — instance of `Sessioning` — [Application types](../design/types.md), line 43.
+  - `Subject` is `Name` — [Application types](../design/types.md), line 44.
+
+### Sharing
+
+Defined in [Sharing](../design/concepts/Sharing.md), line 1.
+
+#### Actions
+
+- `shareItem(author: User, item: Item, audience: Users) : returns ()`
+- `revokeItem(author: User, item: Item, audience: Users) : returns ()`
+- `deleteItem(author: User, item: Item) : returns ()`
+- `deleteItems(author: User, items: Items) : returns ()`
+
+#### Queries
+
+- `_sharedItems(user: User) : many (item: Item)`
+
+#### Instances
+
+- `Sharing` — instance of `Sharing` — [Application types](../design/types.md), line 46.
+  - `Item` is `ItemName` — [Application types](../design/types.md), line 48.
+  - `User` is `Name` — [Application types](../design/types.md), line 47.
+
+### Tagging
+
+Defined in [Tagging](../design/concepts/Tagging.md), line 1.
+
+#### Actions
+
+- `createTag(user: User, name: String) : returns (tag: Tag)`
+- `renameTag(user: User, tag: Tag, newName: String) : returns (tag: Tag)`
+- `deleteTag(user: User, tag: Tag) : returns ()`
+- `addItemTag(user: User, tag: Tag, item: Item, date: Date) : returns ()`
+- `removeItemTag(user: User, tag: Tag, item: Item) : returns ()`
+- `generateTaggedItemID(user: User, tag: Tag, item: Item) : returns (id: ID)`
+- `findTaggedItemID(user: User, tag: Tag, item: Item) : returns (id: ID)`
+- `findTaggedItemsID(user: User, tag: Tag) : returns (ids: IDs)`
+
+#### Queries
+
+- `_getTaggedItems(tag: Tag) : many (item: Item)`
+
+#### Instances
+
+- `Tagging` — instance of `Tagging` — [Application types](../design/types.md), line 50.
+  - `ID` is `TagName` — [Application types](../design/types.md), line 53.
+  - `Item` is `ItemName` — [Application types](../design/types.md), line 52.
+  - `User` is `Name` — [Application types](../design/types.md), line 51.
 
 ## Application types
 
 Concrete types:
 
+- `InformationText` — [Application types](../design/types.md), line 18.
+- `ItemName` — [Application types](../design/types.md), line 12.
 - `Name` — [Application types](../design/types.md), line 6.
+- `RatingName` — [Application types](../design/types.md), line 15.
 - `Table` — [Application types](../design/types.md), line 9.
+- `TagName` — [Application types](../design/types.md), line 21.
 
 ## Formers
 
