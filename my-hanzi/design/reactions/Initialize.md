@@ -3,7 +3,7 @@
 ```
 reaction initialize
 
-when Authenticating.register () : (user)
+when Registering.register () : (user)
 
 then Tagging.createTag (user, "Studied")
 ```
