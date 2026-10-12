@@ -4,14 +4,17 @@ import { policy } from "./src/http.ts";
 
 export default {
   assemble: assembleApplication,
-  title: "Reservations",
-  wireName: "ReservationsWire",
+  title: "My Hanzi",
+  wireName: "MyHanziWire",
   design: {
     version: 1,
     documents: [
       new URL("./design/types.md", import.meta.url),
+      new URL("./design/compositions/accounts.md", import.meta.url),
+      new URL("./design/compositions/passwords.md", import.meta.url),
+      new URL("./design/compositions/commons.md", import.meta.url),
       new URL("./design/compositions/Reservations.md", import.meta.url),
     ],
   },
-  projections: [httpWire({ policy, name: "ReservationsWireHttp" })],
+  projections: [httpWire({ policy, name: "MyHanziWireHttp" })],
 };
