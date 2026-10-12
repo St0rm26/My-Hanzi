@@ -1,6 +1,6 @@
 # Signing in with Commons
 
-Sam clicks "Sign in with Commons". On Commons, he allows the app once, and his browser comes back with a one-time code. The app's server trades the code with Commons for his Commons user and username, and he is signed in. His Commons password never reaches the app. CommonsFederating is Federating with a `CommonsProvider`, which builds the address of Commons' sign-in page and redeems each code. An app copies this composition with [accounts](accounts.md), and its frontend shows `frontend/src/CommonsButton.vue` and `CommonsCallback.vue`.
+Sam clicks "Sign in with Commons". On Commons, he allows the app once, and his browser comes back with a one-time code. The app's server trades the code with Commons for his Commons user and username, and he is signed in. His Commons password never reaches the app. CommonsFederating is Federating with a `CommonsProvider`, which builds the address of Commons' sign-in page and redeems each code. An app copies this composition with [accounts](accounts.md), and its frontend shows `frontend/src/ui/CommonsButton.vue` and `CommonsCallback.vue`.
 
 ## Starting
 
