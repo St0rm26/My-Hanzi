@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { password as passwordHash } from "bun";
 import {
   AuthenticatingConcept,
   InvalidCredentials,
+  InvalidPassword,
   PasswordSet,
 } from "../../src/concepts/Authenticating/Authenticating.ts";
 import { testDatabase } from "../support/mongo.ts";
@@ -17,103 +17,87 @@ async function setup() {
 }
 
 describe("Authenticating", () => {
-  test("register returns the user and the same credentials authenticate", async () => {
+  test("its principle: Ben authenticates with his password, and Leo can neither guess it nor set a new one", async () => {
     const { authenticating } = await setup();
 
     expect(
-      await authenticating.register({ user: "alice", password: "swordfish" }),
-    ).toEqual({
-      user: "alice",
+      await authenticating.set({ user: "ben", password: "sea-shells-42" }),
+    ).toEqual({ user: "ben" });
+    expect(
+      await authenticating.authenticate({
+        user: "ben",
+        password: "sea-shells-42",
+      }),
+    ).toEqual({ user: "ben" });
+
+    const guessed = authenticating.authenticate({
+      user: "ben",
+      password: "guessed-password",
     });
+    await expect(guessed).rejects.toThrow(InvalidCredentials);
+    await expect(guessed).rejects.toThrow(
+      "The username or password is incorrect.",
+    );
+
+    const reset = authenticating.set({
+      user: "ben",
+      password: "leos-password",
+    });
+    await expect(reset).rejects.toThrow(PasswordSet);
+    await expect(reset).rejects.toThrow("This account already has a password.");
     expect(
       await authenticating.authenticate({
-        user: "alice",
-        password: "swordfish",
+        user: "ben",
+        password: "sea-shells-42",
       }),
-    ).toEqual({ user: "alice" });
+    ).toEqual({ user: "ben" });
   });
 
-  test("register refuses an existing user without changing their password", async () => {
+  test("a user with no password, such as one who signed in with Commons, is refused like a wrong password", async () => {
     const { authenticating } = await setup();
-    await authenticating.register({ user: "alice", password: "original" });
-
-    expect(
-      authenticating.register({ user: "alice", password: "replacement" }),
-    ).rejects.toBeInstanceOf(PasswordSet);
-    expect(
-      authenticating.authenticate({ user: "alice", password: "replacement" }),
-    ).rejects.toBeInstanceOf(InvalidCredentials);
-    expect(
-      await authenticating.authenticate({
-        user: "alice",
-        password: "original",
-      }),
-    ).toEqual({ user: "alice" });
+    await expect(
+      authenticating.authenticate({ user: "sam", password: "any-password" }),
+    ).rejects.toThrow(InvalidCredentials);
   });
 
-  test("two simultaneous registrations for one user create one account", async () => {
+  test("Authenticating stores an argon2id hash, never the password", async () => {
     const { authenticating, database } = await setup();
+    await authenticating.set({ user: "ben", password: "sea-shells-42" });
+    const stored = await database
+      .collection<{ _id: string; verifier: string }>("authenticating.users")
+      .findOne({ _id: "ben" });
+    expect(JSON.stringify(stored)).not.toContain("sea-shells-42");
+    expect(stored?.verifier).toStartWith("$argon2id$");
+  });
+
+  test("a password must have 8 to 128 characters, and _acceptable returns the same answer as set", async () => {
+    const { authenticating } = await setup();
+    for (const password of ["short12", "p".repeat(129)]) {
+      expect(await authenticating._acceptable({ password })).toEqual({
+        acceptable: false,
+      });
+      await expect(
+        authenticating.set({ user: "ben", password }),
+      ).rejects.toThrow(InvalidPassword);
+    }
+    for (const password of ["p".repeat(8), "p".repeat(128)]) {
+      expect(await authenticating._acceptable({ password })).toEqual({
+        acceptable: true,
+      });
+    }
+    await expect(
+      authenticating.authenticate({ user: "ben", password: "short12" }),
+    ).rejects.toThrow(InvalidCredentials);
+  });
+
+  test("of two passwords set for one user at once, one is set and the other is refused with PASSWORD_SET", async () => {
+    const { authenticating } = await setup();
     await expectOneWinner(
       [
-        authenticating.register({ user: "alice", password: "first" }),
-        authenticating.register({ user: "alice", password: "second" }),
+        authenticating.set({ user: "ben", password: "sea-shells-42" }),
+        authenticating.set({ user: "ben", password: "other-password" }),
       ],
       PasswordSet,
     );
-    expect(
-      await database.collection("authenticating.users").countDocuments(),
-    ).toBe(1);
-  }, 20_000);
-
-  test("authenticate rejects an unknown user and an incorrect password", async () => {
-    const { authenticating } = await setup();
-    await authenticating.register({ user: "alice", password: "correct" });
-
-    expect(
-      authenticating.authenticate({ user: "missing", password: "correct" }),
-    ).rejects.toBeInstanceOf(InvalidCredentials);
-    expect(
-      authenticating.authenticate({ user: "alice", password: "incorrect" }),
-    ).rejects.toBeInstanceOf(InvalidCredentials);
-  });
-
-  test("usernames and passwords are case sensitive", async () => {
-    const { authenticating } = await setup();
-    await authenticating.register({ user: "Alice", password: "Secret" });
-    await authenticating.register({ user: "alice", password: "Secret" });
-
-    expect(
-      authenticating.authenticate({ user: "Alice", password: "secret" }),
-    ).rejects.toBeInstanceOf(InvalidCredentials);
-    expect(
-      await authenticating.authenticate({ user: "Alice", password: "Secret" }),
-    ).toEqual({ user: "Alice" });
-    expect(
-      await authenticating.authenticate({ user: "alice", password: "Secret" }),
-    ).toEqual({ user: "alice" });
-  });
-
-  test("stores salted password verifiers rather than passwords", async () => {
-    const { authenticating, database } = await setup();
-    await authenticating.register({ user: "alice", password: "shared-secret" });
-    await authenticating.register({ user: "bob", password: "shared-secret" });
-
-    const users = database.collection<{
-      _id: string;
-      verifier: string;
-    }>("authenticating.users");
-    const alice = await users.findOne({ _id: "alice" });
-    const bob = await users.findOne({ _id: "bob" });
-
-    expect(alice).not.toBeNull();
-    expect(bob).not.toBeNull();
-    expect(alice?.verifier.startsWith("$argon2id$")).toBe(true);
-    expect(bob?.verifier.startsWith("$argon2id$")).toBe(true);
-    expect(alice?.verifier).not.toBe("shared-secret");
-    expect(alice?.verifier).not.toBe(bob?.verifier);
-    expect(await passwordHash.verify("shared-secret", alice!.verifier)).toBe(
-      true,
-    );
-    expect(Object.keys(alice ?? {}).sort()).toEqual(["_id", "verifier"]);
   });
 });

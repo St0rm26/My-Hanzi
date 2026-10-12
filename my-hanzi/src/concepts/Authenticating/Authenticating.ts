@@ -1,6 +1,7 @@
 import { password as passwordHash } from "bun";
 import { type Collection, type Db, MongoServerError } from "mongodb";
 
+export class InvalidPassword extends Error {}
 export class PasswordSet extends Error {}
 export class InvalidCredentials extends Error {}
 
@@ -17,7 +18,9 @@ export class AuthenticatingConcept<User extends string> {
     this.users = database.collection(`${name.toLowerCase()}.users`);
   }
 
-  async register({ user, password }: { user: User; password: string }) {
+  async set({ user, password }: { user: User; password: string }) {
+    if (!acceptable(password))
+      throw new InvalidPassword("A password must have 8 to 128 characters.");
     const verifier = await passwordHash.hash(password, {
       algorithm: "argon2id",
     });
@@ -41,7 +44,14 @@ export class AuthenticatingConcept<User extends string> {
     }
     return { user };
   }
+
+  async _acceptable({ password }: { password: string }) {
+    return { acceptable: acceptable(password) };
+  }
 }
+
+const acceptable = (password: string) =>
+  password.length >= 8 && password.length <= 128;
 
 /** 11000 is the code MongoDB gives a write that breaks a unique index. */
 const isDuplicate = (error: unknown) =>
