@@ -1,7 +1,7 @@
 import { createHttpClient } from "@mit-sdg/sync-engine-http/client";
-import type { ReservationsWireHttp } from "../generated/wire.ts";
+import type { MyHanziWireHttp } from "../generated/wire.ts";
 
-const client = createHttpClient<ReservationsWireHttp>({ baseUrl: "/api" });
+const client = createHttpClient<MyHanziWireHttp>({ baseUrl: "/api" });
 
 const form = document.querySelector<HTMLFormElement>("#reserve")!;
 const status = document.querySelector<HTMLParagraphElement>("#status")!;
