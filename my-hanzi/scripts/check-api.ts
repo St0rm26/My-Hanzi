@@ -1,21 +1,19 @@
 import { createHttpClient } from "@mit-sdg/sync-engine-http/client";
-import type { ReservationsWireHttp } from "../generated/wire.ts";
+import type { MyHanziWireHttp } from "../generated/wire.ts";
 
 const address =
   process.argv.slice(2).find((arg) => !arg.startsWith("--")) ??
   "http://127.0.0.1:3000";
 // With --wait, keep trying for 60 seconds. That gives the containers time to start.
 const deadline = Date.now() + (process.argv.includes("--wait") ? 60_000 : 0);
-const client = createHttpClient<ReservationsWireHttp>({
+const client = createHttpClient<MyHanziWireHttp>({
   baseUrl: `${address}/api`,
 });
 
 while (true) {
-  const result = await client.reservations.list({});
+  const result = await client.tags.list({ user: "health-check" });
   if (!("error" in result)) {
-    console.log(
-      `The API at ${address} answered. It has ${result.book.reservations.length} reservation(s).`,
-    );
+    console.log(`The API at ${address} answered.`);
     break;
   }
   if (Date.now() > deadline) {

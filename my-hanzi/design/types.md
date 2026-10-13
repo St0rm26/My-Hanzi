@@ -6,9 +6,6 @@ The application uses simple named strings for the user-facing identities and ite
 concrete Name
   A human-facing name or username.
 
-concrete Table
-  A resource identifier, such as friday-7pm-table-4.
-
 concrete ItemName
   The label for a tracked item.
 
@@ -19,7 +16,7 @@ concrete InformationText
   A textual fact or description about an item.
 
 concrete TagName
-  A generated or user-chosen identifier for a tag.
+  A generated identifier for a tag.
 ```
 
 ```instances
@@ -51,8 +48,4 @@ instantiate Tagging with
   User is Name
   Item is ItemName
   ID is TagName
-
-instantiate Reserving with
-  User is Name
-  Resource is Table
 ```

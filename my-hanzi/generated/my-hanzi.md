@@ -26,8 +26,8 @@ Defined in [Authenticating](../design/concepts/Authenticating.md), line 1.
 
 #### Instances
 
-- `Authenticating` — instance of `Authenticating` — [Application types](../design/types.md), line 28.
-  - `User` is `Name` — [Application types](../design/types.md), line 29.
+- `Authenticating` — instance of `Authenticating` — [Application types](../design/types.md), line 25.
+  - `User` is `Name` — [Application types](../design/types.md), line 26.
 
 ### Federating
 
@@ -50,8 +50,8 @@ Defined in [Federating](../design/concepts/Federating.md), line 1.
 
 #### Instances
 
-- `CommonsFederating` — instance of `Federating` — [Application types](../design/types.md), line 31.
-  - `User` is `Name` — [Application types](../design/types.md), line 32.
+- `CommonsFederating` — instance of `Federating` — [Application types](../design/types.md), line 28.
+  - `User` is `Name` — [Application types](../design/types.md), line 29.
 
 ### InformationCollecting
 
@@ -73,9 +73,9 @@ Defined in [InformationCollecting](../design/concepts/InformationCollecting.md),
 
 #### Instances
 
-- `InformationCollecting` — instance of `InformationCollecting` — [Application types](../design/types.md), line 34.
-  - `Information` is `InformationText` — [Application types](../design/types.md), line 36.
-  - `Item` is `ItemName` — [Application types](../design/types.md), line 35.
+- `InformationCollecting` — instance of `InformationCollecting` — [Application types](../design/types.md), line 31.
+  - `Information` is `InformationText` — [Application types](../design/types.md), line 33.
+  - `Item` is `ItemName` — [Application types](../design/types.md), line 32.
 
 ### PersonalRating
 
@@ -95,10 +95,10 @@ Defined in [PersonalRating](../design/concepts/PersonalRating.md), line 1.
 
 #### Instances
 
-- `PersonalRating` — instance of `PersonalRating` — [Application types](../design/types.md), line 38.
-  - `Item` is `ItemName` — [Application types](../design/types.md), line 40.
-  - `Rating` is `RatingName` — [Application types](../design/types.md), line 41.
-  - `User` is `Name` — [Application types](../design/types.md), line 39.
+- `PersonalRating` — instance of `PersonalRating` — [Application types](../design/types.md), line 35.
+  - `Item` is `ItemName` — [Application types](../design/types.md), line 37.
+  - `Rating` is `RatingName` — [Application types](../design/types.md), line 38.
+  - `User` is `Name` — [Application types](../design/types.md), line 36.
 
 ### Registering
 
@@ -117,28 +117,7 @@ Defined in [Registering](../design/concepts/Registering.md), line 1.
 
 #### Instances
 
-- `Registering` — instance of `Registering` — [Application types](../design/types.md), line 26.
-
-### Reserving
-
-Defined in [Reserving](../design/concepts/Reserving.md), line 1.
-
-#### Actions
-
-- `reserve(user: User, resource: Resource) : returns (reservation: Reservation)`
-  - Refuses `ALREADY_RESERVED`: That resource is already reserved.
-- `cancel(reservation: Reservation) : returns (reservation: Reservation)`
-  - Refuses `NO_SUCH_RESERVATION`: There is no such reservation.
-
-#### Queries
-
-- `_all() : many (reservation: Reservation, user: User, resource: Resource)`
-
-#### Instances
-
-- `Reserving` — instance of `Reserving` — [Application types](../design/types.md), line 55.
-  - `Resource` is `Table` — [Application types](../design/types.md), line 57.
-  - `User` is `Name` — [Application types](../design/types.md), line 56.
+- `Registering` — instance of `Registering` — [Application types](../design/types.md), line 23.
 
 ### Sessioning
 
@@ -154,8 +133,8 @@ Defined in [Sessioning](../design/concepts/Sessioning.md), line 1.
 
 #### Instances
 
-- `Sessioning` — instance of `Sessioning` — [Application types](../design/types.md), line 43.
-  - `Subject` is `Name` — [Application types](../design/types.md), line 44.
+- `Sessioning` — instance of `Sessioning` — [Application types](../design/types.md), line 40.
+  - `Subject` is `Name` — [Application types](../design/types.md), line 41.
 
 ### Sharing
 
@@ -174,9 +153,9 @@ Defined in [Sharing](../design/concepts/Sharing.md), line 1.
 
 #### Instances
 
-- `Sharing` — instance of `Sharing` — [Application types](../design/types.md), line 46.
-  - `Item` is `ItemName` — [Application types](../design/types.md), line 48.
-  - `User` is `Name` — [Application types](../design/types.md), line 47.
+- `Sharing` — instance of `Sharing` — [Application types](../design/types.md), line 43.
+  - `Item` is `ItemName` — [Application types](../design/types.md), line 45.
+  - `User` is `Name` — [Application types](../design/types.md), line 44.
 
 ### Tagging
 
@@ -207,21 +186,20 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 
 #### Instances
 
-- `Tagging` — instance of `Tagging` — [Application types](../design/types.md), line 50.
-  - `ID` is `TagName` — [Application types](../design/types.md), line 53.
-  - `Item` is `ItemName` — [Application types](../design/types.md), line 52.
-  - `User` is `Name` — [Application types](../design/types.md), line 51.
+- `Tagging` — instance of `Tagging` — [Application types](../design/types.md), line 47.
+  - `ID` is `TagName` — [Application types](../design/types.md), line 50.
+  - `Item` is `ItemName` — [Application types](../design/types.md), line 49.
+  - `User` is `Name` — [Application types](../design/types.md), line 48.
 
 ## Application types
 
 Concrete types:
 
-- `InformationText` — [Application types](../design/types.md), line 18.
-- `ItemName` — [Application types](../design/types.md), line 12.
+- `InformationText` — [Application types](../design/types.md), line 15.
+- `ItemName` — [Application types](../design/types.md), line 9.
 - `Name` — [Application types](../design/types.md), line 6.
-- `RatingName` — [Application types](../design/types.md), line 15.
-- `Table` — [Application types](../design/types.md), line 9.
-- `TagName` — [Application types](../design/types.md), line 21.
+- `RatingName` — [Application types](../design/types.md), line 12.
+- `TagName` — [Application types](../design/types.md), line 18.
 
 ## Formers
 
@@ -244,21 +222,6 @@ Former "the items in a user's collection" — inputs (user, tag); bindings (item
     form a record of
       addedDate
       item
-```
-
-### the reservation book
-
-Authored path: `Reservations.ReservationBook`.
-- Covered by [Reservations](../design/compositions/Reservations.md), line 4.
-
-```former
-Former "the reservation book" — inputs (); bindings (reservation, user, resource); promises exactly one record — forms:
-  a record of
-    reservations: each Reserving._all () has (reservation, resource, user)
-      form a record of
-        reservation
-        resource
-        user
 ```
 
 ### the tags owned by a user
@@ -300,70 +263,6 @@ where
   earlier, RequestBoundary.request (requestId)
 then
   RequestBoundary.respond (error: message, requestId)
-```
-
-### Reservations.Cancel
-
-Authored path: `Reservations.Cancel`.
-- Covered by [Reservations](../design/compositions/Reservations.md), line 11.
-- Covered by [Reservations](../design/compositions/Reservations.md), line 15.
-
-```reaction
-when RequestBoundary.request (path: "/reservations/cancel", requestId, reservation)
-then
-  Reserving.cancel (reservation)
-```
-
-### Reservations.Cancel#2
-
-Authored path: `Reservations.Cancel`.
-- Covered by [Reservations](../design/compositions/Reservations.md), line 11.
-- Covered by [Reservations](../design/compositions/Reservations.md), line 15.
-
-```reaction
-when Reserving.cancel (reservation), asked by Reservations.Cancel
-where
-  earlier, RequestBoundary.request (path: "/reservations/cancel", requestId, reservation)
-then
-  RequestBoundary.respond (requestId, reservation)
-```
-
-### Reservations.List
-
-Authored path: `Reservations.List`.
-- Covered by [Reservations](../design/compositions/Reservations.md), line 3.
-- Covered by [Reservations](../design/compositions/Reservations.md), line 7.
-
-```reaction
-when RequestBoundary.request (path: "/reservations/list", requestId)
-then
-  RequestBoundary.respond (book: former "the reservation book", requestId)
-```
-
-### Reservations.Reserve
-
-Authored path: `Reservations.Reserve`.
-- Covered by [Reservations](../design/compositions/Reservations.md), line 10.
-- Covered by [Reservations](../design/compositions/Reservations.md), line 14.
-
-```reaction
-when RequestBoundary.request (path: "/reservations/reserve", requestId, resource, user)
-then
-  Reserving.reserve (resource, user)
-```
-
-### Reservations.Reserve#2
-
-Authored path: `Reservations.Reserve`.
-- Covered by [Reservations](../design/compositions/Reservations.md), line 10.
-- Covered by [Reservations](../design/compositions/Reservations.md), line 14.
-
-```reaction
-when Reserving.reserve (resource, user, reservation), asked by Reservations.Reserve
-where
-  earlier, RequestBoundary.request (path: "/reservations/reserve", requestId, resource, user)
-then
-  RequestBoundary.respond (requestId, reservation)
 ```
 
 ### accounts.identifying.Me
@@ -1008,8 +907,6 @@ not listed here have no explicit input contract.
 - `/information/update-field` — requires `item`, `fieldName`, `description`
 - `/information/view` — requires `item`
 - `/information/view-field` — requires `item`, `fieldName`
-- `/reservations/cancel` — requires `reservation`
-- `/reservations/reserve` — requires `user`, `resource`
 - `/tags/add-item` — requires `user`, `tag`, `item`
 - `/tags/create-tag` — requires `user`, `name`
 - `/tags/delete-tag` — requires `user`, `tag`

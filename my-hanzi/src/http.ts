@@ -14,8 +14,6 @@ export const policy = httpPolicy({
     ...commonsHttp.publicErrors,
     ...informationHttp.publicErrors,
     ...tagsHttp.publicErrors,
-    ALREADY_RESERVED: "CONFLICT",
-    NO_SUCH_RESERVATION: "NOT_FOUND",
   },
   cookies: {
     session: accountsHttp.sessionCookie("my-hanzi-session", [

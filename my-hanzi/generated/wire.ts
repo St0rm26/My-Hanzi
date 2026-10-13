@@ -133,38 +133,6 @@ export type MyHanziWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" };
   };
-  "/reservations/cancel": {
-    input: {
-      "reservation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reserving"]["cancel"]>[0], ["reservation"]>>;
-    };
-    output: {
-      "reservation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reserving"]["cancel"]>[0], ["reservation"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reserving"]["cancel"]>>, ["reservation"]>]>>;
-    };
-    error: { error: AppWideError | "INVALID_INPUT" | "NO_SUCH_RESERVATION" };
-  };
-  "/reservations/list": {
-    input: Record<string, never>;
-    output: {
-      "book": {
-        "reservations": {
-          "reservation": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reserving"]["_all"]>>>, ["reservation"]>>;
-          "resource": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reserving"]["_all"]>>>, ["resource"]>>;
-          "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reserving"]["_all"]>>>, ["user"]>>;
-        }[];
-      };
-    };
-    error: { error: AppWideError };
-  };
-  "/reservations/reserve": {
-    input: {
-      "resource": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reserving"]["reserve"]>[0], ["resource"]>>;
-      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reserving"]["reserve"]>[0], ["user"]>>;
-    };
-    output: {
-      "reservation": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reserving"]["reserve"]>>, ["reservation"]>>;
-    };
-    error: { error: AppWideError | "ALREADY_RESERVED" | "INVALID_INPUT" };
-  };
   "/tags/add-item": {
     input: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["addItemTag"]>[0], ["item"]>>;
@@ -354,38 +322,6 @@ export type MyHanziWireHttp = {
       "information": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_information"]>>>, ["information"]>>;
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" };
-  };
-  "/reservations/cancel": {
-    input: {
-      "reservation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reserving"]["cancel"]>[0], ["reservation"]>>;
-    };
-    output: {
-      "reservation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reserving"]["cancel"]>[0], ["reservation"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reserving"]["cancel"]>>, ["reservation"]>]>>;
-    };
-    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
-  };
-  "/reservations/list": {
-    input: Record<string, never>;
-    output: {
-      "book": {
-        "reservations": {
-          "reservation": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reserving"]["_all"]>>>, ["reservation"]>>;
-          "resource": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reserving"]["_all"]>>>, ["resource"]>>;
-          "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reserving"]["_all"]>>>, ["user"]>>;
-        }[];
-      };
-    };
-    error: { error: HttpAppWideError };
-  };
-  "/reservations/reserve": {
-    input: {
-      "resource": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reserving"]["reserve"]>[0], ["resource"]>>;
-      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reserving"]["reserve"]>[0], ["user"]>>;
-    };
-    output: {
-      "reservation": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reserving"]["reserve"]>>, ["reservation"]>>;
-    };
-    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" };
   };
   "/tags/add-item": {
     input: {
