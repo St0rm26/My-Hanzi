@@ -16,9 +16,6 @@ const categoryMessages: Record<string, string> = {
 };
 
 const endpointMessages: Record<string, Record<string, string>> = {
-  "/information/update-field": {
-    NOT_FOUND: "The information field does not exist.",
-  },
   "/information/add-field": {
     CONFLICT: "That information field already exists.",
   },

@@ -19,9 +19,3 @@ The app can [add an info field](reaction:information.AddField) for an item.
 ```endpoints
 information.AddField at /information/add-field
 ```
-
-Only the app can [update an info field](reaction:information.UpdateField) for an item by sending its field name and new information. If the field does not exist for that item, the endpoint returns not found.
-
-```endpoints
-information.UpdateField at /information/update-field
-```

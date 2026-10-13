@@ -58,36 +58,6 @@ const AddField = endpoint(
   },
 );
 
-const UpdateField = endpoint(
-  "/information/update-field",
-  ({ session, item, fieldName, description, infoField }) =>
-    receive({ session, item, fieldName, description })
-      .then(Sessioning.use({ session }).responds({}))
-      .then(
-        where(
-          InformationCollecting._infoField({ item, fieldName }).is({
-            infoField,
-          }),
-        )
-          .then(
-            InformationCollecting.editInfoField({
-              item,
-              infoField,
-              description,
-            }).responds({ infoField }),
-          )
-          .then(respond({}))
-          .named("found"),
-        where(no(InformationCollecting._infoField({ item, fieldName })))
-          .then(respond({ error: "INFO_FIELD_NOT_FOUND" }))
-          .named("missing"),
-      ),
-  {
-    input: { required: ["session", "item", "fieldName", "description"] },
-    validators: { input: textInput },
-  },
-);
-
 export const informationHttp = {
   publicErrors: {
     ALREADY_COLLECTED_INFORMATION: "CONFLICT",
@@ -99,5 +69,4 @@ export const composition = {
   View,
   AddField,
   ViewField,
-  UpdateField,
 };

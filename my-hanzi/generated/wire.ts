@@ -104,16 +104,6 @@ export type MyHanziWire = {
     };
     error: { error: AppWideError | "ALREADY_COLLECTED_INFORMATION" | "INVALID_INPUT" | "NOT_SIGNED_IN" };
   };
-  "/information/update-field": {
-    input: {
-      "description": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["editInfoField"]>[0], ["description"]>>;
-      "fieldName": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_infoField"]>[0], ["fieldName"]>>;
-      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["editInfoField"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_infoField"]>[0], ["item"]>]>>;
-      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
-    };
-    output: Record<string, never>;
-    error: { error: AppWideError | "INFO_FIELD_NOT_FOUND" | "INVALID_INPUT" | "NOT_SIGNED_IN" };
-  };
   "/information/view": {
     input: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_allInformation"]>[0], ["item"]>>;
@@ -296,15 +286,6 @@ export type MyHanziWireHttp = {
       "infoField": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["addInfoField"]>>, ["infoField"]>>;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "UNAUTHORIZED" };
-  };
-  "/information/update-field": {
-    input: {
-      "description": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["editInfoField"]>[0], ["description"]>>;
-      "fieldName": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_infoField"]>[0], ["fieldName"]>>;
-      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["editInfoField"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_infoField"]>[0], ["item"]>]>>;
-    };
-    output: Record<string, never>;
-    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
   "/information/view": {
     input: {

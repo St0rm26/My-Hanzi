@@ -509,8 +509,8 @@ then
 ### information.AddField
 
 Authored path: `information.AddField`.
-- Covered by [Information](../design/compositions/information.md), line 11.
-- Covered by [Information](../design/compositions/information.md), line 14.
+- Covered by [Information](../design/compositions/information.md), line 17.
+- Covered by [Information](../design/compositions/information.md), line 20.
 
 ```reaction
 when RequestBoundary.request (description, fieldName, item, path: "/information/add-field", requestId, session)
@@ -521,8 +521,8 @@ then
 ### information.AddField#2
 
 Authored path: `information.AddField`.
-- Covered by [Information](../design/compositions/information.md), line 11.
-- Covered by [Information](../design/compositions/information.md), line 14.
+- Covered by [Information](../design/compositions/information.md), line 17.
+- Covered by [Information](../design/compositions/information.md), line 20.
 
 ```reaction
 when Sessioning.use (session), asked by information.AddField
@@ -535,8 +535,8 @@ then
 ### information.AddField#3
 
 Authored path: `information.AddField`.
-- Covered by [Information](../design/compositions/information.md), line 11.
-- Covered by [Information](../design/compositions/information.md), line 14.
+- Covered by [Information](../design/compositions/information.md), line 17.
+- Covered by [Information](../design/compositions/information.md), line 20.
 
 ```reaction
 when InformationCollecting.addInfoField (description, fieldName, item, infoField), asked by information.AddField#2
@@ -544,62 +544,6 @@ where
   earlier, RequestBoundary.request (description, fieldName, item, path: "/information/add-field", requestId, session)
 then
   RequestBoundary.respond (infoField, requestId)
-```
-
-### information.UpdateField
-
-Authored path: `information.UpdateField`.
-- Covered by [Information](../design/compositions/information.md), line 23.
-- Covered by [Information](../design/compositions/information.md), line 26.
-
-```reaction
-when RequestBoundary.request (description, fieldName, item, path: "/information/update-field", requestId, session)
-then
-  Sessioning.use (session)
-```
-
-### information.UpdateField:found#2
-
-Authored path: `information.UpdateField`.
-- Covered by [Information](../design/compositions/information.md), line 23.
-- Covered by [Information](../design/compositions/information.md), line 26.
-
-```reaction
-when Sessioning.use (session), asked by information.UpdateField
-where
-  earlier, RequestBoundary.request (description, fieldName, item, path: "/information/update-field", requestId, session)
-  InformationCollecting._infoField (fieldName, item) has (infoField)
-then
-  InformationCollecting.editInfoField (description, infoField, item)
-```
-
-### information.UpdateField:found#3
-
-Authored path: `information.UpdateField`.
-- Covered by [Information](../design/compositions/information.md), line 23.
-- Covered by [Information](../design/compositions/information.md), line 26.
-
-```reaction
-when InformationCollecting.editInfoField (description, infoField, item), asked by information.UpdateField:found#2
-where
-  earlier, RequestBoundary.request (description, fieldName, item, path: "/information/update-field", requestId, session)
-then
-  RequestBoundary.respond (requestId)
-```
-
-### information.UpdateField:missing#2
-
-Authored path: `information.UpdateField`.
-- Covered by [Information](../design/compositions/information.md), line 23.
-- Covered by [Information](../design/compositions/information.md), line 26.
-
-```reaction
-when Sessioning.use (session), asked by information.UpdateField
-where
-  earlier, RequestBoundary.request (description, fieldName, item, path: "/information/update-field", requestId, session)
-  no InformationCollecting._infoField (fieldName, item)
-then
-  RequestBoundary.respond (error: "INFO_FIELD_NOT_FOUND", requestId)
 ```
 
 ### information.View
@@ -631,8 +575,8 @@ then
 ### information.ViewField
 
 Authored path: `information.ViewField`.
-- Covered by [Information](../design/compositions/information.md), line 17.
-- Covered by [Information](../design/compositions/information.md), line 20.
+- Covered by [Information](../design/compositions/information.md), line 11.
+- Covered by [Information](../design/compositions/information.md), line 14.
 
 ```reaction
 when RequestBoundary.request (fieldName, item, path: "/information/view-field", requestId, session)
@@ -643,8 +587,8 @@ then
 ### information.ViewField#2
 
 Authored path: `information.ViewField`.
-- Covered by [Information](../design/compositions/information.md), line 17.
-- Covered by [Information](../design/compositions/information.md), line 20.
+- Covered by [Information](../design/compositions/information.md), line 11.
+- Covered by [Information](../design/compositions/information.md), line 14.
 
 ```reaction
 when Sessioning.use (session), asked by information.ViewField
@@ -1083,7 +1027,6 @@ not listed here have no explicit input contract.
 - `/auth/me` — requires `session`
 - `/auth/register` — requires `password`, `username`
 - `/information/add-field` — requires `session`, `item`, `fieldName`, `description`
-- `/information/update-field` — requires `session`, `item`, `fieldName`, `description`
 - `/information/view` — requires `session`, `item`
 - `/information/view-field` — requires `session`, `item`, `fieldName`
 - `/tags/add-item` — requires `session`, `tag`, `item`
