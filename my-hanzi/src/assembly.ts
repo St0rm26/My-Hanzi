@@ -11,7 +11,7 @@ import { db } from "./db.ts";
 export function assembleApplication() {
   const commons = new CommonsProvider({
     origin: process.env.COMMONS_ORIGIN ?? "https://class.mit-sdg.dev",
-    app: process.env.APP_ORIGIN ?? "http://127.0.0.1:3000",
+    app: process.env.APP_ORIGIN ?? "http://localhost:8080",
   });
 
   return assemble({
