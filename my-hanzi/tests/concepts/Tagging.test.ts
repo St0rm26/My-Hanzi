@@ -37,6 +37,18 @@ describe("Tagging", () => {
     expect(bobTag).not.toBe(studied);
   });
 
+  test("_tags returns only the user's tags sorted by name", async () => {
+    const pinyin = await createTag("alice", "Pinyin");
+    const studied = await createTag("alice", "Studied");
+    await createTag("bob", "Private");
+
+    expect(await tagging._tags({ user: "alice" })).toEqual([
+      { tag: pinyin, name: "Pinyin" },
+      { tag: studied, name: "Studied" },
+    ]);
+    expect(await tagging._tags({ user: "nobody" })).toEqual([]);
+  });
+
   test("renameTag preserves identity, permits its current name, and rejects another tag's name", async () => {
     const tag = await createTag();
     await createTag("alice", "favorites");

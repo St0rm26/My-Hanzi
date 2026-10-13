@@ -46,12 +46,21 @@ createTag (user: User, name: String) : returns (tag: Tag)
     then
         create a new tag with the given name and author
         returns tag
+    where the tag already exists with the given user as an author
+    then
+        refuses TAG_ALREADY_EXISTS "This user already has a tag with that name."
 
 renameTag (user: User, tag: Tag, newName: String) : returns (tag: Tag)
     where the tag exists with the given user and the new name isn't the name of another tag the user already has
     then
         rename the tag with the new name
         returns tag
+    where the tag does not exist with the given user
+    then
+        refuses TAG_NOT_FOUND "There is no such tag."
+    where another tag has the new name under the given user
+    then
+        refuses TAG_ALREADY_EXISTS "This user already has a tag with that name."
 
 deleteTag (user: User, tag: Tag) : returns ()
     where the tag's name is "Studied"
@@ -61,6 +70,9 @@ deleteTag (user: User, tag: Tag) : returns ()
     then
         delete the tag
         returns
+    where the tag does not exist with the given user
+    then
+        refuses TAG_NOT_FOUND "There is no such tag."
 
 addItemTag (user: User, tag: Tag, item: Item, date: Date) : returns ()
     where the tag exists with the given user, the item exists, and the tagged items set does not have an item with the given tag
@@ -96,6 +108,9 @@ findTaggedItemsID (user: User, tag: Tag) : returns (ids: IDs)
 ## Queries
 
 ```queries
+_tags (user: User) : many (tag: Tag, name: String)
+        Returns every tag owned by the user, ordered by name.
+
 _getTaggedItems (tag: Tag) : many (item: Item)
   Returns every item under the given tag. The order of the items is unspecified.
 ```

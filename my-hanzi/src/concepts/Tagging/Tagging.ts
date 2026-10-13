@@ -245,6 +245,15 @@ export class TaggingConcept<
     return { ids: ids as ID[] };
   }
 
+  async _tags({ user }: { user: User }): Promise<{ tag: Tag; name: string }[]> {
+    await this.#ready();
+    const tags = await this.tags
+      .find({ author: user })
+      .sort({ name: 1 })
+      .toArray();
+    return tags.map(({ _id: tag, name }) => ({ tag, name }));
+  }
+
   async _getTaggedItems({ tag }: { tag: Tag }): Promise<{ item: Item }[]> {
     await this.#ready();
     const found = await this.tags.findOne(
