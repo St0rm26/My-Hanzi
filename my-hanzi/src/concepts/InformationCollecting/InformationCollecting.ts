@@ -106,18 +106,20 @@ export class InformationCollectingConcept<
     item,
   }: {
     item: Item;
-  }): Promise<{ information: Record<string, Information> }> {
+  }): Promise<{ information: Record<string, Information> }[]> {
     await this.#ready();
     const itemInformation = await this.infoFields
       .find({ item })
       .sort({ name: 1 })
       .toArray();
 
-    return {
-      information: Object.fromEntries(
-        itemInformation.map(({ name, description }) => [name, description]),
-      ),
-    };
+    return [
+      {
+        information: Object.fromEntries(
+          itemInformation.map(({ name, description }) => [name, description]),
+        ),
+      },
+    ];
   }
 
   async _infoField({

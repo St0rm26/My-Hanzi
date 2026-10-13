@@ -58,8 +58,8 @@ deleteInfoField (item: Item, infoField: InfoField) : returns ()
 ## Queries
 
 ```queries
-_allInformation(item: Item) : one (information: Information)
-    Returns an object mapping each info field name to its information, or an empty object when the item has no information
+_allInformation(item: Item) : many (information: Information)
+    Returns one row containing an object that maps each info field name to its information, or an empty object when the item has no information
 
 _information(item: Item, fieldName: String) : one (information: Information)
     Returns the information under an item's particular info field/category
