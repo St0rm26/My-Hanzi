@@ -54,6 +54,9 @@ renameTag (user: User, tag: Tag, newName: String) : returns (tag: Tag)
         returns tag
 
 deleteTag (user: User, tag: Tag) : returns ()
+    where the tag's name is "Studied"
+    then
+        refuses DEFAULT_TAG_CANNOT_BE_DELETED "The default \"Studied\" tag cannot be deleted."
     where the tag exists with the given user
     then
         delete the tag

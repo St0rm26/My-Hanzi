@@ -2,6 +2,7 @@ import { type Collection, type Db, MongoServerError } from "mongodb";
 
 export class TagAlreadyExists extends Error {}
 export class TagNotFound extends Error {}
+export class DefaultTagCannotBeDeleted extends Error {}
 export class ItemAlreadyTagged extends Error {}
 export class TaggedItemNotFound extends Error {}
 export class TaggedItemIDNotFound extends Error {}
@@ -109,8 +110,21 @@ export class TaggingConcept<
     const deleted = await this.tags.findOneAndDelete({
       _id: tag,
       author: user,
+      name: { $ne: "Studied" },
     });
-    if (deleted === null) throw new TagNotFound("There is no such tag.");
+    if (deleted === null) {
+      const protectedTag = await this.tags.findOne({
+        _id: tag,
+        author: user,
+        name: "Studied",
+      });
+      if (protectedTag !== null) {
+        throw new DefaultTagCannotBeDeleted(
+          'The default "Studied" tag cannot be deleted.',
+        );
+      }
+      throw new TagNotFound("There is no such tag.");
+    }
 
     await this.taggedItems.deleteMany({ tag });
     return {};

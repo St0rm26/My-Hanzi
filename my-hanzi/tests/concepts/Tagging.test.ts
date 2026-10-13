@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
+  DefaultTagCannotBeDeleted,
   ItemAlreadyTagged,
   type Tag,
   TagAlreadyExists,
@@ -69,6 +70,26 @@ describe("Tagging", () => {
     expect(
       tagging.deleteTag({ user: "alice", tag: "missing" as Tag }),
     ).rejects.toBeInstanceOf(TagNotFound);
+  });
+
+  test("deleteTag refuses the default Studied tag and preserves its tagged items", async () => {
+    const studied = await createTag("alice", "Studied");
+    await tagging.addItemTag({
+      user: "alice",
+      tag: studied,
+      item: "book",
+      date,
+    });
+
+    await expect(
+      tagging.deleteTag({ user: "alice", tag: studied }),
+    ).rejects.toBeInstanceOf(DefaultTagCannotBeDeleted);
+    expect(
+      await database.collection("tagging.tags").findOne({ _id: studied }),
+    ).toMatchObject({ author: "alice", name: "Studied" });
+    expect(await tagging._getTaggedItems({ tag: studied })).toEqual([
+      { item: "book" },
+    ]);
   });
 
   test("deleteTag removes its tagged items but leaves other tags intact", async () => {

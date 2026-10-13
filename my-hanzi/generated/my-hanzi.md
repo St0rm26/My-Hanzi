@@ -187,6 +187,7 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 - `createTag(user: User, name: String) : returns (tag: Tag)`
 - `renameTag(user: User, tag: Tag, newName: String) : returns (tag: Tag)`
 - `deleteTag(user: User, tag: Tag) : returns ()`
+  - Refuses `DEFAULT_TAG_CANNOT_BE_DELETED`: The default "Studied" tag cannot be deleted.
 - `addItemTag(user: User, tag: Tag, item: Item, date: Date) : returns ()`
 - `removeItemTag(user: User, tag: Tag, item: Item) : returns ()`
 - `generateTaggedItemID(user: User, tag: Tag, item: Item) : returns (id: ID)`

@@ -2,6 +2,7 @@ import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import spec from "@design/concepts/Tagging.md" with { type: "text" };
 import type { Db } from "mongodb";
 import {
+  DefaultTagCannotBeDeleted,
   ItemAlreadyTagged,
   TagAlreadyExists,
   TaggedItemIDNotFound,
@@ -15,6 +16,9 @@ class Tagging extends TaggingConcept<string, string, string> {}
 export const tagging = registerConcept({
   class: Tagging,
   spec,
+  refusals: {
+    DEFAULT_TAG_CANNOT_BE_DELETED: DefaultTagCannotBeDeleted,
+  },
   floors: {
     mongo: ({ database }: { database: Db }, name: string) =>
       new Tagging(database, name),
