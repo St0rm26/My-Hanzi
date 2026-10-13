@@ -60,13 +60,16 @@ Defined in [InformationCollecting](../design/concepts/InformationCollecting.md),
 #### Actions
 
 - `addInfoField(item: Item, fieldName: String, description: Information) : returns (infoField: InfoField)`
+  - Refuses `ALREADY_COLLECTED_INFORMATION`: This item already has an info field with that name. Edit it instead.
 - `editInfoField(item: Item, infoField: InfoField, description: Information) : returns (infoField: InfoField)`
+  - Refuses `INFO_FIELD_NOT_FOUND`: This item does not have that info field.
 - `deleteInfoField(item: Item, infoField: InfoField) : returns ()`
 
 #### Queries
 
-- `_allInformation(item: Item) : one (information: Information)`
+- `_allInformation(item: Item) : many (information: Information)`
 - `_information(item: Item, fieldName: String) : one (information: Information)`
+- `_infoField(item: Item, fieldName: String) : many (infoField: InfoField)`
 
 #### Instances
 
@@ -216,6 +219,14 @@ Concrete types:
 
 _Formers name result shapes evaluated when asked. The source former owns_
 _the authored explanation; this section records the generated shape._
+
+### all an item's information
+
+```former
+Former "all an item's information" — inputs (item); bindings (information); promises exactly one record — forms:
+  a record of
+    information: the information of the first InformationCollecting._allInformation (item) has (information)
+```
 
 ### the reservation book
 
@@ -559,6 +570,74 @@ then
   RequestBoundary.respond (address, attempt, expiresAt, requestId)
 ```
 
+### information.UpdateField:found
+
+Authored path: `information.UpdateField`.
+- Covered by [Information](../design/compositions/information.md), line 15.
+- Covered by [Information](../design/compositions/information.md), line 18.
+
+```reaction
+when RequestBoundary.request (description, fieldName, item, path: "/information/update-field", requestId)
+where
+  InformationCollecting._infoField (fieldName, item) has (infoField)
+then
+  InformationCollecting.editInfoField (description, infoField, item)
+```
+
+### information.UpdateField:found#2
+
+Authored path: `information.UpdateField`.
+- Covered by [Information](../design/compositions/information.md), line 15.
+- Covered by [Information](../design/compositions/information.md), line 18.
+
+```reaction
+when InformationCollecting.editInfoField (description, infoField, item), asked by information.UpdateField:found
+where
+  earlier, RequestBoundary.request (description, fieldName, item, path: "/information/update-field", requestId)
+then
+  RequestBoundary.respond (requestId)
+```
+
+### information.UpdateField:missing
+
+Authored path: `information.UpdateField`.
+- Covered by [Information](../design/compositions/information.md), line 15.
+- Covered by [Information](../design/compositions/information.md), line 18.
+
+```reaction
+when RequestBoundary.request (description, fieldName, item, path: "/information/update-field", requestId)
+where
+  no InformationCollecting._infoField (fieldName, item)
+then
+  RequestBoundary.respond (error: "INFO_FIELD_NOT_FOUND", requestId)
+```
+
+### information.View
+
+Authored path: `information.View`.
+- Covered by [Information](../design/compositions/information.md), line 3.
+- Covered by [Information](../design/compositions/information.md), line 6.
+
+```reaction
+when RequestBoundary.request (item, path: "/information/view", requestId)
+then
+  RequestBoundary.respond (information: former "all an item's information" with (item), requestId)
+```
+
+### information.ViewField
+
+Authored path: `information.ViewField`.
+- Covered by [Information](../design/compositions/information.md), line 9.
+- Covered by [Information](../design/compositions/information.md), line 12.
+
+```reaction
+when RequestBoundary.request (fieldName, item, path: "/information/view-field", requestId)
+where
+  InformationCollecting._information (fieldName, item) has (information)
+then
+  RequestBoundary.respond (information, requestId)
+```
+
 ### passwords.entering.Register:accepted
 
 Authored path: `passwords.entering.Register`.
@@ -694,5 +773,8 @@ not listed here have no explicit input contract.
 - `/auth/logout` — requires `session`
 - `/auth/me` — requires `session`
 - `/auth/register` — requires `password`, `username`
+- `/information/update-field` — requires `item`, `fieldName`, `description`
+- `/information/view` — requires `item`
+- `/information/view-field` — requires `item`, `fieldName`
 - `/reservations/cancel` — requires `reservation`
 - `/reservations/reserve` — requires `user`, `resource`

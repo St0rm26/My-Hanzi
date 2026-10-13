@@ -1,6 +1,7 @@
 import { assemble } from "@mit-sdg/sync-engine/assembly";
 import { composition as accountsComposition } from "./compositions/accounts.ts";
 import { composition as commonsComposition } from "./compositions/commons.ts";
+import { composition as informationComposition } from "./compositions/information.ts";
 import { composition as passwordsComposition } from "./compositions/passwords.ts";
 import { composition as reservationsComposition } from "./compositions/Reservations.ts";
 import { CommonsProvider } from "./concepts/Federating/provider.ts";
@@ -24,6 +25,7 @@ export function assembleApplication() {
     composition: {
       accounts: accountsComposition,
       commons: commonsComposition,
+      information: informationComposition,
       passwords: passwordsComposition,
       Reservations: reservationsComposition,
     },

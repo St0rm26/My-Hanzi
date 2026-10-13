@@ -92,6 +92,36 @@ export type MyHanziWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" | "INVALID_PASSWORD" | "INVALID_USERNAME" | "PASSWORD_SET" | "USERNAME_TAKEN" };
   };
+  "/information/update-field": {
+    input: {
+      "description": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["editInfoField"]>[0], ["description"]>>;
+      "fieldName": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_infoField"]>[0], ["fieldName"]>>;
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["editInfoField"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_infoField"]>[0], ["item"]>]>>;
+    };
+    output: Record<string, never>;
+    error: { error: AppWideError | "INFO_FIELD_NOT_FOUND" | "INVALID_INPUT" };
+  };
+  "/information/view": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_allInformation"]>[0], ["item"]>>;
+    };
+    output: {
+      "information": {
+        "information": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_allInformation"]>>>, ["information"]>> | null;
+      };
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/information/view-field": {
+    input: {
+      "fieldName": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_information"]>[0], ["fieldName"]>>;
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_information"]>[0], ["item"]>>;
+    };
+    output: {
+      "information": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_information"]>>>, ["information"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
   "/reservations/cancel": {
     input: {
       "reservation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Reserving"]["cancel"]>[0], ["reservation"]>>;
@@ -188,6 +218,36 @@ export type MyHanziWireHttp = {
       "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["start"]>[0], ["subject"]>>;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" };
+  };
+  "/information/update-field": {
+    input: {
+      "description": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["editInfoField"]>[0], ["description"]>>;
+      "fieldName": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_infoField"]>[0], ["fieldName"]>>;
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["editInfoField"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_infoField"]>[0], ["item"]>]>>;
+    };
+    output: Record<string, never>;
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/information/view": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_allInformation"]>[0], ["item"]>>;
+    };
+    output: {
+      "information": {
+        "information": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_allInformation"]>>>, ["information"]>> | null;
+      };
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/information/view-field": {
+    input: {
+      "fieldName": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_information"]>[0], ["fieldName"]>>;
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_information"]>[0], ["item"]>>;
+    };
+    output: {
+      "information": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_information"]>>>, ["information"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
   };
   "/reservations/cancel": {
     input: {
