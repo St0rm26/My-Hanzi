@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { api } from "../api/client.ts";
+import { api } from "./api/client.ts";
 import CommonsMark from "./CommonsMark.vue";
-import { useSession } from "./session.ts";
+import { useSession } from "./ui/session.ts";
 
 const emit = defineEmits<{ done: [] }>();
 const { enter, error } = useSession();

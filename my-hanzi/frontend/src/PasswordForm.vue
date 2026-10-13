@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { api } from "../api/client.ts";
-import { useSession } from "./session.ts";
+import { api } from "./api/client.ts";
+import { useSession } from "./ui/session.ts";
 
 const { enter, error } = useSession();
 const creating = ref(false);
