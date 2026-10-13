@@ -15,6 +15,10 @@ class InformationCollecting extends InformationCollectingConcept<
 export const informationCollecting = registerConcept({
   class: InformationCollecting,
   spec,
+  refusals: {
+    ALREADY_COLLECTED_INFORMATION: AlreadyCollectedInformation,
+    INFO_FIELD_NOT_FOUND: InfoFieldNotFound,
+  },
   floors: {
     mongo: ({ database }: { database: Db }, name: string) =>
       new InformationCollecting(database, name),

@@ -120,6 +120,18 @@ export class InformationCollectingConcept<
     };
   }
 
+  async _infoField({
+    item,
+    fieldName,
+  }: {
+    item: Item;
+    fieldName: string;
+  }): Promise<{ infoField: InfoField }[]> {
+    await this.#ready();
+    const infoField = await this.infoFields.findOne({ item, name: fieldName });
+    return infoField === null ? [] : [{ infoField: infoField._id }];
+  }
+
   async _information({
     item,
     fieldName,

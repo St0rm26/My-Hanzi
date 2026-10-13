@@ -10,6 +10,7 @@ export const policy = httpPolicy({
     ...accountsHttp.publicErrors,
     ...passwordsHttp.publicErrors,
     ...commonsHttp.publicErrors,
+    INFO_FIELD_NOT_FOUND: "NOT_FOUND",
     ALREADY_RESERVED: "CONFLICT",
     NO_SUCH_RESERVATION: "NOT_FOUND",
   },

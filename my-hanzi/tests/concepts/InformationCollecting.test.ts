@@ -43,6 +43,18 @@ describe("InformationCollecting", () => {
       }),
     ).toEqual({ information: "nǐ" });
     expect(
+      await informationCollecting._infoField({
+        item: "你",
+        fieldName: "meaning",
+      }),
+    ).toEqual([{ infoField: meaning.infoField }]);
+    expect(
+      await informationCollecting._infoField({
+        item: "你",
+        fieldName: "unknown",
+      }),
+    ).toEqual([]);
+    expect(
       await informationCollecting._allInformation({ item: "missing" }),
     ).toEqual({ information: {} });
   });
