@@ -3,11 +3,13 @@ import type { MyHanziWireHttp } from "../../generated/wire.ts";
 import { api } from "./api/client.ts";
 import type { CharacterEntry } from "./api/characters.ts";
 import { messageFor } from "./api/errors.ts";
+import { useSession } from "./session.ts";
 
 type Wire = MyHanziWireHttp;
 type Path = keyof Wire;
 type ErrorResult = { error: string; detail?: string; code?: string };
 
+const { sessionEnded } = useSession();
 const loading = ref(false);
 const error = ref<string | null>(null);
 let requestSequence = 0;
@@ -18,6 +20,7 @@ async function call<T extends object>(
 ): Promise<T | ErrorResult> {
   try {
     const result = await request;
+    if ("error" in result && result.error === "UNAUTHORIZED") sessionEnded();
     return "error" in result
       ? { error: messageFor(path, result.error), code: result.error }
       : result;

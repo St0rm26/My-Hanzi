@@ -3,7 +3,7 @@ import { each, form, former, no, where } from "@mit-sdg/sync-engine/language";
 import { concepts } from "../concepts.ts";
 import { textInput } from "./inputs.ts";
 
-const { InformationCollecting } = concepts;
+const { InformationCollecting, Sessioning } = concepts;
 
 const AllItemInformation = former(
   "all an item's information",
@@ -17,17 +17,33 @@ const AllItemInformation = former(
 
 const View = endpoint(
   "/information/view",
-  ({ item }) =>
-    receive({ item }).then(
-      respond({ information: AllItemInformation({ item }) }),
-    ),
-  { input: { required: ["item"] } },
+  ({ session, item }) =>
+    receive({ session, item })
+      .then(Sessioning.use({ session }).responds({}))
+      .then(respond({ information: AllItemInformation({ item }) })),
+  { input: { required: ["session", "item"] } },
+);
+
+const ViewField = endpoint(
+  "/information/view-field",
+  ({ session, item, fieldName, information }) =>
+    receive({ session, item, fieldName })
+      .then(Sessioning.use({ session }).responds({}))
+      .then(
+        where(
+          InformationCollecting._information({ item, fieldName }).is({
+            information,
+          }),
+        ).then(respond({ information })),
+      ),
+  { input: { required: ["session", "item", "fieldName"] } },
 );
 
 const AddField = endpoint(
   "/information/add-field",
-  ({ item, fieldName, description, infoField }) =>
-    receive({ item, fieldName, description })
+  ({ session, item, fieldName, description, infoField }) =>
+    receive({ session, item, fieldName, description })
+      .then(Sessioning.use({ session }).responds({}))
       .then(
         InformationCollecting.addInfoField({
           item,
@@ -37,46 +53,37 @@ const AddField = endpoint(
       )
       .then(respond({ infoField })),
   {
-    input: { required: ["item", "fieldName", "description"] },
+    input: { required: ["session", "item", "fieldName", "description"] },
     validators: { input: textInput },
   },
 );
 
-const ViewField = endpoint(
-  "/information/view-field",
-  ({ item, fieldName, information }) =>
-    receive({ item, fieldName }).then(
-      where(
-        InformationCollecting._information({ item, fieldName }).is({
-          information,
-        }),
-      ).then(respond({ information })),
-    ),
-  { input: { required: ["item", "fieldName"] } },
-);
-
 const UpdateField = endpoint(
   "/information/update-field",
-  ({ item, fieldName, description, infoField }) =>
-    receive({ item, fieldName, description }).then(
-      where(
-        InformationCollecting._infoField({ item, fieldName }).is({ infoField }),
-      )
-        .then(
-          InformationCollecting.editInfoField({
-            item,
+  ({ session, item, fieldName, description, infoField }) =>
+    receive({ session, item, fieldName, description })
+      .then(Sessioning.use({ session }).responds({}))
+      .then(
+        where(
+          InformationCollecting._infoField({ item, fieldName }).is({
             infoField,
-            description,
-          }).responds({ infoField }),
+          }),
         )
-        .then(respond({}))
-        .named("found"),
-      where(no(InformationCollecting._infoField({ item, fieldName })))
-        .then(respond({ error: "INFO_FIELD_NOT_FOUND" }))
-        .named("missing"),
-    ),
+          .then(
+            InformationCollecting.editInfoField({
+              item,
+              infoField,
+              description,
+            }).responds({ infoField }),
+          )
+          .then(respond({}))
+          .named("found"),
+        where(no(InformationCollecting._infoField({ item, fieldName })))
+          .then(respond({ error: "INFO_FIELD_NOT_FOUND" }))
+          .named("missing"),
+      ),
   {
-    input: { required: ["item", "fieldName", "description"] },
+    input: { required: ["session", "item", "fieldName", "description"] },
     validators: { input: textInput },
   },
 );

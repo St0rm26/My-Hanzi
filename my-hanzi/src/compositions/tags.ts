@@ -8,7 +8,7 @@ import {
 import { concepts } from "../concepts.ts";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 
-const { Tagging, Registering, Sharing } = concepts;
+const { Tagging, Registering, Sessioning } = concepts;
 
 const UserTags = former("the tags owned by a user", ({ user }, { tag, name }) =>
   each(Tagging._tags({ user }).is({ tag, name })).form({ tag, name }),
@@ -31,24 +31,29 @@ const TaggedItems = former(
 
 const List = endpoint(
   "/tags/list",
-  ({ user }) => receive({ user }).then(respond({ tags: UserTags({ user }) })),
-  { input: { required: ["user"] } },
+  ({ session, user }) =>
+    receive({ session })
+      .then(Sessioning.use({ session }).responds({ subject: user }))
+      .then(respond({ tags: UserTags({ user }) })),
+  { input: { required: ["session"] } },
 );
 
 const Items = endpoint(
   "/tags/items",
-  ({ user, tag }) =>
-    receive({ user, tag }).then(
-      respond({ items: TaggedItems({ user, tag }) }),
-    ),
-  { input: { required: ["user", "tag"] } },
+  ({ session, tag, user }) =>
+    receive({ session, tag })
+      .then(Sessioning.use({ session }).responds({ subject: user }))
+      .then(respond({ items: TaggedItems({ user, tag }) })),
+  { input: { required: ["session", "tag"] } },
 );
 
 const ItemMembership = endpoint(
   "/tags/item-membership",
-  ({ user, item }) =>
-    receive({ user, item }).then(respond({ tags: ItemTags({ user, item }) })),
-  { input: { required: ["user", "item"] } },
+  ({ session, item, user }) =>
+    receive({ session, item })
+      .then(Sessioning.use({ session }).responds({ subject: user }))
+      .then(respond({ tags: ItemTags({ user, item }) })),
+  { input: { required: ["session", "item"] } },
 );
 
 const Initialize = reaction(({ user }) =>
@@ -59,29 +64,32 @@ const Initialize = reaction(({ user }) =>
 
 const CreateTag = endpoint(
   "/tags/create-tag",
-  ({ user, name, tag }) =>
-    receive({ user, name })
+  ({ session, name, tag, user }) =>
+    receive({ session, name })
+      .then(Sessioning.use({ session }).responds({ subject: user }))
       .then(Tagging.createTag({ user, name }).responds({ tag }))
       .then(respond({ tag })),
-  { input: { required: ["user", "name"] } },
+  { input: { required: ["session", "name"] } },
 );
 
 const EditTag = endpoint(
   "/tags/edit-tag",
-  ({ user, tag, name }) =>
-    receive({ user, tag, name })
+  ({ session, tag, name, user }) =>
+    receive({ session, tag, name })
+      .then(Sessioning.use({ session }).responds({ subject: user }))
       .then(Tagging.renameTag({ user, tag, newName: name }).responds({ tag }))
       .then(respond({ tag })),
-  { input: { required: ["user", "tag", "name"] } },
+  { input: { required: ["session", "tag", "name"] } },
 );
 
 const DeleteTagEndpoint = endpoint(
   "/tags/delete-tag",
-  ({ user, tag }) =>
-    receive({ user, tag })
+  ({ session, tag, user }) =>
+    receive({ session, tag })
+      .then(Sessioning.use({ session }).responds({ subject: user }))
       .then(Tagging.deleteTag({ user, tag }).responds({}))
       .then(respond({})),
-  { input: { required: ["user", "tag"] } },
+  { input: { required: ["session", "tag"] } },
 );
 
 /*Combines both the FindTaggedCharactersIds and DeleteCollection reactions*/
@@ -94,12 +102,13 @@ const DeleteTag = reaction(({ user, tag }) =>
 
 const AddItemEndpoint = endpoint(
   "/tags/add-item",
-  ({ user, tag, item, date }) =>
-    receive({ user, tag, item })
+  ({ session, tag, item, date, user }) =>
+    receive({ session, tag, item })
       .where(now(date))
+      .then(Sessioning.use({ session }).responds({ subject: user }))
       .then(Tagging.addItemTag({ user, tag, item, date }).responds({}))
       .then(respond({})),
-  { input: { required: ["user", "tag", "item"] } },
+  { input: { required: ["session", "tag", "item"] } },
 );
 
 /*Combines both the GenerateCharacterId and AddCharacter reactions*/
@@ -112,11 +121,12 @@ const TagItem = reaction(({ user, tag, item }) =>
 
 const RemoveItemEndpoint = endpoint(
   "/tags/remove-item",
-  ({ user, tag, item }) =>
-    receive({ user, tag, item })
+  ({ session, tag, item, user }) =>
+    receive({ session, tag, item })
+      .then(Sessioning.use({ session }).responds({ subject: user }))
       .then(Tagging.removeItemTag({ user, tag, item }).responds({}))
       .then(respond({})),
-  { input: { required: ["user", "tag", "item"] } },
+  { input: { required: ["session", "tag", "item"] } },
 );
 
 /*Combines both the FindCharacterId and RemoveCharacter reactions*/
@@ -140,6 +150,7 @@ export const tagsHttp = {
 } as const;
 
 export const composition = {
+  Initialize,
   List,
   Items,
   ItemMembership,

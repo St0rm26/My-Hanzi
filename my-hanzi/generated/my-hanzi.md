@@ -509,66 +509,94 @@ then
 ### information.AddField
 
 Authored path: `information.AddField`.
-- Covered by [Information](../design/compositions/information.md), line 9.
-- Covered by [Information](../design/compositions/information.md), line 12.
+- Covered by [Information](../design/compositions/information.md), line 11.
+- Covered by [Information](../design/compositions/information.md), line 14.
 
 ```reaction
-when RequestBoundary.request (description, fieldName, item, path: "/information/add-field", requestId)
+when RequestBoundary.request (description, fieldName, item, path: "/information/add-field", requestId, session)
 then
-  InformationCollecting.addInfoField (description, fieldName, item)
+  Sessioning.use (session)
 ```
 
 ### information.AddField#2
 
 Authored path: `information.AddField`.
-- Covered by [Information](../design/compositions/information.md), line 9.
-- Covered by [Information](../design/compositions/information.md), line 12.
+- Covered by [Information](../design/compositions/information.md), line 11.
+- Covered by [Information](../design/compositions/information.md), line 14.
 
 ```reaction
-when InformationCollecting.addInfoField (description, fieldName, item, infoField), asked by information.AddField
+when Sessioning.use (session), asked by information.AddField
 where
-  earlier, RequestBoundary.request (description, fieldName, item, path: "/information/add-field", requestId)
+  earlier, RequestBoundary.request (description, fieldName, item, path: "/information/add-field", requestId, session)
+then
+  InformationCollecting.addInfoField (description, fieldName, item)
+```
+
+### information.AddField#3
+
+Authored path: `information.AddField`.
+- Covered by [Information](../design/compositions/information.md), line 11.
+- Covered by [Information](../design/compositions/information.md), line 14.
+
+```reaction
+when InformationCollecting.addInfoField (description, fieldName, item, infoField), asked by information.AddField#2
+where
+  earlier, RequestBoundary.request (description, fieldName, item, path: "/information/add-field", requestId, session)
 then
   RequestBoundary.respond (infoField, requestId)
 ```
 
-### information.UpdateField:found
+### information.UpdateField
 
 Authored path: `information.UpdateField`.
-- Covered by [Information](../design/compositions/information.md), line 21.
-- Covered by [Information](../design/compositions/information.md), line 24.
+- Covered by [Information](../design/compositions/information.md), line 23.
+- Covered by [Information](../design/compositions/information.md), line 26.
 
 ```reaction
-when RequestBoundary.request (description, fieldName, item, path: "/information/update-field", requestId)
-where
-  InformationCollecting._infoField (fieldName, item) has (infoField)
+when RequestBoundary.request (description, fieldName, item, path: "/information/update-field", requestId, session)
 then
-  InformationCollecting.editInfoField (description, infoField, item)
+  Sessioning.use (session)
 ```
 
 ### information.UpdateField:found#2
 
 Authored path: `information.UpdateField`.
-- Covered by [Information](../design/compositions/information.md), line 21.
-- Covered by [Information](../design/compositions/information.md), line 24.
+- Covered by [Information](../design/compositions/information.md), line 23.
+- Covered by [Information](../design/compositions/information.md), line 26.
 
 ```reaction
-when InformationCollecting.editInfoField (description, infoField, item), asked by information.UpdateField:found
+when Sessioning.use (session), asked by information.UpdateField
 where
-  earlier, RequestBoundary.request (description, fieldName, item, path: "/information/update-field", requestId)
+  earlier, RequestBoundary.request (description, fieldName, item, path: "/information/update-field", requestId, session)
+  InformationCollecting._infoField (fieldName, item) has (infoField)
+then
+  InformationCollecting.editInfoField (description, infoField, item)
+```
+
+### information.UpdateField:found#3
+
+Authored path: `information.UpdateField`.
+- Covered by [Information](../design/compositions/information.md), line 23.
+- Covered by [Information](../design/compositions/information.md), line 26.
+
+```reaction
+when InformationCollecting.editInfoField (description, infoField, item), asked by information.UpdateField:found#2
+where
+  earlier, RequestBoundary.request (description, fieldName, item, path: "/information/update-field", requestId, session)
 then
   RequestBoundary.respond (requestId)
 ```
 
-### information.UpdateField:missing
+### information.UpdateField:missing#2
 
 Authored path: `information.UpdateField`.
-- Covered by [Information](../design/compositions/information.md), line 21.
-- Covered by [Information](../design/compositions/information.md), line 24.
+- Covered by [Information](../design/compositions/information.md), line 23.
+- Covered by [Information](../design/compositions/information.md), line 26.
 
 ```reaction
-when RequestBoundary.request (description, fieldName, item, path: "/information/update-field", requestId)
+when Sessioning.use (session), asked by information.UpdateField
 where
+  earlier, RequestBoundary.request (description, fieldName, item, path: "/information/update-field", requestId, session)
   no InformationCollecting._infoField (fieldName, item)
 then
   RequestBoundary.respond (error: "INFO_FIELD_NOT_FOUND", requestId)
@@ -577,11 +605,25 @@ then
 ### information.View
 
 Authored path: `information.View`.
-- Covered by [Information](../design/compositions/information.md), line 3.
-- Covered by [Information](../design/compositions/information.md), line 6.
+- Covered by [Information](../design/compositions/information.md), line 5.
+- Covered by [Information](../design/compositions/information.md), line 8.
 
 ```reaction
-when RequestBoundary.request (item, path: "/information/view", requestId)
+when RequestBoundary.request (item, path: "/information/view", requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### information.View#2
+
+Authored path: `information.View`.
+- Covered by [Information](../design/compositions/information.md), line 5.
+- Covered by [Information](../design/compositions/information.md), line 8.
+
+```reaction
+when Sessioning.use (session), asked by information.View
+where
+  earlier, RequestBoundary.request (item, path: "/information/view", requestId, session)
 then
   RequestBoundary.respond (information: former "all an item's information" with (item), requestId)
 ```
@@ -589,12 +631,25 @@ then
 ### information.ViewField
 
 Authored path: `information.ViewField`.
-- Covered by [Information](../design/compositions/information.md), line 15.
-- Covered by [Information](../design/compositions/information.md), line 18.
+- Covered by [Information](../design/compositions/information.md), line 17.
+- Covered by [Information](../design/compositions/information.md), line 20.
 
 ```reaction
-when RequestBoundary.request (fieldName, item, path: "/information/view-field", requestId)
+when RequestBoundary.request (fieldName, item, path: "/information/view-field", requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### information.ViewField#2
+
+Authored path: `information.ViewField`.
+- Covered by [Information](../design/compositions/information.md), line 17.
+- Covered by [Information](../design/compositions/information.md), line 20.
+
+```reaction
+when Sessioning.use (session), asked by information.ViewField
 where
+  earlier, RequestBoundary.request (fieldName, item, path: "/information/view-field", requestId, session)
   InformationCollecting._information (fieldName, item) has (information)
 then
   RequestBoundary.respond (information, requestId)
@@ -725,27 +780,42 @@ then
 ### tags.AddItem
 
 Authored path: `tags.AddItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 35.
-- Covered by [Tags](../design/compositions/tags.md), line 38.
+- Covered by [Tags](../design/compositions/tags.md), line 37.
+- Covered by [Tags](../design/compositions/tags.md), line 40.
 
 ```reaction
-when RequestBoundary.request (item, path: "/tags/add-item", requestId, tag, user)
+when RequestBoundary.request (item, path: "/tags/add-item", requestId, session, tag)
 where
   date is the current flow's instant
 then
-  Tagging.addItemTag (date, item, tag, user)
+  Sessioning.use (session)
 ```
 
 ### tags.AddItem#2
 
 Authored path: `tags.AddItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 35.
-- Covered by [Tags](../design/compositions/tags.md), line 38.
+- Covered by [Tags](../design/compositions/tags.md), line 37.
+- Covered by [Tags](../design/compositions/tags.md), line 40.
 
 ```reaction
-when Tagging.addItemTag (date, item, tag, user), asked by tags.AddItem
+when Sessioning.use (session, subject: user), asked by tags.AddItem
 where
-  earlier, RequestBoundary.request (item, path: "/tags/add-item", requestId, tag, user)
+  earlier, RequestBoundary.request (item, path: "/tags/add-item", requestId, session, tag)
+  date is the current flow's instant
+then
+  Tagging.addItemTag (date, item, tag, user)
+```
+
+### tags.AddItem#3
+
+Authored path: `tags.AddItem`.
+- Covered by [Tags](../design/compositions/tags.md), line 37.
+- Covered by [Tags](../design/compositions/tags.md), line 40.
+
+```reaction
+when Tagging.addItemTag (date, item, tag, user), asked by tags.AddItem#2
+where
+  earlier, RequestBoundary.request (item, path: "/tags/add-item", requestId, session, tag)
 then
   RequestBoundary.respond (requestId)
 ```
@@ -753,25 +823,39 @@ then
 ### tags.CreateTag
 
 Authored path: `tags.CreateTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 15.
-- Covered by [Tags](../design/compositions/tags.md), line 18.
+- Covered by [Tags](../design/compositions/tags.md), line 17.
+- Covered by [Tags](../design/compositions/tags.md), line 20.
 
 ```reaction
-when RequestBoundary.request (name, path: "/tags/create-tag", requestId, user)
+when RequestBoundary.request (name, path: "/tags/create-tag", requestId, session)
 then
-  Tagging.createTag (name, user)
+  Sessioning.use (session)
 ```
 
 ### tags.CreateTag#2
 
 Authored path: `tags.CreateTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 15.
-- Covered by [Tags](../design/compositions/tags.md), line 18.
+- Covered by [Tags](../design/compositions/tags.md), line 17.
+- Covered by [Tags](../design/compositions/tags.md), line 20.
 
 ```reaction
-when Tagging.createTag (name, user, tag), asked by tags.CreateTag
+when Sessioning.use (session, subject: user), asked by tags.CreateTag
 where
-  earlier, RequestBoundary.request (name, path: "/tags/create-tag", requestId, user)
+  earlier, RequestBoundary.request (name, path: "/tags/create-tag", requestId, session)
+then
+  Tagging.createTag (name, user)
+```
+
+### tags.CreateTag#3
+
+Authored path: `tags.CreateTag`.
+- Covered by [Tags](../design/compositions/tags.md), line 17.
+- Covered by [Tags](../design/compositions/tags.md), line 20.
+
+```reaction
+when Tagging.createTag (name, user, tag), asked by tags.CreateTag#2
+where
+  earlier, RequestBoundary.request (name, path: "/tags/create-tag", requestId, session)
 then
   RequestBoundary.respond (requestId, tag)
 ```
@@ -779,25 +863,39 @@ then
 ### tags.DeleteTag
 
 Authored path: `tags.DeleteTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 27.
-- Covered by [Tags](../design/compositions/tags.md), line 30.
+- Covered by [Tags](../design/compositions/tags.md), line 29.
+- Covered by [Tags](../design/compositions/tags.md), line 32.
 
 ```reaction
-when RequestBoundary.request (path: "/tags/delete-tag", requestId, tag, user)
+when RequestBoundary.request (path: "/tags/delete-tag", requestId, session, tag)
 then
-  Tagging.deleteTag (tag, user)
+  Sessioning.use (session)
 ```
 
 ### tags.DeleteTag#2
 
 Authored path: `tags.DeleteTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 27.
-- Covered by [Tags](../design/compositions/tags.md), line 30.
+- Covered by [Tags](../design/compositions/tags.md), line 29.
+- Covered by [Tags](../design/compositions/tags.md), line 32.
 
 ```reaction
-when Tagging.deleteTag (tag, user), asked by tags.DeleteTag
+when Sessioning.use (session, subject: user), asked by tags.DeleteTag
 where
-  earlier, RequestBoundary.request (path: "/tags/delete-tag", requestId, tag, user)
+  earlier, RequestBoundary.request (path: "/tags/delete-tag", requestId, session, tag)
+then
+  Tagging.deleteTag (tag, user)
+```
+
+### tags.DeleteTag#3
+
+Authored path: `tags.DeleteTag`.
+- Covered by [Tags](../design/compositions/tags.md), line 29.
+- Covered by [Tags](../design/compositions/tags.md), line 32.
+
+```reaction
+when Tagging.deleteTag (tag, user), asked by tags.DeleteTag#2
+where
+  earlier, RequestBoundary.request (path: "/tags/delete-tag", requestId, session, tag)
 then
   RequestBoundary.respond (requestId)
 ```
@@ -805,37 +903,76 @@ then
 ### tags.EditTag
 
 Authored path: `tags.EditTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 21.
-- Covered by [Tags](../design/compositions/tags.md), line 24.
+- Covered by [Tags](../design/compositions/tags.md), line 23.
+- Covered by [Tags](../design/compositions/tags.md), line 26.
 
 ```reaction
-when RequestBoundary.request (name, path: "/tags/edit-tag", requestId, tag, user)
+when RequestBoundary.request (name, path: "/tags/edit-tag", requestId, session, tag)
 then
-  Tagging.renameTag (newName: name, tag, user)
+  Sessioning.use (session)
 ```
 
 ### tags.EditTag#2
 
 Authored path: `tags.EditTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 21.
-- Covered by [Tags](../design/compositions/tags.md), line 24.
+- Covered by [Tags](../design/compositions/tags.md), line 23.
+- Covered by [Tags](../design/compositions/tags.md), line 26.
 
 ```reaction
-when Tagging.renameTag (newName: name, tag, user), asked by tags.EditTag
+when Sessioning.use (session, subject: user), asked by tags.EditTag
 where
-  earlier, RequestBoundary.request (name, path: "/tags/edit-tag", requestId, tag, user)
+  earlier, RequestBoundary.request (name, path: "/tags/edit-tag", requestId, session, tag)
+then
+  Tagging.renameTag (newName: name, tag, user)
+```
+
+### tags.EditTag#3
+
+Authored path: `tags.EditTag`.
+- Covered by [Tags](../design/compositions/tags.md), line 23.
+- Covered by [Tags](../design/compositions/tags.md), line 26.
+
+```reaction
+when Tagging.renameTag (newName: name, tag, user), asked by tags.EditTag#2
+where
+  earlier, RequestBoundary.request (name, path: "/tags/edit-tag", requestId, session, tag)
 then
   RequestBoundary.respond (requestId, tag)
+```
+
+### tags.Initialize
+
+Authored path: `tags.Initialize`.
+- Covered by [Tags](../design/compositions/tags.md), line 5.
+
+```reaction
+when Registering.register (user)
+then
+  Tagging.createTag (name: "Studied", user)
 ```
 
 ### tags.ItemMembership
 
 Authored path: `tags.ItemMembership`.
-- Covered by [Tags](../design/compositions/tags.md), line 41.
-- Covered by [Tags](../design/compositions/tags.md), line 44.
+- Covered by [Tags](../design/compositions/tags.md), line 43.
+- Covered by [Tags](../design/compositions/tags.md), line 46.
 
 ```reaction
-when RequestBoundary.request (item, path: "/tags/item-membership", requestId, user)
+when RequestBoundary.request (item, path: "/tags/item-membership", requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### tags.ItemMembership#2
+
+Authored path: `tags.ItemMembership`.
+- Covered by [Tags](../design/compositions/tags.md), line 43.
+- Covered by [Tags](../design/compositions/tags.md), line 46.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by tags.ItemMembership
+where
+  earlier, RequestBoundary.request (item, path: "/tags/item-membership", requestId, session)
 then
   RequestBoundary.respond (requestId, tags: former "the user's collections containing an item" with (item, user))
 ```
@@ -843,11 +980,25 @@ then
 ### tags.Items
 
 Authored path: `tags.Items`.
-- Covered by [Tags](../design/compositions/tags.md), line 9.
-- Covered by [Tags](../design/compositions/tags.md), line 12.
+- Covered by [Tags](../design/compositions/tags.md), line 11.
+- Covered by [Tags](../design/compositions/tags.md), line 14.
 
 ```reaction
-when RequestBoundary.request (path: "/tags/items", requestId, tag, user)
+when RequestBoundary.request (path: "/tags/items", requestId, session, tag)
+then
+  Sessioning.use (session)
+```
+
+### tags.Items#2
+
+Authored path: `tags.Items`.
+- Covered by [Tags](../design/compositions/tags.md), line 11.
+- Covered by [Tags](../design/compositions/tags.md), line 14.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by tags.Items
+where
+  earlier, RequestBoundary.request (path: "/tags/items", requestId, session, tag)
 then
   RequestBoundary.respond (items: former "the items in a user's collection" with (tag, user), requestId)
 ```
@@ -855,11 +1006,25 @@ then
 ### tags.List
 
 Authored path: `tags.List`.
-- Covered by [Tags](../design/compositions/tags.md), line 3.
-- Covered by [Tags](../design/compositions/tags.md), line 6.
+- Covered by [Tags](../design/compositions/tags.md), line 5.
+- Covered by [Tags](../design/compositions/tags.md), line 8.
 
 ```reaction
-when RequestBoundary.request (path: "/tags/list", requestId, user)
+when RequestBoundary.request (path: "/tags/list", requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### tags.List#2
+
+Authored path: `tags.List`.
+- Covered by [Tags](../design/compositions/tags.md), line 5.
+- Covered by [Tags](../design/compositions/tags.md), line 8.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by tags.List
+where
+  earlier, RequestBoundary.request (path: "/tags/list", requestId, session)
 then
   RequestBoundary.respond (requestId, tags: former "the tags owned by a user" with (user))
 ```
@@ -867,25 +1032,39 @@ then
 ### tags.RemoveItem
 
 Authored path: `tags.RemoveItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 49.
-- Covered by [Tags](../design/compositions/tags.md), line 52.
+- Covered by [Tags](../design/compositions/tags.md), line 51.
+- Covered by [Tags](../design/compositions/tags.md), line 54.
 
 ```reaction
-when RequestBoundary.request (item, path: "/tags/remove-item", requestId, tag, user)
+when RequestBoundary.request (item, path: "/tags/remove-item", requestId, session, tag)
 then
-  Tagging.removeItemTag (item, tag, user)
+  Sessioning.use (session)
 ```
 
 ### tags.RemoveItem#2
 
 Authored path: `tags.RemoveItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 49.
-- Covered by [Tags](../design/compositions/tags.md), line 52.
+- Covered by [Tags](../design/compositions/tags.md), line 51.
+- Covered by [Tags](../design/compositions/tags.md), line 54.
 
 ```reaction
-when Tagging.removeItemTag (item, tag, user), asked by tags.RemoveItem
+when Sessioning.use (session, subject: user), asked by tags.RemoveItem
 where
-  earlier, RequestBoundary.request (item, path: "/tags/remove-item", requestId, tag, user)
+  earlier, RequestBoundary.request (item, path: "/tags/remove-item", requestId, session, tag)
+then
+  Tagging.removeItemTag (item, tag, user)
+```
+
+### tags.RemoveItem#3
+
+Authored path: `tags.RemoveItem`.
+- Covered by [Tags](../design/compositions/tags.md), line 51.
+- Covered by [Tags](../design/compositions/tags.md), line 54.
+
+```reaction
+when Tagging.removeItemTag (item, tag, user), asked by tags.RemoveItem#2
+where
+  earlier, RequestBoundary.request (item, path: "/tags/remove-item", requestId, session, tag)
 then
   RequestBoundary.respond (requestId)
 ```
@@ -903,15 +1082,15 @@ not listed here have no explicit input contract.
 - `/auth/logout` — requires `session`
 - `/auth/me` — requires `session`
 - `/auth/register` — requires `password`, `username`
-- `/information/add-field` — requires `item`, `fieldName`, `description`
-- `/information/update-field` — requires `item`, `fieldName`, `description`
-- `/information/view` — requires `item`
-- `/information/view-field` — requires `item`, `fieldName`
-- `/tags/add-item` — requires `user`, `tag`, `item`
-- `/tags/create-tag` — requires `user`, `name`
-- `/tags/delete-tag` — requires `user`, `tag`
-- `/tags/edit-tag` — requires `user`, `tag`, `name`
-- `/tags/item-membership` — requires `user`, `item`
-- `/tags/items` — requires `user`, `tag`
-- `/tags/list` — requires `user`
-- `/tags/remove-item` — requires `user`, `tag`, `item`
+- `/information/add-field` — requires `session`, `item`, `fieldName`, `description`
+- `/information/update-field` — requires `session`, `item`, `fieldName`, `description`
+- `/information/view` — requires `session`, `item`
+- `/information/view-field` — requires `session`, `item`, `fieldName`
+- `/tags/add-item` — requires `session`, `tag`, `item`
+- `/tags/create-tag` — requires `session`, `name`
+- `/tags/delete-tag` — requires `session`, `tag`
+- `/tags/edit-tag` — requires `session`, `tag`, `name`
+- `/tags/item-membership` — requires `session`, `item`
+- `/tags/items` — requires `session`, `tag`
+- `/tags/list` — requires `session`
+- `/tags/remove-item` — requires `session`, `tag`, `item`

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { api } from "./api/client.ts";
+import { api } from "../api/client.ts";
 import CommonsMark from "./CommonsMark.vue";
-import { useSession } from "./ui/session.ts";
+import { useSession } from "../session.ts";
 
 const { error } = useSession();
 const working = ref(false);
