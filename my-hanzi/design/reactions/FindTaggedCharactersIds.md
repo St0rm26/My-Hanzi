@@ -6,5 +6,5 @@ reaction findTaggedCharactersIds
 when Requesting.deleteCollection (user, collection: Tag)
 
 then
-    Tagging.findTaggedItemsId (user, collection: Tag) : (IDs)
+    Tagging.findTaggedItemsID (user, collection: Tag) : (IDs)
 ```
