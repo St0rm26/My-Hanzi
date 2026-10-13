@@ -14,6 +14,7 @@ const props = defineProps<{
   working: boolean;
   error: string | null;
   saveStatus: string | null;
+  backLabel?: string;
 }>();
 
 const emit = defineEmits<{
@@ -63,7 +64,7 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
 
 <template>
   <main>
-    <button type="button" @click="emit('back')">Back to results</button>
+    <button type="button" @click="emit('back')">{{ backLabel ?? "Back to results" }}</button>
     <header class="character-heading">
       <h1>{{ character.character }}</h1>
       <p>{{ character.pinyin || "Pinyin unavailable" }}</p>

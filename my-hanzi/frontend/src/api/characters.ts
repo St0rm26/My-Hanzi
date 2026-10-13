@@ -24,7 +24,7 @@ function isSimplified(character: string) {
   return toSimplified(character) === character;
 }
 
-function normalizePinyin(value: string) {
+export function normalizePinyin(value: string) {
   return value
     .replace(/[üǖǘǚǜ]/gu, "v")
     .normalize("NFD")
@@ -94,6 +94,18 @@ async function loadDictionary(): Promise<CharacterEntry[]> {
       throw error;
     });
   return dictionaryPromise;
+}
+
+export async function lookupCharacters(
+  characters: string[],
+): Promise<Map<string, CharacterEntry>> {
+  const wanted = new Set(characters);
+  const dictionary = await loadDictionary();
+  return new Map(
+    dictionary
+      .filter((entry) => wanted.has(entry.character))
+      .map((entry) => [entry.character, entry]),
+  );
 }
 
 export async function searchSimplifiedCharacters(

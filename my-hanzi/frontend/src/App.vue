@@ -5,6 +5,7 @@ import CharacterDetail from "./components/CharacterDetail.vue";
 import CharacterSearchResults from "./components/CharacterSearchResults.vue";
 import {
   type CharacterEntry,
+  lookupCharacters,
   searchSimplifiedCharacters,
 } from "./api/characters.ts";
 import {
@@ -44,6 +45,7 @@ const collectionLoading = ref(false);
 const selectedCollectionIds = ref<CollectionId[]>([]);
 const initialCollectionIds = ref<CollectionId[]>([]);
 const membershipLoading = ref(false);
+const detailOrigin = ref<"results" | "collection">("results");
 const searching = ref(false);
 const searchError = ref<string | null>(null);
 const saveStatus = ref<string | null>(null);
@@ -79,7 +81,39 @@ async function searchCharacters() {
   }
 }
 
-async function openCharacter(character: CharacterEntry) {
+async function openCollectionCharacter(character: string) {
+  let entry: CharacterEntry | undefined;
+  try {
+    entry = (await lookupCharacters([character])).get(character);
+  } catch {
+    entry = undefined;
+  }
+  // Characters missing from the dictionary still get a detail page.
+  await openCharacter(
+    entry ?? {
+      character,
+      pinyin: "",
+      meaning: "No definition available.",
+      radical: "Not listed",
+      strokeCount: null,
+    },
+    "collection",
+  );
+}
+
+function closeDetail() {
+  if (detailOrigin.value === "collection" && activeCollection.value) {
+    void openCollection(activeCollection.value);
+  } else {
+    page.value = "results";
+  }
+}
+
+async function openCharacter(
+  character: CharacterEntry,
+  origin: "results" | "collection" = "results",
+) {
+  detailOrigin.value = origin;
   const sequence = ++characterSequence;
   activeCharacter.value = character;
   initialCollectionIds.value = [];
@@ -203,7 +237,10 @@ onMounted(() => void refresh());
       :working="working"
       :error="error"
       :save-status="saveStatus"
-      @back="page = 'results'"
+      :back-label="
+        detailOrigin === 'collection' ? 'Back to collection' : 'Back to results'
+      "
+      @back="closeDetail"
       @selection="updateSelectedCollections"
       @save="saveSelectedCollections"
     />
@@ -214,7 +251,9 @@ onMounted(() => void refresh());
       :items="collectionItems"
       :loading="collectionLoading"
       :error="error"
+      :selected-character="activeCharacter"
       @back="page = 'home'"
+      @select="openCollectionCharacter"
     />
 
     <main v-else>
