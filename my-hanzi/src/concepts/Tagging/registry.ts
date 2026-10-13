@@ -18,6 +18,8 @@ export const tagging = registerConcept({
   spec,
   refusals: {
     DEFAULT_TAG_CANNOT_BE_DELETED: DefaultTagCannotBeDeleted,
+    TAG_ALREADY_EXISTS: TagAlreadyExists,
+    TAG_NOT_FOUND: TagNotFound,
   },
   floors: {
     mongo: ({ database }: { database: Db }, name: string) =>

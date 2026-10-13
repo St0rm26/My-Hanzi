@@ -185,9 +185,13 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 #### Actions
 
 - `createTag(user: User, name: String) : returns (tag: Tag)`
+  - Refuses `TAG_ALREADY_EXISTS`: This user already has a tag with that name.
 - `renameTag(user: User, tag: Tag, newName: String) : returns (tag: Tag)`
+  - Refuses `TAG_NOT_FOUND`: There is no such tag.
+  - Refuses `TAG_ALREADY_EXISTS`: This user already has a tag with that name.
 - `deleteTag(user: User, tag: Tag) : returns ()`
   - Refuses `DEFAULT_TAG_CANNOT_BE_DELETED`: The default "Studied" tag cannot be deleted.
+  - Refuses `TAG_NOT_FOUND`: There is no such tag.
 - `addItemTag(user: User, tag: Tag, item: Item, date: Date) : returns ()`
 - `removeItemTag(user: User, tag: Tag, item: Item) : returns ()`
 - `generateTaggedItemID(user: User, tag: Tag, item: Item) : returns (id: ID)`
@@ -196,6 +200,7 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 
 #### Queries
 
+- `_tags(user: User) : many (tag: Tag, name: String)`
 - `_getTaggedItems(tag: Tag) : many (item: Item)`
 
 #### Instances
@@ -242,6 +247,16 @@ Former "the reservation book" — inputs (); bindings (reservation, user, resour
         reservation
         resource
         user
+```
+
+### the tags owned by a user
+
+```former
+Former "the tags owned by a user" — inputs (user); bindings (tag, name); promises exactly one record — forms:
+  each Tagging._tags (user) has (name, tag)
+    form a record of
+      name
+      tag
 ```
 
 ## Reactions
@@ -761,6 +776,96 @@ then
   RequestBoundary.respond (error: "INVALID_CREDENTIALS", requestId)
 ```
 
+### tags.CreateTag
+
+Authored path: `tags.CreateTag`.
+- Covered by [Tags](../design/compositions/tags.md), line 9.
+- Covered by [Tags](../design/compositions/tags.md), line 12.
+
+```reaction
+when RequestBoundary.request (name, path: "/tags/create-tag", requestId, user)
+then
+  Tagging.createTag (name, user)
+```
+
+### tags.CreateTag#2
+
+Authored path: `tags.CreateTag`.
+- Covered by [Tags](../design/compositions/tags.md), line 9.
+- Covered by [Tags](../design/compositions/tags.md), line 12.
+
+```reaction
+when Tagging.createTag (name, user, tag), asked by tags.CreateTag
+where
+  earlier, RequestBoundary.request (name, path: "/tags/create-tag", requestId, user)
+then
+  RequestBoundary.respond (requestId, tag)
+```
+
+### tags.DeleteTag
+
+Authored path: `tags.DeleteTag`.
+- Covered by [Tags](../design/compositions/tags.md), line 21.
+- Covered by [Tags](../design/compositions/tags.md), line 24.
+
+```reaction
+when RequestBoundary.request (path: "/tags/delete-tag", requestId, tag, user)
+then
+  Tagging.deleteTag (tag, user)
+```
+
+### tags.DeleteTag#2
+
+Authored path: `tags.DeleteTag`.
+- Covered by [Tags](../design/compositions/tags.md), line 21.
+- Covered by [Tags](../design/compositions/tags.md), line 24.
+
+```reaction
+when Tagging.deleteTag (tag, user), asked by tags.DeleteTag
+where
+  earlier, RequestBoundary.request (path: "/tags/delete-tag", requestId, tag, user)
+then
+  RequestBoundary.respond (requestId)
+```
+
+### tags.EditTag
+
+Authored path: `tags.EditTag`.
+- Covered by [Tags](../design/compositions/tags.md), line 15.
+- Covered by [Tags](../design/compositions/tags.md), line 18.
+
+```reaction
+when RequestBoundary.request (name, path: "/tags/edit-tag", requestId, tag, user)
+then
+  Tagging.renameTag (newName: name, tag, user)
+```
+
+### tags.EditTag#2
+
+Authored path: `tags.EditTag`.
+- Covered by [Tags](../design/compositions/tags.md), line 15.
+- Covered by [Tags](../design/compositions/tags.md), line 18.
+
+```reaction
+when Tagging.renameTag (newName: name, tag, user), asked by tags.EditTag
+where
+  earlier, RequestBoundary.request (name, path: "/tags/edit-tag", requestId, tag, user)
+then
+  RequestBoundary.respond (requestId, tag)
+```
+
+### tags.List
+
+Authored path: `tags.List`.
+- Covered by [Tags](../design/compositions/tags.md), line 3.
+- Covered by [Tags](../design/compositions/tags.md), line 6.
+
+```reaction
+when RequestBoundary.request (path: "/tags/list", requestId, user)
+then
+  RequestBoundary.respond (requestId, tags: former "the tags owned by a user" with (user))
+```
+
 ## Endpoint input contracts
 
 Before recording an action ask, the boundary rejects a body that is not an
@@ -779,3 +884,7 @@ not listed here have no explicit input contract.
 - `/information/view-field` — requires `item`, `fieldName`
 - `/reservations/cancel` — requires `reservation`
 - `/reservations/reserve` — requires `user`, `resource`
+- `/tags/create-tag` — requires `user`, `name`
+- `/tags/delete-tag` — requires `user`, `tag`
+- `/tags/edit-tag` — requires `user`, `tag`, `name`
+- `/tags/list` — requires `user`

@@ -1,6 +1,10 @@
 # Tags
 
-When a user registers, the system [creates a tag called "Studied"](../reactions/Initialize.md) for them from a reaction.
+When a user registers, the system [creates a tag called "Studied"](../reactions/Initialize.md) for them from a reaction. The [collections list](reaction:tags.List) returns all tags a user has.
+
+```endpoints
+tags.List at /tags/list
+```
 
 Anyone can [create their own tag](reaction:tags.CreateTag) for themselves as long as the name hasn't already been used.
 
@@ -14,7 +18,13 @@ Anyone can [edit their own tag](reaction:tags.EditTag) as long as the tag exists
 tags.EditTag at /tags/edit-tag
 ```
 
-Anyone can [delete a tag](../reactions/FindTaggedCharactersIds.md) from the system as long as it is not the default "Studied" tag. This reaction finds the unique IDs of all items with that tag, then executes another reaction that [removes the tag from each item and revokes access from its shared audience](../reactions/DeleteCollection.md).
+Anyone can [delete a tag](reaction:tags.DeleteTag) other than the default "Studied" collection.
+
+```endpoints
+tags.DeleteTag at /tags/delete-tag
+```
+
+After deleting a tag, there is a reaction that finds the unique IDs of all items with that tag, then executes another reaction that [removes the tag from each item and revokes access from its shared audience](../reactions/DeleteCollection.md).
 
 Anyone can add a tag to an item. When Tagging adds a tag to an item, it first [generates a unique ID](../reactions/GenerateCharacterId.md) for the tagged item, then [shares the tagged item](../reactions/AddCharacter.md) with no one and adds the tag to the item.
 

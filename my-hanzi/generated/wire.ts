@@ -154,6 +154,47 @@ export type MyHanziWire = {
     };
     error: { error: AppWideError | "ALREADY_RESERVED" | "INVALID_INPUT" };
   };
+  "/tags/create-tag": {
+    input: {
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["createTag"]>[0], ["name"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["createTag"]>[0], ["user"]>>;
+    };
+    output: {
+      "tag": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["createTag"]>>, ["tag"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "TAG_ALREADY_EXISTS" };
+  };
+  "/tags/delete-tag": {
+    input: {
+      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["deleteTag"]>[0], ["tag"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["deleteTag"]>[0], ["user"]>>;
+    };
+    output: Record<string, never>;
+    error: { error: AppWideError | "DEFAULT_TAG_CANNOT_BE_DELETED" | "INVALID_INPUT" | "TAG_NOT_FOUND" };
+  };
+  "/tags/edit-tag": {
+    input: {
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["renameTag"]>[0], ["newName"]>>;
+      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["renameTag"]>[0], ["tag"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["renameTag"]>[0], ["user"]>>;
+    };
+    output: {
+      "tag": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["renameTag"]>[0], ["tag"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["renameTag"]>>, ["tag"]>]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "TAG_ALREADY_EXISTS" | "TAG_NOT_FOUND" };
+  };
+  "/tags/list": {
+    input: {
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tags"]>[0], ["user"]>>;
+    };
+    output: {
+      "tags": {
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tags"]>>>, ["name"]>>;
+        "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tags"]>>>, ["tag"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
 };
 
 export type HttpAppWideError = never;
@@ -280,5 +321,46 @@ export type MyHanziWireHttp = {
       "reservation": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Reserving"]["reserve"]>>, ["reservation"]>>;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" };
+  };
+  "/tags/create-tag": {
+    input: {
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["createTag"]>[0], ["name"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["createTag"]>[0], ["user"]>>;
+    };
+    output: {
+      "tag": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["createTag"]>>, ["tag"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" };
+  };
+  "/tags/delete-tag": {
+    input: {
+      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["deleteTag"]>[0], ["tag"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["deleteTag"]>[0], ["user"]>>;
+    };
+    output: Record<string, never>;
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/tags/edit-tag": {
+    input: {
+      "name": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["renameTag"]>[0], ["newName"]>>;
+      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["renameTag"]>[0], ["tag"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["renameTag"]>[0], ["user"]>>;
+    };
+    output: {
+      "tag": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["renameTag"]>[0], ["tag"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["renameTag"]>>, ["tag"]>]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
+  };
+  "/tags/list": {
+    input: {
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tags"]>[0], ["user"]>>;
+    };
+    output: {
+      "tags": {
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tags"]>>>, ["name"]>>;
+        "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tags"]>>>, ["tag"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
   };
 };
