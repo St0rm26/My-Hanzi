@@ -18,6 +18,8 @@ Anyone can [delete a tag](../reactions/FindTaggedCharactersIds.md) from the syst
 
 Anyone can add a tag to an item. When Tagging adds a tag to an item, it first [generates a unique ID](../reactions/GenerateCharacterId.md) for the tagged item, then [shares the tagged item](../reactions/AddCharacter.md) with no one and adds the tag to the item.
 
+Anyone can remove a tag from an item. When Tagging removes a tag from an item, it first [finds the item's unique ID](../reactions/FindCharacterId.md), then [removes the tagged item and revokes access from its shared audience](../reactions/RemoveCharacter.md).
+
 If the user adds an item to "Studied", it [adds the item to the built-in benchmarks](reaction:tags.AddToBenchmark) to show progress.
 
 ```endpoints
@@ -29,5 +31,3 @@ On the other hand, if the user removes an item from "Studied", it [removes the i
 ```endpoints
 tags.RemoveFromBenchmark at /tags/remove-from-benchmark
 ```
-
-Anyone can remove a tag from an item. When Tagging removes a tag from an item, it first [finds the item's unique ID](../reactions/FindCharacterId.md), then [removes the tagged item and revokes access from its shared audience](../reactions/RemoveCharacter.md).
