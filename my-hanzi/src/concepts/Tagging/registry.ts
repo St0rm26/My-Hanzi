@@ -18,6 +18,7 @@ export const tagging = registerConcept({
   spec,
   refusals: {
     DEFAULT_TAG_CANNOT_BE_DELETED: DefaultTagCannotBeDeleted,
+    ITEM_ALREADY_TAGGED: ItemAlreadyTagged,
     TAG_ALREADY_EXISTS: TagAlreadyExists,
     TAG_NOT_FOUND: TagNotFound,
   },

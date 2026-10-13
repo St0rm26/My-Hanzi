@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { api } from "../api/client.ts";
+import { api } from "./api/client.ts";
 
 interface Me {
   username: string;

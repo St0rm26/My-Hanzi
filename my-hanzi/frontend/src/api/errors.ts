@@ -19,6 +19,9 @@ const endpointMessages: Record<string, Record<string, string>> = {
   "/information/update-field": {
     NOT_FOUND: "The information field does not exist.",
   },
+  "/information/add-field": {
+    CONFLICT: "That information field already exists.",
+  },
   "/tags/create-tag": {
     CONFLICT: "A collection with that name already exists.",
   },
@@ -29,6 +32,9 @@ const endpointMessages: Record<string, Record<string, string>> = {
   "/tags/delete-tag": {
     CONFLICT: 'The default "Studied" collection cannot be deleted.',
     NOT_FOUND: "That collection no longer exists.",
+  },
+  "/tags/add-item": {
+    CONFLICT: "That character is already in the selected collection.",
   },
 };
 

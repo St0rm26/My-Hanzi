@@ -6,6 +6,12 @@ Anyone can access an [item's information](reaction:information.View).
 information.View at /information/view
 ```
 
+The app can [add an info field](reaction:information.AddField) for an item.
+
+```endpoints
+information.AddField at /information/add-field
+```
+
 If they are interested in looking at a certain info field, they can choose to just [view that field](reaction:information.ViewField)
 
 ```endpoints

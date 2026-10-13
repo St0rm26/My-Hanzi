@@ -193,6 +193,7 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
   - Refuses `DEFAULT_TAG_CANNOT_BE_DELETED`: The default "Studied" tag cannot be deleted.
   - Refuses `TAG_NOT_FOUND`: There is no such tag.
 - `addItemTag(user: User, tag: Tag, item: Item, date: Date) : returns ()`
+  - Refuses `ITEM_ALREADY_TAGGED`: This item already has the given tag.
 - `removeItemTag(user: User, tag: Tag, item: Item) : returns ()`
 - `generateTaggedItemID(user: User, tag: Tag, item: Item) : returns (id: ID)`
 - `findTaggedItemID(user: User, tag: Tag, item: Item) : returns (id: ID)`
@@ -201,6 +202,7 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 #### Queries
 
 - `_tags(user: User) : many (tag: Tag, name: String)`
+- `_tagsContainingItem(user: User, item: Item) : many (tag: Tag)`
 - `_getTaggedItems(tag: Tag) : many (item: Item)`
 
 #### Instances
@@ -256,6 +258,15 @@ Former "the tags owned by a user" — inputs (user); bindings (tag, name); promi
   each Tagging._tags (user) has (name, tag)
     form a record of
       name
+      tag
+```
+
+### the user's collections containing an item
+
+```former
+Former "the user's collections containing an item" — inputs (user, item); bindings (tag); promises exactly one record — forms:
+  each Tagging._tagsContainingItem (item, user) has (tag)
+    form a record of
       tag
 ```
 
@@ -586,11 +597,37 @@ then
   RequestBoundary.respond (address, attempt, expiresAt, requestId)
 ```
 
+### information.AddField
+
+Authored path: `information.AddField`.
+- Covered by [Information](../design/compositions/information.md), line 9.
+- Covered by [Information](../design/compositions/information.md), line 12.
+
+```reaction
+when RequestBoundary.request (description, fieldName, item, path: "/information/add-field", requestId)
+then
+  InformationCollecting.addInfoField (description, fieldName, item)
+```
+
+### information.AddField#2
+
+Authored path: `information.AddField`.
+- Covered by [Information](../design/compositions/information.md), line 9.
+- Covered by [Information](../design/compositions/information.md), line 12.
+
+```reaction
+when InformationCollecting.addInfoField (description, fieldName, item, infoField), asked by information.AddField
+where
+  earlier, RequestBoundary.request (description, fieldName, item, path: "/information/add-field", requestId)
+then
+  RequestBoundary.respond (infoField, requestId)
+```
+
 ### information.UpdateField:found
 
 Authored path: `information.UpdateField`.
-- Covered by [Information](../design/compositions/information.md), line 15.
-- Covered by [Information](../design/compositions/information.md), line 18.
+- Covered by [Information](../design/compositions/information.md), line 21.
+- Covered by [Information](../design/compositions/information.md), line 24.
 
 ```reaction
 when RequestBoundary.request (description, fieldName, item, path: "/information/update-field", requestId)
@@ -603,8 +640,8 @@ then
 ### information.UpdateField:found#2
 
 Authored path: `information.UpdateField`.
-- Covered by [Information](../design/compositions/information.md), line 15.
-- Covered by [Information](../design/compositions/information.md), line 18.
+- Covered by [Information](../design/compositions/information.md), line 21.
+- Covered by [Information](../design/compositions/information.md), line 24.
 
 ```reaction
 when InformationCollecting.editInfoField (description, infoField, item), asked by information.UpdateField:found
@@ -617,8 +654,8 @@ then
 ### information.UpdateField:missing
 
 Authored path: `information.UpdateField`.
-- Covered by [Information](../design/compositions/information.md), line 15.
-- Covered by [Information](../design/compositions/information.md), line 18.
+- Covered by [Information](../design/compositions/information.md), line 21.
+- Covered by [Information](../design/compositions/information.md), line 24.
 
 ```reaction
 when RequestBoundary.request (description, fieldName, item, path: "/information/update-field", requestId)
@@ -643,8 +680,8 @@ then
 ### information.ViewField
 
 Authored path: `information.ViewField`.
-- Covered by [Information](../design/compositions/information.md), line 9.
-- Covered by [Information](../design/compositions/information.md), line 12.
+- Covered by [Information](../design/compositions/information.md), line 15.
+- Covered by [Information](../design/compositions/information.md), line 18.
 
 ```reaction
 when RequestBoundary.request (fieldName, item, path: "/information/view-field", requestId)
@@ -776,6 +813,34 @@ then
   RequestBoundary.respond (error: "INVALID_CREDENTIALS", requestId)
 ```
 
+### tags.AddItem
+
+Authored path: `tags.AddItem`.
+- Covered by [Tags](../design/compositions/tags.md), line 29.
+- Covered by [Tags](../design/compositions/tags.md), line 32.
+
+```reaction
+when RequestBoundary.request (item, path: "/tags/add-item", requestId, tag, user)
+where
+  date is the current flow's instant
+then
+  Tagging.addItemTag (date, item, tag, user)
+```
+
+### tags.AddItem#2
+
+Authored path: `tags.AddItem`.
+- Covered by [Tags](../design/compositions/tags.md), line 29.
+- Covered by [Tags](../design/compositions/tags.md), line 32.
+
+```reaction
+when Tagging.addItemTag (date, item, tag, user), asked by tags.AddItem
+where
+  earlier, RequestBoundary.request (item, path: "/tags/add-item", requestId, tag, user)
+then
+  RequestBoundary.respond (requestId)
+```
+
 ### tags.CreateTag
 
 Authored path: `tags.CreateTag`.
@@ -854,6 +919,18 @@ then
   RequestBoundary.respond (requestId, tag)
 ```
 
+### tags.ItemMembership
+
+Authored path: `tags.ItemMembership`.
+- Covered by [Tags](../design/compositions/tags.md), line 35.
+- Covered by [Tags](../design/compositions/tags.md), line 38.
+
+```reaction
+when RequestBoundary.request (item, path: "/tags/item-membership", requestId, user)
+then
+  RequestBoundary.respond (requestId, tags: former "the user's collections containing an item" with (item, user))
+```
+
 ### tags.List
 
 Authored path: `tags.List`.
@@ -864,6 +941,32 @@ Authored path: `tags.List`.
 when RequestBoundary.request (path: "/tags/list", requestId, user)
 then
   RequestBoundary.respond (requestId, tags: former "the tags owned by a user" with (user))
+```
+
+### tags.RemoveItem
+
+Authored path: `tags.RemoveItem`.
+- Covered by [Tags](../design/compositions/tags.md), line 43.
+- Covered by [Tags](../design/compositions/tags.md), line 46.
+
+```reaction
+when RequestBoundary.request (item, path: "/tags/remove-item", requestId, tag, user)
+then
+  Tagging.removeItemTag (item, tag, user)
+```
+
+### tags.RemoveItem#2
+
+Authored path: `tags.RemoveItem`.
+- Covered by [Tags](../design/compositions/tags.md), line 43.
+- Covered by [Tags](../design/compositions/tags.md), line 46.
+
+```reaction
+when Tagging.removeItemTag (item, tag, user), asked by tags.RemoveItem
+where
+  earlier, RequestBoundary.request (item, path: "/tags/remove-item", requestId, tag, user)
+then
+  RequestBoundary.respond (requestId)
 ```
 
 ## Endpoint input contracts
@@ -879,12 +982,16 @@ not listed here have no explicit input contract.
 - `/auth/logout` — requires `session`
 - `/auth/me` — requires `session`
 - `/auth/register` — requires `password`, `username`
+- `/information/add-field` — requires `item`, `fieldName`, `description`
 - `/information/update-field` — requires `item`, `fieldName`, `description`
 - `/information/view` — requires `item`
 - `/information/view-field` — requires `item`, `fieldName`
 - `/reservations/cancel` — requires `reservation`
 - `/reservations/reserve` — requires `user`, `resource`
+- `/tags/add-item` — requires `user`, `tag`, `item`
 - `/tags/create-tag` — requires `user`, `name`
 - `/tags/delete-tag` — requires `user`, `tag`
 - `/tags/edit-tag` — requires `user`, `tag`, `name`
+- `/tags/item-membership` — requires `user`, `item`
 - `/tags/list` — requires `user`
+- `/tags/remove-item` — requires `user`, `tag`, `item`

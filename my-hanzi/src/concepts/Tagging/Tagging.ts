@@ -254,6 +254,30 @@ export class TaggingConcept<
     return tags.map(({ _id: tag, name }) => ({ tag, name }));
   }
 
+  async _tagsContainingItem({
+    user,
+    item,
+  }: {
+    user: User;
+    item: Item;
+  }): Promise<{ tag: Tag }[]> {
+    await this.#ready();
+    const tags = await this.tags
+      .find({ author: user }, { projection: { _id: 1 } })
+      .toArray();
+    if (tags.length === 0) return [];
+
+    const containing = new Set(
+      await this.taggedItems.distinct("tag", {
+        tag: { $in: tags.map(({ _id }) => _id) },
+        item,
+      }),
+    );
+    return tags
+      .filter(({ _id }) => containing.has(_id))
+      .map(({ _id: tag }) => ({ tag }));
+  }
+
   async _getTaggedItems({ tag }: { tag: Tag }): Promise<{ item: Item }[]> {
     await this.#ready();
     const found = await this.tags.findOne(

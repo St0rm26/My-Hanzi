@@ -79,6 +79,9 @@ addItemTag (user: User, tag: Tag, item: Item, date: Date) : returns ()
     then
         adds the given item to the tagged item set with the given tag and current date
         returns
+    where the tagged items set already has an item with the given tag
+    then
+        refuses ITEM_ALREADY_TAGGED "This item already has the given tag."
 
 removeItemTag (user: User, tag: Tag, item: Item) : returns ()
     where the tag exists with the given user, the item exists, and the tagged items set does have an item with the given tag
@@ -110,6 +113,9 @@ findTaggedItemsID (user: User, tag: Tag) : returns (ids: IDs)
 ```queries
 _tags (user: User) : many (tag: Tag, name: String)
         Returns every tag owned by the user, ordered by name.
+
+_tagsContainingItem (user: User, item: Item) : many (tag: Tag)
+    Returns the user's tags that contain the given item.
 
 _getTaggedItems (tag: Tag) : many (item: Item)
   Returns every item under the given tag. The order of the items is unspecified.

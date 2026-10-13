@@ -26,18 +26,24 @@ tags.DeleteTag at /tags/delete-tag
 
 After deleting a tag, there is a reaction that finds the unique IDs of all items with that tag, then executes another reaction that [removes the tag from each item and revokes access from its shared audience](../reactions/DeleteCollection.md).
 
-Anyone can add a tag to an item. When Tagging adds a tag to an item, it first [generates a unique ID](../reactions/GenerateCharacterId.md) for the tagged item, then [shares the tagged item](../reactions/AddCharacter.md) with no one and adds the tag to the item.
-
-Anyone can remove a tag from an item. When Tagging removes a tag from an item, it first [finds the item's unique ID](../reactions/FindCharacterId.md), then [removes the tagged item and revokes access from its shared audience](../reactions/RemoveCharacter.md).
-
-If the user adds an item to "Studied", it [adds the item to the built-in benchmarks](reaction:tags.AddToBenchmark) to show progress.
+From a character detail page, a user can [add the character to a collection](reaction:tags.AddItem). The server records when it was added.
 
 ```endpoints
-tags.AddToBenchmark at /tags/add-to-benchmark
+tags.AddItem at /tags/add-item
 ```
 
-On the other hand, if the user removes an item from "Studied", it [removes the item from the built-in benchmarks](reaction:tags.RemoveFromBenchmark).
+The character detail page can also [load the collections that already contain that character](reaction:tags.ItemMembership).
 
 ```endpoints
-tags.RemoveFromBenchmark at /tags/remove-from-benchmark
+tags.ItemMembership at /tags/item-membership
 ```
+
+After adding a tag to an item, a reaction [generates a unique ID](../reactions/GenerateCharacterId.md) for the tagged item and then [shares the tagged item](../reactions/AddCharacter.md) with no one.
+
+From a character detail page, a user can also [remove the character from a collection](reaction:tags.RemoveItem).
+
+```endpoints
+tags.RemoveItem at /tags/remove-item
+```
+
+After removing a tag from an item, a reaction first [finds the item's unique ID](../reactions/FindCharacterId.md), then [removes the tagged item and revokes access from its shared audience](../reactions/RemoveCharacter.md).

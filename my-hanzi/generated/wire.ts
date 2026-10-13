@@ -92,6 +92,17 @@ export type MyHanziWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" | "INVALID_PASSWORD" | "INVALID_USERNAME" | "PASSWORD_SET" | "USERNAME_TAKEN" };
   };
+  "/information/add-field": {
+    input: {
+      "description": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["addInfoField"]>[0], ["description"]>>;
+      "fieldName": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["addInfoField"]>[0], ["fieldName"]>>;
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["addInfoField"]>[0], ["item"]>>;
+    };
+    output: {
+      "infoField": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["addInfoField"]>>, ["infoField"]>>;
+    };
+    error: { error: AppWideError | "ALREADY_COLLECTED_INFORMATION" | "INVALID_INPUT" };
+  };
   "/information/update-field": {
     input: {
       "description": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["editInfoField"]>[0], ["description"]>>;
@@ -154,6 +165,15 @@ export type MyHanziWire = {
     };
     error: { error: AppWideError | "ALREADY_RESERVED" | "INVALID_INPUT" };
   };
+  "/tags/add-item": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["addItemTag"]>[0], ["item"]>>;
+      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["addItemTag"]>[0], ["tag"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["addItemTag"]>[0], ["user"]>>;
+    };
+    output: Record<string, never>;
+    error: { error: AppWideError | "INVALID_INPUT" | "ITEM_ALREADY_TAGGED" };
+  };
   "/tags/create-tag": {
     input: {
       "name": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["createTag"]>[0], ["name"]>>;
@@ -183,6 +203,18 @@ export type MyHanziWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" | "TAG_ALREADY_EXISTS" | "TAG_NOT_FOUND" };
   };
+  "/tags/item-membership": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagsContainingItem"]>[0], ["item"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagsContainingItem"]>[0], ["user"]>>;
+    };
+    output: {
+      "tags": {
+        "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagsContainingItem"]>>>, ["tag"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
   "/tags/list": {
     input: {
       "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tags"]>[0], ["user"]>>;
@@ -193,6 +225,15 @@ export type MyHanziWire = {
         "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tags"]>>>, ["tag"]>>;
       }[];
     };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
+  "/tags/remove-item": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["removeItemTag"]>[0], ["item"]>>;
+      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["removeItemTag"]>[0], ["tag"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["removeItemTag"]>[0], ["user"]>>;
+    };
+    output: Record<string, never>;
     error: { error: AppWideError | "INVALID_INPUT" };
   };
 };
@@ -260,6 +301,17 @@ export type MyHanziWireHttp = {
     };
     error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" };
   };
+  "/information/add-field": {
+    input: {
+      "description": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["addInfoField"]>[0], ["description"]>>;
+      "fieldName": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["addInfoField"]>[0], ["fieldName"]>>;
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["addInfoField"]>[0], ["item"]>>;
+    };
+    output: {
+      "infoField": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["addInfoField"]>>, ["infoField"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" };
+  };
   "/information/update-field": {
     input: {
       "description": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["editInfoField"]>[0], ["description"]>>;
@@ -322,6 +374,15 @@ export type MyHanziWireHttp = {
     };
     error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" };
   };
+  "/tags/add-item": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["addItemTag"]>[0], ["item"]>>;
+      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["addItemTag"]>[0], ["tag"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["addItemTag"]>[0], ["user"]>>;
+    };
+    output: Record<string, never>;
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" };
+  };
   "/tags/create-tag": {
     input: {
       "name": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["createTag"]>[0], ["name"]>>;
@@ -351,6 +412,18 @@ export type MyHanziWireHttp = {
     };
     error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" };
   };
+  "/tags/item-membership": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagsContainingItem"]>[0], ["item"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagsContainingItem"]>[0], ["user"]>>;
+    };
+    output: {
+      "tags": {
+        "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagsContainingItem"]>>>, ["tag"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
   "/tags/list": {
     input: {
       "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tags"]>[0], ["user"]>>;
@@ -361,6 +434,15 @@ export type MyHanziWireHttp = {
         "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tags"]>>>, ["tag"]>>;
       }[];
     };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/tags/remove-item": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["removeItemTag"]>[0], ["item"]>>;
+      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["removeItemTag"]>[0], ["tag"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["removeItemTag"]>[0], ["user"]>>;
+    };
+    output: Record<string, never>;
     error: { error: HttpAppWideError | "INVALID_REQUEST" };
   };
 };

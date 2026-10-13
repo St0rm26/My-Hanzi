@@ -24,6 +24,24 @@ const View = endpoint(
   { input: { required: ["item"] } },
 );
 
+const AddField = endpoint(
+  "/information/add-field",
+  ({ item, fieldName, description, infoField }) =>
+    receive({ item, fieldName, description })
+      .then(
+        InformationCollecting.addInfoField({
+          item,
+          fieldName,
+          description,
+        }).responds({ infoField }),
+      )
+      .then(respond({ infoField })),
+  {
+    input: { required: ["item", "fieldName", "description"] },
+    validators: { input: textInput },
+  },
+);
+
 const ViewField = endpoint(
   "/information/view-field",
   ({ item, fieldName, information }) =>
@@ -63,8 +81,16 @@ const UpdateField = endpoint(
   },
 );
 
+export const informationHttp = {
+  publicErrors: {
+    ALREADY_COLLECTED_INFORMATION: "CONFLICT",
+    INFO_FIELD_NOT_FOUND: "NOT_FOUND",
+  },
+} as const;
+
 export const composition = {
   View,
+  AddField,
   ViewField,
   UpdateField,
 };

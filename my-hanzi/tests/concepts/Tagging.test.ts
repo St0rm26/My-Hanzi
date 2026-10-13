@@ -49,6 +49,22 @@ describe("Tagging", () => {
     expect(await tagging._tags({ user: "nobody" })).toEqual([]);
   });
 
+  test("_tagsContainingItem returns only the user's collections containing the item", async () => {
+    const studied = await createTag("alice", "Studied");
+    const favorites = await createTag("alice", "Favorites");
+    const bobTag = await createTag("bob", "Shared name");
+    await tagging.addItemTag({ user: "alice", tag: studied, item: "你", date });
+    await tagging.addItemTag({ user: "bob", tag: bobTag, item: "你", date });
+
+    expect(
+      await tagging._tagsContainingItem({ user: "alice", item: "你" }),
+    ).toEqual([{ tag: studied }]);
+    expect(
+      await tagging._tagsContainingItem({ user: "alice", item: "我" }),
+    ).toEqual([]);
+    expect(favorites).not.toBe(studied);
+  });
+
   test("renameTag preserves identity, permits its current name, and rejects another tag's name", async () => {
     const tag = await createTag();
     await createTag("alice", "favorites");

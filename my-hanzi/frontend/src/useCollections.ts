@@ -6,6 +6,7 @@ import { messageFor } from "./api/errors.ts";
 type Wire = MyHanziWireHttp;
 type Path = keyof Wire;
 export type Collection = Wire["/tags/list"]["output"]["tags"][number];
+export type CollectionId = Collection["tag"];
 type ErrorResult = { error: string; detail?: string };
 
 const collections = ref<Collection[]>([]);
@@ -104,6 +105,58 @@ function deleteCollection(collection: Collection) {
   );
 }
 
+async function getCharacterCollections(
+  character: string,
+): Promise<CollectionId[] | null> {
+  const result = await call(
+    "/tags/item-membership",
+    api["/tags/item-membership"]({ user, item: character }),
+  );
+  if ("error" in result) {
+    error.value = result.error;
+    return null;
+  }
+  return result.tags.map(({ tag }) => tag);
+}
+
+async function saveCharacterCollections(
+  character: string,
+  originalTags: CollectionId[],
+  selectedTags: CollectionId[],
+): Promise<boolean> {
+  if (working.value) return false;
+  working.value = true;
+  error.value = null;
+  const original = new Set(originalTags);
+  const selected = new Set(selectedTags);
+  const additions = selectedTags.filter((tag) => !original.has(tag));
+  const removals = originalTags.filter((tag) => !selected.has(tag));
+  let failure: string | null = null;
+
+  try {
+    for (const tag of additions) {
+      const result = await call(
+        "/tags/add-item",
+        api["/tags/add-item"]({ user, tag, item: character }),
+      );
+      if ("error" in result) failure ??= result.error;
+    }
+    for (const tag of removals) {
+      const result = await call(
+        "/tags/remove-item",
+        api["/tags/remove-item"]({ user, tag, item: character }),
+      );
+      if ("error" in result) failure ??= result.error;
+    }
+
+    const refreshed = await refresh();
+    if (failure) error.value = failure;
+    return refreshed && failure === null;
+  } finally {
+    working.value = false;
+  }
+}
+
 export function useCollections() {
   return {
     collections,
@@ -114,5 +167,7 @@ export function useCollections() {
     createCollection,
     renameCollection,
     deleteCollection,
+    getCharacterCollections,
+    saveCharacterCollections,
   };
 }

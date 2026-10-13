@@ -1,6 +1,17 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { type Collection, useCollections } from "./useCollections.ts";
+import CharacterDetail from "./components/CharacterDetail.vue";
+import CharacterSearchResults from "./components/CharacterSearchResults.vue";
+import {
+  type CharacterEntry,
+  searchSimplifiedCharacters,
+} from "./api/characters.ts";
+import {
+  type Collection,
+  type CollectionId,
+  useCollections,
+} from "./useCollections.ts";
+import { useInformation } from "./useInformation.ts";
 
 const {
   collections,
@@ -11,7 +22,27 @@ const {
   createCollection,
   renameCollection,
   deleteCollection,
+  getCharacterCollections,
+  saveCharacterCollections,
 } = useCollections();
+const {
+  loading: informationLoading,
+  error: informationError,
+  getCharacterInformation,
+} = useInformation();
+const page = ref<"home" | "results" | "detail">("home");
+const searchQuery = ref("");
+const lastSearch = ref("");
+const characters = ref<CharacterEntry[]>([]);
+const activeCharacter = ref<CharacterEntry | null>(null);
+const selectedCollectionIds = ref<CollectionId[]>([]);
+const initialCollectionIds = ref<CollectionId[]>([]);
+const membershipLoading = ref(false);
+const searching = ref(false);
+const searchError = ref<string | null>(null);
+const saveStatus = ref<string | null>(null);
+let searchSequence = 0;
+let characterSequence = 0;
 const isEditing = ref(false);
 const activeCollection = ref<Collection | null>(null);
 const collectionName = ref("");
@@ -20,6 +51,68 @@ function openCreateForm() {
   activeCollection.value = null;
   collectionName.value = "";
   isEditing.value = true;
+}
+
+async function searchCharacters() {
+  const query = searchQuery.value.trim();
+  if (!query) return;
+
+  const sequence = ++searchSequence;
+  lastSearch.value = query;
+  characters.value = [];
+  searchError.value = null;
+  searching.value = true;
+  page.value = "results";
+  try {
+    characters.value = await searchSimplifiedCharacters(query);
+  } catch (cause) {
+    searchError.value =
+      cause instanceof Error ? cause.message : "Character search failed.";
+  } finally {
+    if (sequence === searchSequence) searching.value = false;
+  }
+}
+
+async function openCharacter(character: CharacterEntry) {
+  const sequence = ++characterSequence;
+  activeCharacter.value = character;
+  initialCollectionIds.value = [];
+  selectedCollectionIds.value = [];
+  saveStatus.value = null;
+  page.value = "detail";
+  membershipLoading.value = true;
+  try {
+    const [containingTags, information] = await Promise.all([
+      getCharacterCollections(character.character),
+      getCharacterInformation(character),
+    ]);
+    if (sequence !== characterSequence) return;
+    if (containingTags !== null) {
+      initialCollectionIds.value = containingTags;
+      selectedCollectionIds.value = [...containingTags];
+    }
+    if (information !== null) activeCharacter.value = information;
+  } finally {
+    if (sequence === characterSequence) membershipLoading.value = false;
+  }
+}
+
+function updateSelectedCollections(tagIds: CollectionId[]) {
+  selectedCollectionIds.value = tagIds;
+  saveStatus.value = null;
+}
+
+async function saveSelectedCollections() {
+  if (!activeCharacter.value) return;
+  const saved = await saveCharacterCollections(
+    activeCharacter.value.character,
+    initialCollectionIds.value,
+    selectedCollectionIds.value,
+  );
+  if (saved) {
+    initialCollectionIds.value = [...selectedCollectionIds.value];
+    saveStatus.value = "Collection membership saved.";
+  }
 }
 
 function openEditForm(collection: Collection) {
@@ -57,10 +150,43 @@ onMounted(() => void refresh());
   <div class="home">
     <header class="navbar">
       <a class="brand" href="/">MyHanzi</a>
-      <input type="search" placeholder="Search" aria-label="Search" />
+      <form class="search-form" @submit.prevent="searchCharacters">
+        <input
+          v-model="searchQuery"
+          type="search"
+          placeholder="Pinyin or character (note: type v for ü)"
+          aria-label="Search by pinyin or character"
+        />
+      </form>
     </header>
 
-    <main>
+    <CharacterSearchResults
+      v-if="page === 'results'"
+      :query="lastSearch"
+      :characters="characters"
+      :loading="searching"
+      :error="searchError"
+      @back="page = 'home'"
+      @select="openCharacter"
+    />
+
+    <CharacterDetail
+      v-else-if="page === 'detail' && activeCharacter"
+      :character="activeCharacter"
+      :information-loading="informationLoading"
+      :information-error="informationError"
+      :collections="collections"
+      :selected-tags="selectedCollectionIds"
+      :membership-loading="membershipLoading"
+      :working="working"
+      :error="error"
+      :save-status="saveStatus"
+      @back="page = 'results'"
+      @selection="updateSelectedCollections"
+      @save="saveSelectedCollections"
+    />
+
+    <main v-else>
       <section aria-labelledby="collections-heading">
         <div class="section-heading">
           <h1 id="collections-heading">Collections</h1>
@@ -172,7 +298,7 @@ main {
   justify-content: space-between;
 }
 
-form {
+main form {
   margin-top: 1rem;
 }
 
