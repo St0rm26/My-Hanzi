@@ -203,7 +203,7 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 
 - `_tags(user: User) : many (tag: Tag, name: String)`
 - `_tagsContainingItem(user: User, item: Item) : many (tag: Tag)`
-- `_getTaggedItems(tag: Tag) : many (item: Item)`
+- `_taggedItems(user: User, tag: Tag) : many (item: Item, addedDate: Date)`
 
 #### Instances
 
@@ -236,9 +236,20 @@ Former "all an item's information" — inputs (item); bindings (information); pr
     information: the information of the first InformationCollecting._allInformation (item) has (information)
 ```
 
+### the items in a user's collection
+
+```former
+Former "the items in a user's collection" — inputs (user, tag); bindings (item, addedDate); promises exactly one record — forms:
+  each Tagging._taggedItems (tag, user) has (addedDate, item)
+    form a record of
+      addedDate
+      item
+```
+
 ### the reservation book
 
 Authored path: `Reservations.ReservationBook`.
+
 - Covered by [Reservations](../design/compositions/Reservations.md), line 4.
 
 ```former
@@ -295,6 +306,7 @@ then
 ### Reservations.Cancel
 
 Authored path: `Reservations.Cancel`.
+
 - Covered by [Reservations](../design/compositions/Reservations.md), line 11.
 - Covered by [Reservations](../design/compositions/Reservations.md), line 15.
 
@@ -307,6 +319,7 @@ then
 ### Reservations.Cancel#2
 
 Authored path: `Reservations.Cancel`.
+
 - Covered by [Reservations](../design/compositions/Reservations.md), line 11.
 - Covered by [Reservations](../design/compositions/Reservations.md), line 15.
 
@@ -321,6 +334,7 @@ then
 ### Reservations.List
 
 Authored path: `Reservations.List`.
+
 - Covered by [Reservations](../design/compositions/Reservations.md), line 3.
 - Covered by [Reservations](../design/compositions/Reservations.md), line 7.
 
@@ -333,6 +347,7 @@ then
 ### Reservations.Reserve
 
 Authored path: `Reservations.Reserve`.
+
 - Covered by [Reservations](../design/compositions/Reservations.md), line 10.
 - Covered by [Reservations](../design/compositions/Reservations.md), line 14.
 
@@ -345,6 +360,7 @@ then
 ### Reservations.Reserve#2
 
 Authored path: `Reservations.Reserve`.
+
 - Covered by [Reservations](../design/compositions/Reservations.md), line 10.
 - Covered by [Reservations](../design/compositions/Reservations.md), line 14.
 
@@ -359,6 +375,7 @@ then
 ### accounts.identifying.Me
 
 Authored path: `accounts.identifying.Me`.
+
 - Covered by [Accounts](../design/compositions/accounts.md), line 5.
 - Covered by [Accounts](../design/compositions/accounts.md), line 8.
 
@@ -371,6 +388,7 @@ then
 ### accounts.identifying.Me#2
 
 Authored path: `accounts.identifying.Me`.
+
 - Covered by [Accounts](../design/compositions/accounts.md), line 5.
 - Covered by [Accounts](../design/compositions/accounts.md), line 8.
 
@@ -386,6 +404,7 @@ then
 ### accounts.leaving.SignOut
 
 Authored path: `accounts.leaving.SignOut`.
+
 - Covered by [Accounts](../design/compositions/accounts.md), line 11.
 - Covered by [Accounts](../design/compositions/accounts.md), line 14.
 
@@ -398,6 +417,7 @@ then
 ### accounts.leaving.SignOut#2
 
 Authored path: `accounts.leaving.SignOut`.
+
 - Covered by [Accounts](../design/compositions/accounts.md), line 11.
 - Covered by [Accounts](../design/compositions/accounts.md), line 14.
 
@@ -412,6 +432,7 @@ then
 ### commons.finishing.ChooseUsername:expired
 
 Authored path: `commons.finishing.ChooseUsername`.
+
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 22.
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 26.
 
@@ -426,6 +447,7 @@ then
 ### commons.finishing.ChooseUsername:linkable
 
 Authored path: `commons.finishing.ChooseUsername`.
+
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 22.
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 26.
 
@@ -440,6 +462,7 @@ then
 ### commons.finishing.ChooseUsername:linkable#2
 
 Authored path: `commons.finishing.ChooseUsername`.
+
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 22.
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 26.
 
@@ -454,6 +477,7 @@ then
 ### commons.finishing.ChooseUsername:linkable#3
 
 Authored path: `commons.finishing.ChooseUsername`.
+
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 22.
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 26.
 
@@ -466,6 +490,7 @@ then
 ### commons.finishing.ChooseUsername:linkable#4
 
 Authored path: `commons.finishing.ChooseUsername`.
+
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 22.
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 26.
 
@@ -480,6 +505,7 @@ then
 ### commons.finishing.FinishCommons
 
 Authored path: `commons.finishing.FinishCommons`.
+
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 15.
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 25.
 
@@ -492,6 +518,7 @@ then
 ### commons.finishing.FinishCommons:new#2
 
 Authored path: `commons.finishing.FinishCommons`.
+
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 15.
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 25.
 
@@ -506,6 +533,7 @@ then
 ### commons.finishing.FinishCommons:new#3
 
 Authored path: `commons.finishing.FinishCommons`.
+
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 15.
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 25.
 
@@ -520,6 +548,7 @@ then
 ### commons.finishing.FinishCommons:new#4
 
 Authored path: `commons.finishing.FinishCommons`.
+
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 15.
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 25.
 
@@ -532,6 +561,7 @@ then
 ### commons.finishing.FinishCommons:new#5
 
 Authored path: `commons.finishing.FinishCommons`.
+
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 15.
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 25.
 
@@ -546,6 +576,7 @@ then
 ### commons.finishing.FinishCommons:returning#2
 
 Authored path: `commons.finishing.FinishCommons`.
+
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 15.
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 25.
 
@@ -560,6 +591,7 @@ then
 ### commons.finishing.FinishCommons:returning#3
 
 Authored path: `commons.finishing.FinishCommons`.
+
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 15.
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 25.
 
@@ -574,6 +606,7 @@ then
 ### commons.starting.StartCommons
 
 Authored path: `commons.starting.StartCommons`.
+
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 7.
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 10.
 
@@ -586,6 +619,7 @@ then
 ### commons.starting.StartCommons#2
 
 Authored path: `commons.starting.StartCommons`.
+
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 7.
 - Covered by [Signing in with Commons](../design/compositions/commons.md), line 10.
 
@@ -600,6 +634,7 @@ then
 ### information.AddField
 
 Authored path: `information.AddField`.
+
 - Covered by [Information](../design/compositions/information.md), line 9.
 - Covered by [Information](../design/compositions/information.md), line 12.
 
@@ -612,6 +647,7 @@ then
 ### information.AddField#2
 
 Authored path: `information.AddField`.
+
 - Covered by [Information](../design/compositions/information.md), line 9.
 - Covered by [Information](../design/compositions/information.md), line 12.
 
@@ -626,6 +662,7 @@ then
 ### information.UpdateField:found
 
 Authored path: `information.UpdateField`.
+
 - Covered by [Information](../design/compositions/information.md), line 21.
 - Covered by [Information](../design/compositions/information.md), line 24.
 
@@ -640,6 +677,7 @@ then
 ### information.UpdateField:found#2
 
 Authored path: `information.UpdateField`.
+
 - Covered by [Information](../design/compositions/information.md), line 21.
 - Covered by [Information](../design/compositions/information.md), line 24.
 
@@ -654,6 +692,7 @@ then
 ### information.UpdateField:missing
 
 Authored path: `information.UpdateField`.
+
 - Covered by [Information](../design/compositions/information.md), line 21.
 - Covered by [Information](../design/compositions/information.md), line 24.
 
@@ -668,6 +707,7 @@ then
 ### information.View
 
 Authored path: `information.View`.
+
 - Covered by [Information](../design/compositions/information.md), line 3.
 - Covered by [Information](../design/compositions/information.md), line 6.
 
@@ -680,6 +720,7 @@ then
 ### information.ViewField
 
 Authored path: `information.ViewField`.
+
 - Covered by [Information](../design/compositions/information.md), line 15.
 - Covered by [Information](../design/compositions/information.md), line 18.
 
@@ -694,6 +735,7 @@ then
 ### passwords.entering.Register:accepted
 
 Authored path: `passwords.entering.Register`.
+
 - Covered by [Passwords](../design/compositions/passwords.md), line 5.
 - Covered by [Passwords](../design/compositions/passwords.md), line 12.
 
@@ -708,6 +750,7 @@ then
 ### passwords.entering.Register:accepted#2
 
 Authored path: `passwords.entering.Register`.
+
 - Covered by [Passwords](../design/compositions/passwords.md), line 5.
 - Covered by [Passwords](../design/compositions/passwords.md), line 12.
 
@@ -722,6 +765,7 @@ then
 ### passwords.entering.Register:accepted#3
 
 Authored path: `passwords.entering.Register`.
+
 - Covered by [Passwords](../design/compositions/passwords.md), line 5.
 - Covered by [Passwords](../design/compositions/passwords.md), line 12.
 
@@ -734,6 +778,7 @@ then
 ### passwords.entering.Register:accepted#4
 
 Authored path: `passwords.entering.Register`.
+
 - Covered by [Passwords](../design/compositions/passwords.md), line 5.
 - Covered by [Passwords](../design/compositions/passwords.md), line 12.
 
@@ -748,6 +793,7 @@ then
 ### passwords.entering.Register:refused
 
 Authored path: `passwords.entering.Register`.
+
 - Covered by [Passwords](../design/compositions/passwords.md), line 5.
 - Covered by [Passwords](../design/compositions/passwords.md), line 12.
 
@@ -762,6 +808,7 @@ then
 ### passwords.entering.SignIn:known
 
 Authored path: `passwords.entering.SignIn`.
+
 - Covered by [Passwords](../design/compositions/passwords.md), line 7.
 - Covered by [Passwords](../design/compositions/passwords.md), line 13.
 
@@ -776,6 +823,7 @@ then
 ### passwords.entering.SignIn:known#2
 
 Authored path: `passwords.entering.SignIn`.
+
 - Covered by [Passwords](../design/compositions/passwords.md), line 7.
 - Covered by [Passwords](../design/compositions/passwords.md), line 13.
 
@@ -788,6 +836,7 @@ then
 ### passwords.entering.SignIn:known#3
 
 Authored path: `passwords.entering.SignIn`.
+
 - Covered by [Passwords](../design/compositions/passwords.md), line 7.
 - Covered by [Passwords](../design/compositions/passwords.md), line 13.
 
@@ -802,6 +851,7 @@ then
 ### passwords.entering.SignIn:unknown
 
 Authored path: `passwords.entering.SignIn`.
+
 - Covered by [Passwords](../design/compositions/passwords.md), line 7.
 - Covered by [Passwords](../design/compositions/passwords.md), line 13.
 
@@ -816,8 +866,9 @@ then
 ### tags.AddItem
 
 Authored path: `tags.AddItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 29.
-- Covered by [Tags](../design/compositions/tags.md), line 32.
+
+- Covered by [Tags](../design/compositions/tags.md), line 35.
+- Covered by [Tags](../design/compositions/tags.md), line 38.
 
 ```reaction
 when RequestBoundary.request (item, path: "/tags/add-item", requestId, tag, user)
@@ -830,8 +881,9 @@ then
 ### tags.AddItem#2
 
 Authored path: `tags.AddItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 29.
-- Covered by [Tags](../design/compositions/tags.md), line 32.
+
+- Covered by [Tags](../design/compositions/tags.md), line 35.
+- Covered by [Tags](../design/compositions/tags.md), line 38.
 
 ```reaction
 when Tagging.addItemTag (date, item, tag, user), asked by tags.AddItem
@@ -844,8 +896,9 @@ then
 ### tags.CreateTag
 
 Authored path: `tags.CreateTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 9.
-- Covered by [Tags](../design/compositions/tags.md), line 12.
+
+- Covered by [Tags](../design/compositions/tags.md), line 15.
+- Covered by [Tags](../design/compositions/tags.md), line 18.
 
 ```reaction
 when RequestBoundary.request (name, path: "/tags/create-tag", requestId, user)
@@ -856,8 +909,9 @@ then
 ### tags.CreateTag#2
 
 Authored path: `tags.CreateTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 9.
-- Covered by [Tags](../design/compositions/tags.md), line 12.
+
+- Covered by [Tags](../design/compositions/tags.md), line 15.
+- Covered by [Tags](../design/compositions/tags.md), line 18.
 
 ```reaction
 when Tagging.createTag (name, user, tag), asked by tags.CreateTag
@@ -870,8 +924,9 @@ then
 ### tags.DeleteTag
 
 Authored path: `tags.DeleteTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 21.
-- Covered by [Tags](../design/compositions/tags.md), line 24.
+
+- Covered by [Tags](../design/compositions/tags.md), line 27.
+- Covered by [Tags](../design/compositions/tags.md), line 30.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/delete-tag", requestId, tag, user)
@@ -882,8 +937,9 @@ then
 ### tags.DeleteTag#2
 
 Authored path: `tags.DeleteTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 21.
-- Covered by [Tags](../design/compositions/tags.md), line 24.
+
+- Covered by [Tags](../design/compositions/tags.md), line 27.
+- Covered by [Tags](../design/compositions/tags.md), line 30.
 
 ```reaction
 when Tagging.deleteTag (tag, user), asked by tags.DeleteTag
@@ -896,8 +952,9 @@ then
 ### tags.EditTag
 
 Authored path: `tags.EditTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 15.
-- Covered by [Tags](../design/compositions/tags.md), line 18.
+
+- Covered by [Tags](../design/compositions/tags.md), line 21.
+- Covered by [Tags](../design/compositions/tags.md), line 24.
 
 ```reaction
 when RequestBoundary.request (name, path: "/tags/edit-tag", requestId, tag, user)
@@ -908,8 +965,9 @@ then
 ### tags.EditTag#2
 
 Authored path: `tags.EditTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 15.
-- Covered by [Tags](../design/compositions/tags.md), line 18.
+
+- Covered by [Tags](../design/compositions/tags.md), line 21.
+- Covered by [Tags](../design/compositions/tags.md), line 24.
 
 ```reaction
 when Tagging.renameTag (newName: name, tag, user), asked by tags.EditTag
@@ -922,8 +980,9 @@ then
 ### tags.ItemMembership
 
 Authored path: `tags.ItemMembership`.
-- Covered by [Tags](../design/compositions/tags.md), line 35.
-- Covered by [Tags](../design/compositions/tags.md), line 38.
+
+- Covered by [Tags](../design/compositions/tags.md), line 41.
+- Covered by [Tags](../design/compositions/tags.md), line 44.
 
 ```reaction
 when RequestBoundary.request (item, path: "/tags/item-membership", requestId, user)
@@ -931,9 +990,23 @@ then
   RequestBoundary.respond (requestId, tags: former "the user's collections containing an item" with (item, user))
 ```
 
+### tags.Items
+
+Authored path: `tags.Items`.
+
+- Covered by [Tags](../design/compositions/tags.md), line 9.
+- Covered by [Tags](../design/compositions/tags.md), line 12.
+
+```reaction
+when RequestBoundary.request (path: "/tags/items", requestId, tag, user)
+then
+  RequestBoundary.respond (items: former "the items in a user's collection" with (tag, user), requestId)
+```
+
 ### tags.List
 
 Authored path: `tags.List`.
+
 - Covered by [Tags](../design/compositions/tags.md), line 3.
 - Covered by [Tags](../design/compositions/tags.md), line 6.
 
@@ -946,8 +1019,9 @@ then
 ### tags.RemoveItem
 
 Authored path: `tags.RemoveItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 43.
-- Covered by [Tags](../design/compositions/tags.md), line 46.
+
+- Covered by [Tags](../design/compositions/tags.md), line 49.
+- Covered by [Tags](../design/compositions/tags.md), line 52.
 
 ```reaction
 when RequestBoundary.request (item, path: "/tags/remove-item", requestId, tag, user)
@@ -958,8 +1032,9 @@ then
 ### tags.RemoveItem#2
 
 Authored path: `tags.RemoveItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 43.
-- Covered by [Tags](../design/compositions/tags.md), line 46.
+
+- Covered by [Tags](../design/compositions/tags.md), line 49.
+- Covered by [Tags](../design/compositions/tags.md), line 52.
 
 ```reaction
 when Tagging.removeItemTag (item, tag, user), asked by tags.RemoveItem
@@ -993,5 +1068,6 @@ not listed here have no explicit input contract.
 - `/tags/delete-tag` — requires `user`, `tag`
 - `/tags/edit-tag` — requires `user`, `tag`, `name`
 - `/tags/item-membership` — requires `user`, `item`
+- `/tags/items` — requires `user`, `tag`
 - `/tags/list` — requires `user`
 - `/tags/remove-item` — requires `user`, `tag`, `item`

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import CollectionPage from "./components/Collection.vue";
 import CharacterDetail from "./components/CharacterDetail.vue";
 import CharacterSearchResults from "./components/CharacterSearchResults.vue";
 import {
@@ -9,6 +10,7 @@ import {
 import {
   type Collection,
   type CollectionId,
+  type CollectionItem,
   useCollections,
 } from "./useCollections.ts";
 import { useInformation } from "./useInformation.ts";
@@ -23,6 +25,7 @@ const {
   renameCollection,
   deleteCollection,
   getCharacterCollections,
+  getCollectionItems,
   saveCharacterCollections,
 } = useCollections();
 const {
@@ -30,11 +33,14 @@ const {
   error: informationError,
   getCharacterInformation,
 } = useInformation();
-const page = ref<"home" | "results" | "detail">("home");
+const page = ref<"home" | "results" | "detail" | "collection">("home");
 const searchQuery = ref("");
 const lastSearch = ref("");
 const characters = ref<CharacterEntry[]>([]);
 const activeCharacter = ref<CharacterEntry | null>(null);
+const activeCollection = ref<Collection | null>(null);
+const collectionItems = ref<CollectionItem[]>([]);
+const collectionLoading = ref(false);
 const selectedCollectionIds = ref<CollectionId[]>([]);
 const initialCollectionIds = ref<CollectionId[]>([]);
 const membershipLoading = ref(false);
@@ -43,8 +49,8 @@ const searchError = ref<string | null>(null);
 const saveStatus = ref<string | null>(null);
 let searchSequence = 0;
 let characterSequence = 0;
+let collectionSequence = 0;
 const isEditing = ref(false);
-const activeCollection = ref<Collection | null>(null);
 const collectionName = ref("");
 
 function openCreateForm() {
@@ -121,6 +127,22 @@ function openEditForm(collection: Collection) {
   isEditing.value = true;
 }
 
+async function openCollection(collection: Collection) {
+  const sequence = ++collectionSequence;
+  activeCollection.value = collection;
+  collectionItems.value = [];
+  collectionLoading.value = true;
+  page.value = "collection";
+  try {
+    const items = await getCollectionItems(collection);
+    if (sequence === collectionSequence && items !== null) {
+      collectionItems.value = items;
+    }
+  } finally {
+    if (sequence === collectionSequence) collectionLoading.value = false;
+  }
+}
+
 function cancelForm() {
   isEditing.value = false;
   activeCollection.value = null;
@@ -186,6 +208,15 @@ onMounted(() => void refresh());
       @save="saveSelectedCollections"
     />
 
+    <CollectionPage
+      v-else-if="page === 'collection' && activeCollection"
+      :collection="activeCollection"
+      :items="collectionItems"
+      :loading="collectionLoading"
+      :error="error"
+      @back="page = 'home'"
+    />
+
     <main v-else>
       <section aria-labelledby="collections-heading">
         <div class="section-heading">
@@ -228,7 +259,11 @@ onMounted(() => void refresh());
             :key="collection.tag"
             class="collection-row"
           >
-            <button type="button" class="collection-button">
+            <button
+              type="button"
+              class="collection-button"
+              @click="openCollection(collection)"
+            >
               {{ collection.name }}
             </button>
             <template v-if="collection.name !== 'Studied'">

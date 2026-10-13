@@ -6,6 +6,12 @@ When a user registers, the system [creates a tag called "Studied"](../reactions/
 tags.List at /tags/list
 ```
 
+Anyone can [view the items under one of their tags](reaction:tags.Items), ordered by newest added first.
+
+```endpoints
+tags.Items at /tags/items
+```
+
 Anyone can [create their own tag](reaction:tags.CreateTag) for themselves as long as the name hasn't already been used.
 
 ```endpoints

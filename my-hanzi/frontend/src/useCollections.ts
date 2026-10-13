@@ -7,6 +7,7 @@ type Wire = MyHanziWireHttp;
 type Path = keyof Wire;
 export type Collection = Wire["/tags/list"]["output"]["tags"][number];
 export type CollectionId = Collection["tag"];
+export type CollectionItem = Wire["/tags/items"]["output"]["items"][number];
 type ErrorResult = { error: string; detail?: string };
 
 const collections = ref<Collection[]>([]);
@@ -119,6 +120,21 @@ async function getCharacterCollections(
   return result.tags.map(({ tag }) => tag);
 }
 
+async function getCollectionItems(
+  collection: Collection,
+): Promise<CollectionItem[] | null> {
+  error.value = null;
+  const result = await call(
+    "/tags/items",
+    api["/tags/items"]({ user, tag: collection.tag }),
+  );
+  if ("error" in result) {
+    error.value = result.error;
+    return null;
+  }
+  return result.items;
+}
+
 async function saveCharacterCollections(
   character: string,
   originalTags: CollectionId[],
@@ -168,6 +184,7 @@ export function useCollections() {
     renameCollection,
     deleteCollection,
     getCharacterCollections,
+    getCollectionItems,
     saveCharacterCollections,
   };
 }

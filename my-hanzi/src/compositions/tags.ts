@@ -20,10 +20,28 @@ const ItemTags = former(
     each(Tagging._tagsContainingItem({ user, item }).is({ tag })).form({ tag }),
 );
 
+const TaggedItems = former(
+  "the items in a user's collection",
+  ({ user, tag }, { item, addedDate }) =>
+    each(Tagging._taggedItems({ user, tag }).is({ item, addedDate })).form({
+      item,
+      addedDate,
+    }),
+);
+
 const List = endpoint(
   "/tags/list",
   ({ user }) => receive({ user }).then(respond({ tags: UserTags({ user }) })),
   { input: { required: ["user"] } },
+);
+
+const Items = endpoint(
+  "/tags/items",
+  ({ user, tag }) =>
+    receive({ user, tag }).then(
+      respond({ items: TaggedItems({ user, tag }) }),
+    ),
+  { input: { required: ["user", "tag"] } },
 );
 
 const ItemMembership = endpoint(
@@ -123,6 +141,7 @@ export const tagsHttp = {
 
 export const composition = {
   List,
+  Items,
   ItemMembership,
   CreateTag,
   EditTag,

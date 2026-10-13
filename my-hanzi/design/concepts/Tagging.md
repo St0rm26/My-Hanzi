@@ -112,11 +112,11 @@ findTaggedItemsID (user: User, tag: Tag) : returns (ids: IDs)
 
 ```queries
 _tags (user: User) : many (tag: Tag, name: String)
-        Returns every tag owned by the user, ordered by name.
+    Returns every tag owned by the user, ordered by name.
 
 _tagsContainingItem (user: User, item: Item) : many (tag: Tag)
     Returns the user's tags that contain the given item.
 
-_getTaggedItems (tag: Tag) : many (item: Item)
-  Returns every item under the given tag. The order of the items is unspecified.
+_taggedItems (user: User, tag: Tag) : many (item: Item, addedDate: Date)
+  Returns every item under the user's tag, newest added first.
 ```

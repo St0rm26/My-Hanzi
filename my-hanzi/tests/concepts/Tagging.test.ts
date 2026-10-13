@@ -65,6 +65,39 @@ describe("Tagging", () => {
     expect(favorites).not.toBe(studied);
   });
 
+  test("_taggedItems returns a user's collection items newest first", async () => {
+    const tag = await createTag("alice", "Favorites");
+    const bobTag = await createTag("bob", "Private");
+    const older = new Date("2026-01-01T00:00:00.000Z");
+    const newer = new Date("2026-01-03T00:00:00.000Z");
+    await tagging.addItemTag({
+      user: "alice",
+      tag,
+      item: "你",
+      date: older,
+    });
+    await tagging.addItemTag({
+      user: "alice",
+      tag,
+      item: "我",
+      date: newer,
+    });
+    await tagging.addItemTag({
+      user: "bob",
+      tag: bobTag,
+      item: "她",
+      date: newer,
+    });
+
+    expect(await tagging._taggedItems({ user: "alice", tag })).toEqual([
+      { item: "我", addedDate: newer },
+      { item: "你", addedDate: older },
+    ]);
+    await expect(
+      tagging._taggedItems({ user: "bob", tag }),
+    ).rejects.toBeInstanceOf(TagNotFound);
+  });
+
   test("renameTag preserves identity, permits its current name, and rejects another tag's name", async () => {
     const tag = await createTag();
     await createTag("alice", "favorites");
@@ -115,9 +148,9 @@ describe("Tagging", () => {
     expect(
       await database.collection("tagging.tags").findOne({ _id: studied }),
     ).toMatchObject({ author: "alice", name: "Studied" });
-    expect(await tagging._getTaggedItems({ tag: studied })).toEqual([
-      { item: "book" },
-    ]);
+    expect(
+      await tagging._taggedItems({ user: "alice", tag: studied }),
+    ).toEqual([{ item: "book", addedDate: date }]);
   });
 
   test("deleteTag removes its tagged items but leaves other tags intact", async () => {
@@ -137,10 +170,17 @@ describe("Tagging", () => {
     });
 
     await tagging.deleteTag({ user: "alice", tag: removed });
-    expect(await tagging._getTaggedItems({ tag: removed })).toEqual([]);
-    expect(await tagging._getTaggedItems({ tag: retained })).toEqual([
-      { item: "book" },
-    ]);
+    await expect(
+      tagging._taggedItems({ user: "alice", tag: removed }),
+    ).rejects.toBeInstanceOf(TagNotFound);
+    expect(
+      await database
+        .collection("tagging.taggedItems")
+        .countDocuments({ tag: removed }),
+    ).toBe(0);
+    expect(
+      await tagging._taggedItems({ user: "alice", tag: retained }),
+    ).toEqual([{ item: "book", addedDate: date }]);
     expect(
       tagging.addItemTag({ user: "alice", tag: removed, item: "other", date }),
     ).rejects.toBeInstanceOf(TagNotFound);
@@ -159,7 +199,9 @@ describe("Tagging", () => {
       tagging.addItemTag({ user: "alice", tag, item: "book", date }),
     ).rejects.toBeInstanceOf(ItemAlreadyTagged);
     await tagging.addItemTag({ user: "alice", tag: other, item: "book", date });
-    expect(await tagging._getTaggedItems({ tag })).toEqual([{ item: "book" }]);
+    expect(await tagging._taggedItems({ user: "alice", tag })).toEqual([
+      { item: "book", addedDate: date },
+    ]);
   });
 
   test("removeItemTag removes one item and checks ownership and existence", async () => {
@@ -170,8 +212,8 @@ describe("Tagging", () => {
       tagging.removeItemTag({ user: "bob", tag, item: "book" }),
     ).rejects.toBeInstanceOf(TagNotFound);
     await tagging.removeItemTag({ user: "alice", tag, item: "book" });
-    expect(await tagging._getTaggedItems({ tag })).toEqual([
-      { item: "article" },
+    expect(await tagging._taggedItems({ user: "alice", tag })).toEqual([
+      { item: "article", addedDate: date },
     ]);
     expect(
       tagging.removeItemTag({ user: "alice", tag, item: "book" }),

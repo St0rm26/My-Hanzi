@@ -278,16 +278,21 @@ export class TaggingConcept<
       .map(({ _id: tag }) => ({ tag }));
   }
 
-  async _getTaggedItems({ tag }: { tag: Tag }): Promise<{ item: Item }[]> {
+  async _taggedItems({
+    user,
+    tag,
+  }: {
+    user: User;
+    tag: Tag;
+  }): Promise<{ item: Item; addedDate: Date }[]> {
     await this.#ready();
-    const found = await this.tags.findOne(
-      { _id: tag },
-      { projection: { _id: 1 } },
-    );
-    if (found === null) return [];
+    await this.#requireTag(user, tag);
 
-    const taggedItems = await this.taggedItems.find({ tag }).toArray();
-    return taggedItems.map(({ item }) => ({ item }));
+    const taggedItems = await this.taggedItems
+      .find({ tag })
+      .sort({ addedDate: -1 })
+      .toArray();
+    return taggedItems.map(({ item, addedDate }) => ({ item, addedDate }));
   }
 
   async #requireTag(user: User, tag: Tag) {

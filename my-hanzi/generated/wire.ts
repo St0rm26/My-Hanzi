@@ -215,6 +215,19 @@ export type MyHanziWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" };
   };
+  "/tags/items": {
+    input: {
+      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_taggedItems"]>[0], ["tag"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_taggedItems"]>[0], ["user"]>>;
+    };
+    output: {
+      "items": {
+        "addedDate": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_taggedItems"]>>>, ["addedDate"]>>;
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_taggedItems"]>>>, ["item"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" };
+  };
   "/tags/list": {
     input: {
       "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tags"]>[0], ["user"]>>;
@@ -420,6 +433,19 @@ export type MyHanziWireHttp = {
     output: {
       "tags": {
         "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagsContainingItem"]>>>, ["tag"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" };
+  };
+  "/tags/items": {
+    input: {
+      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_taggedItems"]>[0], ["tag"]>>;
+      "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_taggedItems"]>[0], ["user"]>>;
+    };
+    output: {
+      "items": {
+        "addedDate": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_taggedItems"]>>>, ["addedDate"]>>;
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_taggedItems"]>>>, ["item"]>>;
       }[];
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" };
