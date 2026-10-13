@@ -65,7 +65,7 @@ Defined in [InformationCollecting](../design/concepts/InformationCollecting.md),
 
 #### Queries
 
-- `_allInformation(item: Item) : many (information: Information)`
+- `_allInformation(item: Item) : one (information: Information)`
 - `_information(item: Item, fieldName: String) : one (information: Information)`
 
 #### Instances

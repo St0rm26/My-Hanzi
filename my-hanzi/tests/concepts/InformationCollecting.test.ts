@@ -18,7 +18,7 @@ async function setup() {
 }
 
 describe("InformationCollecting", () => {
-  test("adds distinct fields and returns information sorted by field name", async () => {
+  test("adds distinct fields and returns a field-name dictionary", async () => {
     const { informationCollecting } = await setup();
 
     const pinyin = await informationCollecting.addInfoField({
@@ -34,7 +34,7 @@ describe("InformationCollecting", () => {
 
     expect(pinyin.infoField).not.toBe(meaning.infoField);
     expect(await informationCollecting._allInformation({ item: "你" })).toEqual(
-      [{ information: "you" }, { information: "nǐ" }],
+      { information: { meaning: "you", pinyin: "nǐ" } },
     );
     expect(
       await informationCollecting._information({
@@ -44,7 +44,7 @@ describe("InformationCollecting", () => {
     ).toEqual({ information: "nǐ" });
     expect(
       await informationCollecting._allInformation({ item: "missing" }),
-    ).toEqual([]);
+    ).toEqual({ information: {} });
   });
 
   test("field names are unique per item, regardless of description", async () => {
@@ -68,7 +68,7 @@ describe("InformationCollecting", () => {
       description: "I",
     });
     expect(await informationCollecting._allInformation({ item: "我" })).toEqual(
-      [{ information: "I" }],
+      { information: { meaning: "I" } },
     );
   });
 
@@ -137,7 +137,7 @@ describe("InformationCollecting", () => {
       informationCollecting._information({ item: "你", fieldName: "meaning" }),
     ).rejects.toBeInstanceOf(InfoFieldNotFound);
     expect(await informationCollecting._allInformation({ item: "你" })).toEqual(
-      [{ information: "nǐ" }],
+      { information: { pinyin: "nǐ" } },
     );
     expect(
       informationCollecting.deleteInfoField({ item: "你", infoField }),
