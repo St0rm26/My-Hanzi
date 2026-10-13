@@ -1,7 +1,7 @@
 import vue from "@vitejs/plugin-vue";
 import { defineConfig } from "vite";
 
-const backend = process.env.BACKEND_URL ?? "http://127.0.0.1:4000";
+const backend = process.env.BACKEND_URL ?? "http://127.0.0.1:3000";
 const apiProxy = {
   "/api": { target: backend, changeOrigin: true },
   "/health": { target: backend, changeOrigin: true },

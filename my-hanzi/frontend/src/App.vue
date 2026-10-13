@@ -1,40 +1,56 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
+import { type Collection, useCollections } from "./useCollections.ts";
 
-const collections = ref(["Studied"]);
-const isCreating = ref(false);
-const newCollectionName = ref("");
-const message = ref("");
+const {
+  collections,
+  error,
+  loading,
+  working,
+  refresh,
+  createCollection,
+  renameCollection,
+  deleteCollection,
+} = useCollections();
+const isEditing = ref(false);
+const activeCollection = ref<Collection | null>(null);
+const collectionName = ref("");
 
 function openCreateForm() {
-  isCreating.value = true;
-  message.value = "";
+  activeCollection.value = null;
+  collectionName.value = "";
+  isEditing.value = true;
 }
 
-function cancelCreate() {
-  isCreating.value = false;
-  newCollectionName.value = "";
-  message.value = "";
+function openEditForm(collection: Collection) {
+  activeCollection.value = collection;
+  collectionName.value = collection.name;
+  isEditing.value = true;
 }
 
-function createCollection() {
-  const name = newCollectionName.value.trim();
-  if (!name) {
-    message.value = "Enter a collection name.";
-    return;
-  }
-  if (
-    collections.value.some(
-      (collection) => collection.toLowerCase() === name.toLowerCase(),
-    )
-  ) {
-    message.value = "That collection already exists.";
-    return;
-  }
-
-  collections.value.push(name);
-  cancelCreate();
+function cancelForm() {
+  isEditing.value = false;
+  activeCollection.value = null;
+  collectionName.value = "";
 }
+
+async function saveCollection() {
+  const name = collectionName.value.trim();
+  if (!name) return;
+
+  const saved = activeCollection.value
+    ? await renameCollection(activeCollection.value, name)
+    : await createCollection(name);
+  if (saved) cancelForm();
+}
+
+async function removeCollection(collection: Collection) {
+  if (collection.name === "Studied") return;
+  if (!window.confirm(`Delete the "${collection.name}" collection?`)) return;
+  await deleteCollection(collection);
+}
+
+onMounted(() => void refresh());
 </script>
 
 <template>
@@ -50,33 +66,61 @@ function createCollection() {
           <h1 id="collections-heading">Collections</h1>
           <button
             type="button"
-            :aria-expanded="isCreating"
+            :aria-expanded="isEditing"
+            :disabled="working"
             @click="openCreateForm"
           >
             New collection
           </button>
         </div>
 
-        <form v-if="isCreating" @submit.prevent="createCollection">
+        <p v-if="error" role="alert">{{ error }}</p>
+        <p v-if="loading">Loading collections...</p>
+
+        <form v-if="isEditing" @submit.prevent="saveCollection">
           <label for="collection-name">Collection name</label>
           <div class="create-controls">
             <input
               id="collection-name"
-              v-model="newCollectionName"
+              v-model="collectionName"
               required
               maxlength="50"
+              :disabled="working"
             />
-            <button type="submit">Create</button>
-            <button type="button" @click="cancelCreate">Cancel</button>
+            <button type="submit" :disabled="working">
+              {{ activeCollection ? "Save" : "Create" }}
+            </button>
+            <button type="button" :disabled="working" @click="cancelForm">
+              Cancel
+            </button>
           </div>
-          <p role="status">{{ message }}</p>
         </form>
 
         <ul class="collection-list">
-          <li v-for="collection in collections" :key="collection">
+          <li
+            v-for="collection in collections"
+            :key="collection.tag"
+            class="collection-row"
+          >
             <button type="button" class="collection-button">
-              {{ collection }}
+              {{ collection.name }}
             </button>
+            <template v-if="collection.name !== 'Studied'">
+              <button
+                type="button"
+                :disabled="working"
+                @click="openEditForm(collection)"
+              >
+                Rename
+              </button>
+              <button
+                type="button"
+                :disabled="working"
+                @click="removeCollection(collection)"
+              >
+                Delete
+              </button>
+            </template>
           </li>
         </ul>
       </section>
@@ -144,11 +188,15 @@ form {
 }
 
 .collection-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   border-bottom: 1px solid #ddd;
 }
 
 .collection-button {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: 0.75rem 0;
   border: 0;
   background: transparent;

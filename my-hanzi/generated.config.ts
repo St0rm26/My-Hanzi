@@ -15,6 +15,7 @@ export default {
       new URL("./design/compositions/commons.md", import.meta.url),
       new URL("./design/compositions/information.md", import.meta.url),
       new URL("./design/compositions/Reservations.md", import.meta.url),
+      new URL("./design/compositions/tags.md", import.meta.url),
     ],
   },
   projections: [httpWire({ policy, name: "MyHanziWireHttp" })],
