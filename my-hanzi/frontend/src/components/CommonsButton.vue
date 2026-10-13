@@ -46,9 +46,6 @@ async function start() {
   color: #fefcf4;
   font-weight: 700;
 }
-.commons-button:hover:not(:disabled) {
-  background: #a03f00;
-}
 .commons-button:focus-visible {
   outline-color: #b44900;
 }

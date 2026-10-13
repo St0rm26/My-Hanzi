@@ -219,7 +219,14 @@ onMounted(() => void refresh());
       </form>
       <div class="account">
         <span>{{ me?.username }}</span>
-        <button type="button" @click="signOut">Sign out</button>
+        <button
+          type="button"
+          class="sign-out"
+          :disabled="working"
+          @click="signOut"
+        >
+          Sign out
+        </button>
       </div>
     </header>
 
@@ -269,6 +276,7 @@ onMounted(() => void refresh());
           <h1 id="collections-heading">Collections</h1>
           <button
             type="button"
+            class="new-collection"
             :aria-expanded="isEditing"
             :disabled="working"
             @click="openCreateForm"
@@ -349,12 +357,18 @@ onMounted(() => void refresh());
   gap: 1rem;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid #ccc;
+  background: #bdbdbd;
 }
 
 .brand {
-  color: inherit;
-  font-weight: 600;
+  color: rgb(255, 255, 255);
+  font-weight: 800;
   text-decoration: none;
+  font-size: large;
+}
+
+.brand:hover {
+  color: rgb(236, 236, 236);
 }
 
 .navbar input {
@@ -364,9 +378,17 @@ onMounted(() => void refresh());
 }
 
 .account {
+  color: rgb(255, 255, 255);
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.sign-out {
+  background: white;
+  color: black;
+  font-weight: 600;
+  border-radius: 6px;
 }
 
 main {
@@ -407,6 +429,17 @@ main form {
   border-bottom: 1px solid #ddd;
 }
 
+.collection-row:hover {
+  background: #e1e0e0;
+}
+
+.new-collection {
+  background: #bdbdbd;
+  color: rgb(255, 255, 255);
+  font-weight: 500;
+  border-radius: 6px;
+}
+
 .collection-button {
   flex: 1;
   min-width: 0;
@@ -415,7 +448,10 @@ main form {
   background: transparent;
   color: inherit;
   font: inherit;
+  font-size: 20px;
+  font-weight: 500;
   text-align: left;
+  padding: 1rem 1rem;
 }
 
 @media (max-width: 32rem) {
