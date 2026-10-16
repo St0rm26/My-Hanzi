@@ -93,9 +93,9 @@ describe("Tagging", () => {
       { item: "我", addedDate: newer },
       { item: "你", addedDate: older },
     ]);
-    await expect(
-      tagging._taggedItems({ user: "bob", tag }),
-    ).rejects.toBeInstanceOf(TagNotFound);
+    expect(tagging._taggedItems({ user: "bob", tag })).rejects.toBeInstanceOf(
+      TagNotFound,
+    );
   });
 
   test("renameTag preserves identity, permits its current name, and rejects another tag's name", async () => {
@@ -142,15 +142,15 @@ describe("Tagging", () => {
       date,
     });
 
-    await expect(
+    expect(
       tagging.deleteTag({ user: "alice", tag: studied }),
     ).rejects.toBeInstanceOf(DefaultTagCannotBeDeleted);
     expect(
       await database.collection("tagging.tags").findOne({ _id: studied }),
     ).toMatchObject({ author: "alice", name: "Studied" });
-    expect(
-      await tagging._taggedItems({ user: "alice", tag: studied }),
-    ).toEqual([{ item: "book", addedDate: date }]);
+    expect(await tagging._taggedItems({ user: "alice", tag: studied })).toEqual(
+      [{ item: "book", addedDate: date }],
+    );
   });
 
   test("deleteTag removes its tagged items but leaves other tags intact", async () => {
@@ -170,7 +170,7 @@ describe("Tagging", () => {
     });
 
     await tagging.deleteTag({ user: "alice", tag: removed });
-    await expect(
+    expect(
       tagging._taggedItems({ user: "alice", tag: removed }),
     ).rejects.toBeInstanceOf(TagNotFound);
     expect(
