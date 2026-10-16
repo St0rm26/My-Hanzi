@@ -7,10 +7,4 @@ when Tagging.removeItemTag (user, collection: Tag, character: Item)
 
 where tag is the default "Studied" tag and there exists a benchmark with the item (repeat for every benchmark with the item)
     then Benchmarking.uncheckBenchmarkItem (benchmark, character: Item)
-
-then
-    Tagging._audience (user, collection: Tag) : (audience)
-    Tagging.findTaggedItemID (user, collection: Tag, character: Item) : (ID)
-    Sharing.revokeItem (user, ID, audience)
-    Sharing.deleteItem (user, ID)
 ```
