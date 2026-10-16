@@ -47,29 +47,47 @@ removeDefinedRating (rating: Rating) : returns ()
     then
         remove the rating from the set and from all items with this rating
         returns
+    where the rating does not exist in the defined ratings set
+    then
+        refuses RATING_NOT_DEFINED "This rating is not defined."
 
 addRating (user: User, item: Item, rating: Rating) : returns ()
     where the rating exists in the defined ratings set
     then
         add the given rating to the item with the user, creating a new user and item if needed
         returns
+    where the rating does not exist in the defined ratings set
+    then
+        refuses RATING_NOT_DEFINED "That rating is not defined."
+    where the user and item already have a personal rating
+    then
+        refuses ALREADY_RATED "User has already rated this item. Change the rating instead."
 
 changeRating (user: User, item: Item, rating: Rating) : returns ()
     where a personal rating exists with the user, item, and a rating; the given rating exists in the defined ratings set
     then
         modify the given rating of the item
         returns
+    where the rating does not exist in the defined ratings set
+    then
+        refuses RATING_NOT_DEFINED "That rating is not defined."
+    where no personal rating exists for the user and item
+    then
+        refuses PERSONAL_RATING_NOT_FOUND "User has not rated this item."
 
 deleteRating (user: User, item: Item) : returns ()
     where the user exists and the item is paired with the user and has a rating
     then
         remove the rating from the item
         returns
+    where no personal rating exists for the user and item
+    then
+        refuses PERSONAL_RATING_NOT_FOUND "User has not rated this item."
 ```
 
 ## Queries
 
 ```queries
-_rating(user: User, item: Item) : one (rating: Rating)
+_rating(user: User, item: Item) : optional (rating: Rating)
     Return the user's rating of the particular item.
 ```
