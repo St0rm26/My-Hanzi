@@ -13,6 +13,7 @@ interface TagDocument<User> {
   _id: Tag;
   author: User;
   name: string;
+  audience: User[];
 }
 
 interface TaggedItemDocument<Item, ID> {
@@ -63,7 +64,7 @@ export class TaggingConcept<
     const tag = this.freshID() as Tag;
 
     try {
-      await this.tags.insertOne({ _id: tag, author: user, name });
+      await this.tags.insertOne({ _id: tag, author: user, name, audience: [] });
     } catch (error) {
       if (isDuplicateAuthorAndName(error)) {
         throw new TagAlreadyExists(
@@ -245,6 +246,24 @@ export class TaggingConcept<
     return { ids: ids as ID[] };
   }
 
+  async updateAudience({
+    user,
+    tag,
+    audience,
+  }: {
+    user: User;
+    tag: Tag;
+    audience: Set<User>;
+  }) {
+    await this.#ready();
+    await this.#requireTag(user, tag);
+    await this.tags.updateOne(
+      { _id: tag, author: user },
+      { $set: { audience: [...new Set(audience)] } },
+    );
+    return {};
+  }
+
   async _tags({ user }: { user: User }): Promise<{ tag: Tag; name: string }[]> {
     await this.#ready();
     const tags = await this.tags
@@ -293,6 +312,23 @@ export class TaggingConcept<
       .sort({ addedDate: -1 })
       .toArray();
     return taggedItems.map(({ item, addedDate }) => ({ item, addedDate }));
+  }
+
+  async _audience({
+    user,
+    tag,
+  }: {
+    user: User;
+    tag: Tag;
+  }): Promise<{ audience: User[] }[]> {
+    await this.#ready();
+    await this.#requireTag(user, tag);
+    const found = await this.tags.findOne(
+      { _id: tag, author: user },
+      { projection: { _id: 0, audience: 1 } },
+    );
+    if (found === null) throw new TagNotFound("There is no such tag.");
+    return [{ audience: found.audience }];
   }
 
   async #requireTag(user: User, tag: Tag) {

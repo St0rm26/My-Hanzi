@@ -37,6 +37,43 @@ describe("Tagging", () => {
     expect(bobTag).not.toBe(studied);
   });
 
+  test("tags start with an empty audience and updateAudience replaces it", async () => {
+    const tag = await createTag();
+
+    expect(await tagging._audience({ user: "alice", tag })).toEqual([
+      { audience: [] },
+    ]);
+    expect(
+      await tagging.updateAudience({
+        user: "alice",
+        tag,
+        audience: new Set(["bob", "carol", "bob"]),
+      }),
+    ).toEqual({});
+    expect(await tagging._audience({ user: "alice", tag })).toEqual([
+      { audience: ["bob", "carol"] },
+    ]);
+
+    await tagging.updateAudience({
+      user: "alice",
+      tag,
+      audience: new Set(["dave"]),
+    });
+    expect(await tagging._audience({ user: "alice", tag })).toEqual([
+      { audience: ["dave"] },
+    ]);
+    expect(
+      tagging.updateAudience({
+        user: "bob",
+        tag,
+        audience: new Set(["mallory"]),
+      }),
+    ).rejects.toBeInstanceOf(TagNotFound);
+    expect(
+      tagging._audience({ user: "bob", tag }),
+    ).rejects.toBeInstanceOf(TagNotFound);
+  });
+
   test("_tags returns only the user's tags sorted by name", async () => {
     const pinyin = await createTag("alice", "Pinyin");
     const studied = await createTag("alice", "Studied");

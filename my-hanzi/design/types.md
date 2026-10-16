@@ -20,6 +20,7 @@ concrete TagName
 
 concrete CompletionState
   Whether a benchmark item is finished.
+
 ```
 
 ```instances
@@ -51,6 +52,7 @@ instantiate Tagging with
   User is Name
   Item is ItemName
   ID is TagName
+  Audience is Name
 
 instantiate Benchmarking with
   User is Name

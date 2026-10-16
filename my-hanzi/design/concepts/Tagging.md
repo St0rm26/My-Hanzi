@@ -20,6 +20,9 @@ external Item
 external ID
     A unique identifier for a tagged item.
 
+external Audience
+    A set of users with whom a tag is shared.
+
 opaque IDs
     A set of tagged-item identifiers.
 ```
@@ -30,6 +33,7 @@ opaque IDs
 a set of Tags with
     an author User
     a name String
+    an audience Audience
 
 a set of TaggedItems with
     a tag Tag
@@ -106,6 +110,12 @@ findTaggedItemsID (user: User, tag: Tag) : returns (ids: IDs)
     then
         give a set of all IDs of items in the tagged items set
         returns ids
+
+updateAudience (user: User, tag: Tag, audience: Audience) : returns ()
+    where the tag exists with the given user
+    then
+        update the audience for the given tag, replacing the old one
+        returns
 ```
 
 ## Queries
@@ -119,4 +129,7 @@ _tagsContainingItem (user: User, item: Item) : many (tag: Tag)
 
 _taggedItems (user: User, tag: Tag) : many (item: Item, addedDate: Date)
   Returns every item under the user's tag, newest added first.
+
+_audience (user: User, tag: Tag) : many (audience: Audience)
+  Returns the audience with which the user's tag is shared.
 ```
