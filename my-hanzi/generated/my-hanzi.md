@@ -120,13 +120,19 @@ Defined in [PersonalRating](../design/concepts/PersonalRating.md), line 1.
 
 - `addDefinedRatings(ratings: Ratings) : returns (ratings: Ratings)`
 - `removeDefinedRating(rating: Rating) : returns ()`
+  - Refuses `RATING_NOT_DEFINED`: This rating is not defined.
 - `addRating(user: User, item: Item, rating: Rating) : returns ()`
+  - Refuses `RATING_NOT_DEFINED`: That rating is not defined.
+  - Refuses `ALREADY_RATED`: User has already rated this item. Change the rating instead.
 - `changeRating(user: User, item: Item, rating: Rating) : returns ()`
+  - Refuses `RATING_NOT_DEFINED`: That rating is not defined.
+  - Refuses `PERSONAL_RATING_NOT_FOUND`: User has not rated this item.
 - `deleteRating(user: User, item: Item) : returns ()`
+  - Refuses `PERSONAL_RATING_NOT_FOUND`: User has not rated this item.
 
 #### Queries
 
-- `_rating(user: User, item: Item) : one (rating: Rating)`
+- `_rating(user: User, item: Item) : optional (rating: Rating)`
 
 #### Instances
 
@@ -259,6 +265,15 @@ _the authored explanation; this section records the generated shape._
 Former "all an item's information" — inputs (item); bindings (information); promises exactly one record — forms:
   a record of
     information: the information of the first InformationCollecting._allInformation (item) has (information)
+```
+
+### an item's rating
+
+```former
+Former "an item's rating" — inputs (user, item); bindings (rating); promises at most one record — forms:
+  a record of
+    where PersonalRating._rating (item, user) has (rating)
+    rating
 ```
 
 ### the completed items in a benchmark
@@ -1020,6 +1035,182 @@ then
   RequestBoundary.respond (error: "INVALID_CREDENTIALS", requestId)
 ```
 
+### ratings.AddDefinedRatings
+
+Authored path: `ratings.AddDefinedRatings`.
+- Covered by [Rating](../design/compositions/ratings.md), line 23.
+- Covered by [Rating](../design/compositions/ratings.md), line 26.
+
+```reaction
+when RequestBoundary.request (path: "/rating/add-defined-ratings", ratings, requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### ratings.AddDefinedRatings#2
+
+Authored path: `ratings.AddDefinedRatings`.
+- Covered by [Rating](../design/compositions/ratings.md), line 23.
+- Covered by [Rating](../design/compositions/ratings.md), line 26.
+
+```reaction
+when Sessioning.use (session), asked by ratings.AddDefinedRatings
+where
+  earlier, RequestBoundary.request (path: "/rating/add-defined-ratings", ratings, requestId, session)
+then
+  PersonalRating.addDefinedRatings (ratings)
+```
+
+### ratings.AddDefinedRatings#3
+
+Authored path: `ratings.AddDefinedRatings`.
+- Covered by [Rating](../design/compositions/ratings.md), line 23.
+- Covered by [Rating](../design/compositions/ratings.md), line 26.
+
+```reaction
+when PersonalRating.addDefinedRatings (ratings), asked by ratings.AddDefinedRatings#2
+where
+  earlier, RequestBoundary.request (path: "/rating/add-defined-ratings", ratings, requestId, session)
+then
+  RequestBoundary.respond (requestId)
+```
+
+### ratings.Rate
+
+Authored path: `ratings.Rate`.
+- Covered by [Rating](../design/compositions/ratings.md), line 5.
+- Covered by [Rating](../design/compositions/ratings.md), line 8.
+
+```reaction
+when RequestBoundary.request (item, path: "/rating/rate", rating, requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### ratings.Rate:existing#2
+
+Authored path: `ratings.Rate`.
+- Covered by [Rating](../design/compositions/ratings.md), line 5.
+- Covered by [Rating](../design/compositions/ratings.md), line 8.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by ratings.Rate
+where
+  earlier, RequestBoundary.request (item, path: "/rating/rate", rating, requestId, session)
+  PersonalRating._rating (item, user)
+then
+  PersonalRating.changeRating (item, rating, user)
+```
+
+### ratings.Rate:existing#3
+
+Authored path: `ratings.Rate`.
+- Covered by [Rating](../design/compositions/ratings.md), line 5.
+- Covered by [Rating](../design/compositions/ratings.md), line 8.
+
+```reaction
+when PersonalRating.changeRating (item, rating, user), asked by ratings.Rate:existing#2
+where
+  earlier, RequestBoundary.request (item, path: "/rating/rate", rating, requestId, session)
+then
+  RequestBoundary.respond (requestId)
+```
+
+### ratings.Rate:new#2
+
+Authored path: `ratings.Rate`.
+- Covered by [Rating](../design/compositions/ratings.md), line 5.
+- Covered by [Rating](../design/compositions/ratings.md), line 8.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by ratings.Rate
+where
+  earlier, RequestBoundary.request (item, path: "/rating/rate", rating, requestId, session)
+  no PersonalRating._rating (item, user)
+then
+  PersonalRating.addRating (item, rating, user)
+```
+
+### ratings.Rate:new#3
+
+Authored path: `ratings.Rate`.
+- Covered by [Rating](../design/compositions/ratings.md), line 5.
+- Covered by [Rating](../design/compositions/ratings.md), line 8.
+
+```reaction
+when PersonalRating.addRating (item, rating, user), asked by ratings.Rate:new#2
+where
+  earlier, RequestBoundary.request (item, path: "/rating/rate", rating, requestId, session)
+then
+  RequestBoundary.respond (requestId)
+```
+
+### ratings.Remove
+
+Authored path: `ratings.Remove`.
+- Covered by [Rating](../design/compositions/ratings.md), line 11.
+- Covered by [Rating](../design/compositions/ratings.md), line 14.
+
+```reaction
+when RequestBoundary.request (item, path: "/rating/remove", requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### ratings.Remove#2
+
+Authored path: `ratings.Remove`.
+- Covered by [Rating](../design/compositions/ratings.md), line 11.
+- Covered by [Rating](../design/compositions/ratings.md), line 14.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by ratings.Remove
+where
+  earlier, RequestBoundary.request (item, path: "/rating/remove", requestId, session)
+then
+  PersonalRating.deleteRating (item, user)
+```
+
+### ratings.Remove#3
+
+Authored path: `ratings.Remove`.
+- Covered by [Rating](../design/compositions/ratings.md), line 11.
+- Covered by [Rating](../design/compositions/ratings.md), line 14.
+
+```reaction
+when PersonalRating.deleteRating (item, user), asked by ratings.Remove#2
+where
+  earlier, RequestBoundary.request (item, path: "/rating/remove", requestId, session)
+then
+  RequestBoundary.respond (requestId)
+```
+
+### ratings.View
+
+Authored path: `ratings.View`.
+- Covered by [Rating](../design/compositions/ratings.md), line 17.
+- Covered by [Rating](../design/compositions/ratings.md), line 20.
+
+```reaction
+when RequestBoundary.request (item, path: "/rating/view", requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### ratings.View#2
+
+Authored path: `ratings.View`.
+- Covered by [Rating](../design/compositions/ratings.md), line 17.
+- Covered by [Rating](../design/compositions/ratings.md), line 20.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by ratings.View
+where
+  earlier, RequestBoundary.request (item, path: "/rating/view", requestId, session)
+then
+  RequestBoundary.respond (rating: former "an item's rating" with (item, user), requestId)
+```
+
 ### tags.AddCharacter
 
 Authored path: `tags.AddCharacter`.
@@ -1122,6 +1313,7 @@ then
 
 Authored path: `tags.DeleteTag`.
 - Covered by [Tags](../design/compositions/tags.md), line 35.
+- Covered by [Tags](../design/compositions/tags.md), line 35.
 - Covered by [Tags](../design/compositions/tags.md), line 38.
 
 ```reaction
@@ -1133,6 +1325,7 @@ then
 ### tags.DeleteTag#2
 
 Authored path: `tags.DeleteTag`.
+- Covered by [Tags](../design/compositions/tags.md), line 35.
 - Covered by [Tags](../design/compositions/tags.md), line 35.
 - Covered by [Tags](../design/compositions/tags.md), line 38.
 
@@ -1148,6 +1341,7 @@ then
 
 Authored path: `tags.DeleteTag`.
 - Covered by [Tags](../design/compositions/tags.md), line 35.
+- Covered by [Tags](../design/compositions/tags.md), line 35.
 - Covered by [Tags](../design/compositions/tags.md), line 38.
 
 ```reaction
@@ -1159,6 +1353,7 @@ then
 ### tags.DeleteTag#4
 
 Authored path: `tags.DeleteTag`.
+- Covered by [Tags](../design/compositions/tags.md), line 35.
 - Covered by [Tags](../design/compositions/tags.md), line 35.
 - Covered by [Tags](../design/compositions/tags.md), line 38.
 
@@ -1173,6 +1368,7 @@ then
 ### tags.DeleteTag#5
 
 Authored path: `tags.DeleteTag`.
+- Covered by [Tags](../design/compositions/tags.md), line 35.
 - Covered by [Tags](../design/compositions/tags.md), line 35.
 - Covered by [Tags](../design/compositions/tags.md), line 38.
 
@@ -1528,6 +1724,10 @@ not listed here have no explicit input contract.
 - `/information/add-field` — requires `session`, `item`, `fieldName`, `description`
 - `/information/view` — requires `session`, `item`
 - `/information/view-field` — requires `session`, `item`, `fieldName`
+- `/rating/add-defined-ratings` — requires `session`, `ratings`
+- `/rating/rate` — requires `session`, `item`, `rating`
+- `/rating/remove` — requires `session`, `item`
+- `/rating/view` — requires `session`, `item`
 - `/tags/add-item` — requires `session`, `tag`, `item`
 - `/tags/create-tag` — requires `session`, `name`
 - `/tags/delete-tag` — requires `session`, `tag`

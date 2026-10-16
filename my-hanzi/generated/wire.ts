@@ -163,6 +163,43 @@ export type MyHanziWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
   };
+  "/rating/add-defined-ratings": {
+    input: {
+      "ratings": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["addDefinedRatings"]>[0], ["ratings"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: Record<string, never>;
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+  };
+  "/rating/rate": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["changeRating"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["addRating"]>[0], ["item"]>]>>;
+      "rating": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["changeRating"]>[0], ["rating"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["addRating"]>[0], ["rating"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: Record<string, never>;
+    error: { error: AppWideError | "ALREADY_RATED" | "INVALID_INPUT" | "NOT_SIGNED_IN" | "PERSONAL_RATING_NOT_FOUND" | "RATING_NOT_DEFINED" };
+  };
+  "/rating/remove": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["deleteRating"]>[0], ["item"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: Record<string, never>;
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" | "PERSONAL_RATING_NOT_FOUND" };
+  };
+  "/rating/view": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["_rating"]>[0], ["item"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: {
+      "rating": {
+        "rating": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["_rating"]>>>, ["rating"]>>;
+      } | null;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+  };
   "/tags/add-item": {
     input: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["addItemTag"]>[0], ["item"]>>;
@@ -383,6 +420,39 @@ export type MyHanziWireHttp = {
     };
     output: {
       "information": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_information"]>>>, ["information"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/rating/add-defined-ratings": {
+    input: {
+      "ratings": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["addDefinedRatings"]>[0], ["ratings"]>>;
+    };
+    output: Record<string, never>;
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/rating/rate": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["changeRating"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["addRating"]>[0], ["item"]>]>>;
+      "rating": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["changeRating"]>[0], ["rating"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["addRating"]>[0], ["rating"]>]>>;
+    };
+    output: Record<string, never>;
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/rating/remove": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["deleteRating"]>[0], ["item"]>>;
+    };
+    output: Record<string, never>;
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/rating/view": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["_rating"]>[0], ["item"]>>;
+    };
+    output: {
+      "rating": {
+        "rating": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["_rating"]>>>, ["rating"]>>;
+      } | null;
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
   };
