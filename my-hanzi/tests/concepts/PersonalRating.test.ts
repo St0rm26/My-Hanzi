@@ -16,25 +16,25 @@ async function setup() {
 }
 
 describe("PersonalRating", () => {
-  test("addDefinedRatings unions new definitions, tolerates repeats, and returns the supplied list", async () => {
+  test("addDefinedRatings unions new definitions, tolerates repeats, and returns distinct ratings", async () => {
     const { personalRating, database } = await setup();
 
     expect(
       await personalRating.addDefinedRatings({
-        ratings: new Set(["easy", "hard", "easy"]),
+        ratings: ["easy", "hard", "easy"],
       }),
-    ).toEqual({ ratings: new Set(["easy", "hard", "easy"]) });
+    ).toEqual({ ratings: ["easy", "hard"] });
     expect(
       await personalRating.addDefinedRatings({
-        ratings: new Set(["hard", "medium"]),
+        ratings: ["hard", "medium"],
       }),
     ).toEqual({
-      ratings: new Set(["hard", "medium"]),
+      ratings: ["hard", "medium"],
     });
     expect(
-      await personalRating.addDefinedRatings({ ratings: new Set() }),
+      await personalRating.addDefinedRatings({ ratings: [] }),
     ).toEqual({
-      ratings: new Set(),
+      ratings: [],
     });
 
     const definitions = await database
@@ -70,7 +70,7 @@ describe("PersonalRating", () => {
     const { personalRating } = await setup();
 
     await personalRating.addDefinedRatings({
-      ratings: new Set(["easy", "hard"]),
+      ratings: ["easy", "hard"],
     });
     await personalRating.addRating({
       user: "maya",
@@ -90,26 +90,20 @@ describe("PersonalRating", () => {
 
     expect(
       await personalRating._rating({ user: "maya", item: "item-1" }),
-    ).toEqual({
-      rating: "easy",
-    });
+    ).toEqual([{ rating: "easy" }]);
     expect(
       await personalRating._rating({ user: "maya", item: "item-2" }),
-    ).toEqual({
-      rating: "hard",
-    });
+    ).toEqual([{ rating: "hard" }]);
     expect(
       await personalRating._rating({ user: "leo", item: "item-1" }),
-    ).toEqual({
-      rating: "hard",
-    });
+    ).toEqual([{ rating: "hard" }]);
   });
 
   test("the user-item index rejects a second rating even if its value differs", async () => {
     const { personalRating } = await setup();
 
     await personalRating.addDefinedRatings({
-      ratings: new Set(["easy", "hard"]),
+      ratings: ["easy", "hard"],
     });
     await personalRating.addRating({
       user: "maya",
@@ -133,15 +127,13 @@ describe("PersonalRating", () => {
     ).rejects.toBeInstanceOf(AlreadyRated);
     expect(
       await personalRating._rating({ user: "maya", item: "item-1" }),
-    ).toEqual({
-      rating: "easy",
-    });
+    ).toEqual([{ rating: "easy" }]);
   });
 
   test("changeRating refuses an undefined new rating and leaves the old one intact", async () => {
     const { personalRating } = await setup();
 
-    await personalRating.addDefinedRatings({ ratings: new Set(["easy"]) });
+    await personalRating.addDefinedRatings({ ratings: ["easy"] });
     await personalRating.addRating({
       user: "maya",
       item: "item-1",
@@ -157,16 +149,14 @@ describe("PersonalRating", () => {
     ).rejects.toBeInstanceOf(RatingNotDefined);
     expect(
       await personalRating._rating({ user: "maya", item: "item-1" }),
-    ).toEqual({
-      rating: "easy",
-    });
+    ).toEqual([{ rating: "easy" }]);
   });
 
   test("changeRating refuses a missing pair", async () => {
     const { personalRating } = await setup();
 
     await personalRating.addDefinedRatings({
-      ratings: new Set(["easy", "hard"]),
+      ratings: ["easy", "hard"],
     });
     expect(
       personalRating.changeRating({
@@ -181,7 +171,7 @@ describe("PersonalRating", () => {
     const { personalRating } = await setup();
 
     await personalRating.addDefinedRatings({
-      ratings: new Set(["easy", "hard"]),
+      ratings: ["easy", "hard"],
     });
     await personalRating.addRating({
       user: "maya",
@@ -206,25 +196,19 @@ describe("PersonalRating", () => {
     });
     expect(
       await personalRating._rating({ user: "maya", item: "item-1" }),
-    ).toEqual({
-      rating: "hard",
-    });
+    ).toEqual([{ rating: "hard" }]);
     expect(
       await personalRating._rating({ user: "leo", item: "item-1" }),
-    ).toEqual({
-      rating: "easy",
-    });
+    ).toEqual([{ rating: "easy" }]);
     expect(
       await personalRating._rating({ user: "maya", item: "item-2" }),
-    ).toEqual({
-      rating: "easy",
-    });
+    ).toEqual([{ rating: "easy" }]);
   });
 
   test("deleteRating removes exactly one pair and refuses a missing pair", async () => {
     const { personalRating } = await setup();
 
-    await personalRating.addDefinedRatings({ ratings: new Set(["easy"]) });
+    await personalRating.addDefinedRatings({ ratings: ["easy"] });
     await personalRating.addRating({
       user: "maya",
       item: "item-1",
@@ -240,23 +224,21 @@ describe("PersonalRating", () => {
       await personalRating.deleteRating({ user: "maya", item: "item-1" }),
     ).toEqual({});
     expect(
-      personalRating._rating({ user: "maya", item: "item-1" }),
-    ).rejects.toBeInstanceOf(PersonalRatingNotFound);
+      await personalRating._rating({ user: "maya", item: "item-1" }),
+    ).toEqual([]);
     expect(
       personalRating.deleteRating({ user: "maya", item: "item-1" }),
     ).rejects.toBeInstanceOf(PersonalRatingNotFound);
     expect(
       await personalRating._rating({ user: "leo", item: "item-1" }),
-    ).toEqual({
-      rating: "easy",
-    });
+    ).toEqual([{ rating: "easy" }]);
   });
 
   test("removeDefinedRating removes the definition and every use of it", async () => {
     const { personalRating } = await setup();
 
     await personalRating.addDefinedRatings({
-      ratings: new Set(["easy", "hard"]),
+      ratings: ["easy", "hard"],
     });
     await personalRating.addRating({
       user: "maya",
@@ -279,15 +261,11 @@ describe("PersonalRating", () => {
       ["maya", "item-1"],
       ["leo", "item-2"],
     ]) {
-      expect(personalRating._rating({ user, item })).rejects.toBeInstanceOf(
-        PersonalRatingNotFound,
-      );
+      expect(await personalRating._rating({ user, item })).toEqual([]);
     }
     expect(
       await personalRating._rating({ user: "maya", item: "item-3" }),
-    ).toEqual({
-      rating: "hard",
-    });
+    ).toEqual([{ rating: "hard" }]);
     expect(
       personalRating.addRating({
         user: "maya",

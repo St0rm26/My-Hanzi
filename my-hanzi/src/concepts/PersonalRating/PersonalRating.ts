@@ -53,7 +53,7 @@ export class PersonalRatingConcept<
     return this.indexes;
   }
 
-  async addDefinedRatings({ ratings }: { ratings: Set<Rating> }) {
+  async addDefinedRatings({ ratings }: { ratings: Rating[] }) {
     const uniqueRatings = [...new Set(ratings)];
     await Promise.all(
       uniqueRatings.map(async (rating) => {
@@ -69,7 +69,7 @@ export class PersonalRatingConcept<
         }
       }),
     );
-    return { ratings };
+    return { ratings: uniqueRatings };
   }
 
   async removeDefinedRating({ rating }: { rating: Rating }) {
@@ -147,12 +147,11 @@ export class PersonalRatingConcept<
   }: {
     user: User;
     item: Item;
-  }): Promise<{ rating: Rating }> {
+  }): Promise<{ rating: Rating }[]> {
     await this.#ready();
     const personalRating = await this.personalRatings.findOne({ user, item });
-    if (personalRating === null)
-      throw new PersonalRatingNotFound("User has not rated that item.");
-    return { rating: personalRating.rating };
+    if (personalRating === null) return [];
+    return [{ rating: personalRating.rating }];
   }
 
   async #requireDefined(rating: Rating) {
