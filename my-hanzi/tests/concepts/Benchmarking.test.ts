@@ -7,6 +7,7 @@ import {
   BenchmarkItemNotFinished,
   BenchmarkItemNotFound,
   BenchmarkNotFound,
+  BenchmarkRequiresDistinctItems,
   BenchmarkRequiresItems,
 } from "../../src/concepts/Benchmarking/Benchmarking.ts";
 import { testDatabase } from "../support/mongo.ts";
@@ -23,10 +24,15 @@ describe("Benchmarking", () => {
   async function createBenchmark(
     user = "alice",
     name = "Hanzi basics",
-    items = new Set(["你", "好", "我"]),
+    items: Iterable<string> = ["你", "好", "我"],
   ) {
-    return (await benchmarking.createBenchmark({ user, name, items }))
-      .benchmark;
+    return (
+      await benchmarking.createBenchmark({
+        user,
+        name,
+        items: [...items],
+      })
+    ).benchmark;
   }
 
   test("creates uniquely named benchmarks and starts all items unfinished", async () => {
@@ -44,12 +50,43 @@ describe("Benchmarking", () => {
     expect(createBenchmark()).rejects.toBeInstanceOf(BenchmarkAlreadyExists);
   });
 
+  test("_benchmarks returns only the user's benchmarks unordered", async () => {
+    const travel = await createBenchmark("alice", "Travel");
+    const basics = await createBenchmark("alice", "Basics");
+    await createBenchmark("bob", "Private");
+
+    const aliceBenchmarks = await benchmarking._benchmarks({ user: "alice" });
+    expect(aliceBenchmarks).toHaveLength(2);
+    expect(
+      aliceBenchmarks
+        .sort((left, right) => left.name.localeCompare(right.name)),
+    ).toEqual([
+      { benchmark: basics, name: "Basics" },
+      { benchmark: travel, name: "Travel" },
+    ]);
+    expect(await benchmarking._benchmarks({ user: "nobody" })).toEqual([]);
+  });
+
   test("does not create a benchmark without items", async () => {
     expect(createBenchmark("alice", "Empty", new Set())).rejects.toBeInstanceOf(
       BenchmarkRequiresItems,
     );
     expect(
       await database.collection("benchmarking.benchmarks").countDocuments(),
+    ).toBe(0);
+  });
+
+  test("does not create a benchmark when items are not distinct", async () => {
+    expect(
+      createBenchmark("alice", "Duplicates", ["你", "好", "你"]),
+    ).rejects.toBeInstanceOf(BenchmarkRequiresDistinctItems);
+    expect(
+      await database.collection("benchmarking.benchmarks").countDocuments(),
+    ).toBe(0);
+    expect(
+      await database
+        .collection("benchmarking.benchmarkedItems")
+        .countDocuments(),
     ).toBe(0);
   });
 

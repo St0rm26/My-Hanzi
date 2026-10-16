@@ -47,6 +47,9 @@ createBenchmark (user: User, items: Items, name: String) : returns (benchmark: B
     where the number of items is zero
     then
         refuses BENCHMARK_REQUIRES_ITEMS "A benchmark must contain at least one item."
+    where not all items are distinct
+    then
+        refuses BENCHMARK_REQUIRES_DISTINCT_ITEMS "All items must be distinct."
     where the benchmark already exists for the user
     then
         refuses BENCHMARK_ALREADY_EXISTS "This user already has a benchmark with that name."
@@ -94,6 +97,9 @@ uncheckBenchmarkItem (benchmark: Benchmark, item: Item) : returns ()
 ## Queries
 
 ```queries
+_benchmarks(user: User) : many (benchmark: Benchmark, name: String)
+    Return this user's benchmarks, unordered
+
 _items(benchmark: Benchmark) : many (item: Item)
     Return all items of benchmarked items with this benchmark, unordered
 

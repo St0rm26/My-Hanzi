@@ -3,6 +3,7 @@ import { type Collection, type Db, MongoServerError } from "mongodb";
 export class BenchmarkAlreadyExists extends Error {}
 export class BenchmarkNotFound extends Error {}
 export class BenchmarkRequiresItems extends Error {}
+export class BenchmarkRequiresDistinctItems extends Error {}
 export class BenchmarkItemNotFound extends Error {}
 export class BenchmarkItemAlreadyFinished extends Error {}
 export class BenchmarkItemNotFinished extends Error {}
@@ -38,10 +39,7 @@ export class BenchmarkingConcept<User extends string, Item extends string> {
   /** Creates storage constraints once per concept instance. */
   #ready() {
     this.indexes ??= Promise.all([
-      this.benchmarks.createIndex(
-        { user: 1, name: 1 },
-        { unique: true },
-      ),
+      this.benchmarks.createIndex({ user: 1, name: 1 }, { unique: true }),
       this.benchmarkedItems.createIndex(
         { benchmark: 1, item: 1 },
         { unique: true },
@@ -59,14 +57,18 @@ export class BenchmarkingConcept<User extends string, Item extends string> {
     name,
   }: {
     user: User;
-    items: Set<Item>;
+    items: readonly Item[];
     name: string;
   }) {
     await this.#ready();
-    if (items.size === 0) {
+    if (items.length === 0) {
       throw new BenchmarkRequiresItems(
         "A benchmark must contain at least one item.",
       );
+    }
+    const distinctItems = new Set(items);
+    if (distinctItems.size !== items.length) {
+      throw new BenchmarkRequiresDistinctItems("All items must be distinct.");
     }
 
     const benchmark: Benchmark = crypto.randomUUID();
@@ -84,7 +86,7 @@ export class BenchmarkingConcept<User extends string, Item extends string> {
 
     try {
       await this.benchmarkedItems.insertMany(
-        [...items].map((item) => ({
+        [...distinctItems].map((item) => ({
           benchmark,
           item,
           finished: false,
@@ -182,6 +184,21 @@ export class BenchmarkingConcept<User extends string, Item extends string> {
     return items.map(({ item }) => ({ item }));
   }
 
+  async _benchmarks({
+    user,
+  }: {
+    user: User;
+  }): Promise<{ benchmark: Benchmark; name: string }[]> {
+    await this.#ready();
+    const benchmarks = await this.benchmarks
+      .find({ user }, { projection: { _id: 1, name: 1 } })
+      .toArray();
+    return benchmarks.map(({ _id: benchmark, name }) => ({
+      benchmark,
+      name,
+    }));
+  }
+
   async _finishedItems({
     benchmark,
   }: {
@@ -189,10 +206,7 @@ export class BenchmarkingConcept<User extends string, Item extends string> {
   }): Promise<{ item: Item }[]> {
     await this.#ready();
     const items = await this.benchmarkedItems
-      .find(
-        { benchmark, finished: true },
-        { projection: { _id: 0, item: 1 } },
-      )
+      .find({ benchmark, finished: true }, { projection: { _id: 0, item: 1 } })
       .toArray();
     return items.map(({ item }) => ({ item }));
   }
@@ -204,10 +218,7 @@ export class BenchmarkingConcept<User extends string, Item extends string> {
   }): Promise<{ item: Item }[]> {
     await this.#ready();
     const items = await this.benchmarkedItems
-      .find(
-        { benchmark, finished: false },
-        { projection: { _id: 0, item: 1 } },
-      )
+      .find({ benchmark, finished: false }, { projection: { _id: 0, item: 1 } })
       .toArray();
     return items.map(({ item }) => ({ item }));
   }
