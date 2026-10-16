@@ -26,6 +26,7 @@ external Boolean
 ```state
 a set of Benchmarks with
     a user User
+    a name String
 
 a set of BenchmarkedItems with
   a benchmark Benchmark
@@ -36,7 +37,7 @@ a set of BenchmarkedItems with
 ## Actions
 
 ```actions
-createBenchmark (user: User, items: Items) : returns (benchmark: Benchmark)
+createBenchmark (user: User, items: Items, name: String) : returns (benchmark: Benchmark)
   where the user exists and the number of items is at least one and all distinct
   then
     create a benchmark with the given user and benchmarked items with every item and a false finished field
