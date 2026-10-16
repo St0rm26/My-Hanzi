@@ -26,8 +26,41 @@ Defined in [Authenticating](../design/concepts/Authenticating.md), line 1.
 
 #### Instances
 
-- `Authenticating` — instance of `Authenticating` — [Application types](../design/types.md), line 25.
-  - `User` is `Name` — [Application types](../design/types.md), line 26.
+- `Authenticating` — instance of `Authenticating` — [Application types](../design/types.md), line 28.
+  - `User` is `Name` — [Application types](../design/types.md), line 29.
+
+### Benchmarking
+
+Defined in [Benchmarking](../design/concepts/Benchmarking.md), line 1.
+
+#### Actions
+
+- `createBenchmark(user: User, items: Items, name: String) : returns (benchmark: Benchmark)`
+  - Refuses `BENCHMARK_REQUIRES_ITEMS`: A benchmark must contain at least one item.
+  - Refuses `BENCHMARK_ALREADY_EXISTS`: This user already has a benchmark with that name.
+- `deleteBenchmark(benchmark: Benchmark) : returns ()`
+  - Refuses `BENCHMARK_NOT_FOUND`: There is no such benchmark.
+- `checkBenchmarkItem(benchmark: Benchmark, item: Item) : returns ()`
+  - Refuses `BENCHMARK_NOT_FOUND`: There is no such benchmark.
+  - Refuses `BENCHMARK_ITEM_NOT_FOUND`: There is no such item in this benchmark.
+  - Refuses `BENCHMARK_ITEM_ALREADY_FINISHED`: This item is already finished.
+- `uncheckBenchmarkItem(benchmark: Benchmark, item: Item) : returns ()`
+  - Refuses `BENCHMARK_NOT_FOUND`: There is no such benchmark.
+  - Refuses `BENCHMARK_ITEM_NOT_FOUND`: There is no such item in this benchmark.
+  - Refuses `BENCHMARK_ITEM_NOT_FINISHED`: This item is not finished.
+
+#### Queries
+
+- `_items(benchmark: Benchmark) : many (item: Item)`
+- `_finishedItems(benchmark: Benchmark) : many (item: Item)`
+- `_unfinishedItems(benchmark: Benchmark) : many (item: Item)`
+
+#### Instances
+
+- `Benchmarking` — instance of `Benchmarking` — [Application types](../design/types.md), line 55.
+  - `Boolean` is `CompletionState` — [Application types](../design/types.md), line 58.
+  - `Item` is `ItemName` — [Application types](../design/types.md), line 57.
+  - `User` is `Name` — [Application types](../design/types.md), line 56.
 
 ### Federating
 
@@ -50,8 +83,8 @@ Defined in [Federating](../design/concepts/Federating.md), line 1.
 
 #### Instances
 
-- `CommonsFederating` — instance of `Federating` — [Application types](../design/types.md), line 28.
-  - `User` is `Name` — [Application types](../design/types.md), line 29.
+- `CommonsFederating` — instance of `Federating` — [Application types](../design/types.md), line 31.
+  - `User` is `Name` — [Application types](../design/types.md), line 32.
 
 ### InformationCollecting
 
@@ -73,9 +106,9 @@ Defined in [InformationCollecting](../design/concepts/InformationCollecting.md),
 
 #### Instances
 
-- `InformationCollecting` — instance of `InformationCollecting` — [Application types](../design/types.md), line 31.
-  - `Information` is `InformationText` — [Application types](../design/types.md), line 33.
-  - `Item` is `ItemName` — [Application types](../design/types.md), line 32.
+- `InformationCollecting` — instance of `InformationCollecting` — [Application types](../design/types.md), line 34.
+  - `Information` is `InformationText` — [Application types](../design/types.md), line 36.
+  - `Item` is `ItemName` — [Application types](../design/types.md), line 35.
 
 ### PersonalRating
 
@@ -95,10 +128,10 @@ Defined in [PersonalRating](../design/concepts/PersonalRating.md), line 1.
 
 #### Instances
 
-- `PersonalRating` — instance of `PersonalRating` — [Application types](../design/types.md), line 35.
-  - `Item` is `ItemName` — [Application types](../design/types.md), line 37.
-  - `Rating` is `RatingName` — [Application types](../design/types.md), line 38.
-  - `User` is `Name` — [Application types](../design/types.md), line 36.
+- `PersonalRating` — instance of `PersonalRating` — [Application types](../design/types.md), line 38.
+  - `Item` is `ItemName` — [Application types](../design/types.md), line 40.
+  - `Rating` is `RatingName` — [Application types](../design/types.md), line 41.
+  - `User` is `Name` — [Application types](../design/types.md), line 39.
 
 ### Registering
 
@@ -117,7 +150,7 @@ Defined in [Registering](../design/concepts/Registering.md), line 1.
 
 #### Instances
 
-- `Registering` — instance of `Registering` — [Application types](../design/types.md), line 23.
+- `Registering` — instance of `Registering` — [Application types](../design/types.md), line 26.
 
 ### Sessioning
 
@@ -133,8 +166,8 @@ Defined in [Sessioning](../design/concepts/Sessioning.md), line 1.
 
 #### Instances
 
-- `Sessioning` — instance of `Sessioning` — [Application types](../design/types.md), line 40.
-  - `Subject` is `Name` — [Application types](../design/types.md), line 41.
+- `Sessioning` — instance of `Sessioning` — [Application types](../design/types.md), line 43.
+  - `Subject` is `Name` — [Application types](../design/types.md), line 44.
 
 ### Sharing
 
@@ -153,9 +186,9 @@ Defined in [Sharing](../design/concepts/Sharing.md), line 1.
 
 #### Instances
 
-- `Sharing` — instance of `Sharing` — [Application types](../design/types.md), line 43.
-  - `Item` is `ItemName` — [Application types](../design/types.md), line 45.
-  - `User` is `Name` — [Application types](../design/types.md), line 44.
+- `Sharing` — instance of `Sharing` — [Application types](../design/types.md), line 46.
+  - `Item` is `ItemName` — [Application types](../design/types.md), line 48.
+  - `User` is `Name` — [Application types](../design/types.md), line 47.
 
 ### Tagging
 
@@ -186,15 +219,16 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 
 #### Instances
 
-- `Tagging` — instance of `Tagging` — [Application types](../design/types.md), line 47.
-  - `ID` is `TagName` — [Application types](../design/types.md), line 50.
-  - `Item` is `ItemName` — [Application types](../design/types.md), line 49.
-  - `User` is `Name` — [Application types](../design/types.md), line 48.
+- `Tagging` — instance of `Tagging` — [Application types](../design/types.md), line 50.
+  - `ID` is `TagName` — [Application types](../design/types.md), line 53.
+  - `Item` is `ItemName` — [Application types](../design/types.md), line 52.
+  - `User` is `Name` — [Application types](../design/types.md), line 51.
 
 ## Application types
 
 Concrete types:
 
+- `CompletionState` — [Application types](../design/types.md), line 21.
 - `InformationText` — [Application types](../design/types.md), line 15.
 - `ItemName` — [Application types](../design/types.md), line 9.
 - `Name` — [Application types](../design/types.md), line 6.

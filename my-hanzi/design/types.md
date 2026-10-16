@@ -17,6 +17,9 @@ concrete InformationText
 
 concrete TagName
   A generated identifier for a tag.
+
+concrete CompletionState
+  Whether a benchmark item is finished.
 ```
 
 ```instances
@@ -48,4 +51,9 @@ instantiate Tagging with
   User is Name
   Item is ItemName
   ID is TagName
+
+instantiate Benchmarking with
+  User is Name
+  Item is ItemName
+  Boolean is CompletionState
 ```

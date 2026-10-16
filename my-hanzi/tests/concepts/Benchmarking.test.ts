@@ -1,0 +1,118 @@
+import { beforeEach, describe, expect, test } from "bun:test";
+import {
+  BenchmarkAlreadyExists,
+  type Benchmark,
+  BenchmarkingConcept,
+  BenchmarkItemAlreadyFinished,
+  BenchmarkItemNotFinished,
+  BenchmarkItemNotFound,
+  BenchmarkNotFound,
+  BenchmarkRequiresItems,
+} from "../../src/concepts/Benchmarking/Benchmarking.ts";
+import { testDatabase } from "../support/mongo.ts";
+
+describe("Benchmarking", () => {
+  let database: Awaited<ReturnType<typeof testDatabase>>;
+  let benchmarking: BenchmarkingConcept<string, string>;
+
+  beforeEach(async () => {
+    database = await testDatabase();
+    benchmarking = new BenchmarkingConcept(database);
+  });
+
+  async function createBenchmark(
+    user = "alice",
+    name = "Hanzi basics",
+    items = new Set(["你", "好", "我"]),
+  ) {
+    return (await benchmarking.createBenchmark({ user, name, items }))
+      .benchmark;
+  }
+
+  test("creates uniquely named benchmarks and starts all items unfinished", async () => {
+    const first = await createBenchmark();
+    const second = await createBenchmark("alice", "Travel");
+    const anotherUser = await createBenchmark("bob");
+
+    expect(first).not.toBe(second);
+    expect(first).not.toBe(anotherUser);
+    expect(await benchmarking._items({ benchmark: first })).toHaveLength(3);
+    expect(await benchmarking._finishedItems({ benchmark: first })).toEqual([]);
+    expect(
+      await benchmarking._unfinishedItems({ benchmark: first }),
+    ).toHaveLength(3);
+    expect(createBenchmark()).rejects.toBeInstanceOf(BenchmarkAlreadyExists);
+  });
+
+  test("does not create a benchmark without items", async () => {
+    expect(createBenchmark("alice", "Empty", new Set())).rejects.toBeInstanceOf(
+      BenchmarkRequiresItems,
+    );
+    expect(
+      await database.collection("benchmarking.benchmarks").countDocuments(),
+    ).toBe(0);
+  });
+
+  test("checks and unchecks items and exposes the changed state in queries", async () => {
+    const benchmark = await createBenchmark();
+
+    expect(
+      await benchmarking.checkBenchmarkItem({ benchmark, item: "你" }),
+    ).toEqual({});
+    expect(await benchmarking._finishedItems({ benchmark })).toEqual([
+      { item: "你" },
+    ]);
+    expect(
+      (await benchmarking._unfinishedItems({ benchmark }))
+        .map(({ item }) => item)
+        .sort(),
+    ).toEqual(["好", "我"].sort());
+
+    expect(
+      await benchmarking.uncheckBenchmarkItem({ benchmark, item: "你" }),
+    ).toEqual({});
+    expect(await benchmarking._finishedItems({ benchmark })).toEqual([]);
+    expect(await benchmarking._unfinishedItems({ benchmark })).toHaveLength(3);
+  });
+
+  test("refuses checking an already finished item and unchecking an unfinished item", async () => {
+    const benchmark = await createBenchmark();
+    await benchmarking.checkBenchmarkItem({ benchmark, item: "你" });
+
+    expect(
+      benchmarking.checkBenchmarkItem({ benchmark, item: "你" }),
+    ).rejects.toBeInstanceOf(BenchmarkItemAlreadyFinished);
+    expect(
+      benchmarking.uncheckBenchmarkItem({ benchmark, item: "好" }),
+    ).rejects.toBeInstanceOf(BenchmarkItemNotFinished);
+  });
+
+  test("refuses changes to missing benchmarks and items", async () => {
+    const benchmark = await createBenchmark();
+
+    expect(
+      benchmarking.checkBenchmarkItem({
+        benchmark: "missing" as Benchmark,
+        item: "你",
+      }),
+    ).rejects.toBeInstanceOf(BenchmarkNotFound);
+    expect(
+      benchmarking.uncheckBenchmarkItem({ benchmark, item: "missing" }),
+    ).rejects.toBeInstanceOf(BenchmarkItemNotFound);
+  });
+
+  test("deletes a benchmark and all its items", async () => {
+    const benchmark = await createBenchmark();
+
+    expect(await benchmarking.deleteBenchmark({ benchmark })).toEqual({});
+    expect(await benchmarking._items({ benchmark })).toEqual([]);
+    expect(
+      await database
+        .collection("benchmarking.benchmarkedItems")
+        .countDocuments({ benchmark }),
+    ).toBe(0);
+    expect(benchmarking.deleteBenchmark({ benchmark })).rejects.toBeInstanceOf(
+      BenchmarkNotFound,
+    );
+  });
+});
