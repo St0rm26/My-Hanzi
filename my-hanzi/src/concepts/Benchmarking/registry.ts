@@ -8,6 +8,7 @@ import {
   BenchmarkItemNotFinished,
   BenchmarkItemNotFound,
   BenchmarkNotFound,
+  BenchmarkRequiresDistinctItems,
   BenchmarkRequiresItems,
 } from "./Benchmarking.ts";
 
@@ -22,6 +23,7 @@ export const benchmarking = registerConcept({
     BENCHMARK_ITEM_NOT_FINISHED: BenchmarkItemNotFinished,
     BENCHMARK_ITEM_NOT_FOUND: BenchmarkItemNotFound,
     BENCHMARK_NOT_FOUND: BenchmarkNotFound,
+    BENCHMARK_REQUIRES_DISTINCT_ITEMS: BenchmarkRequiresDistinctItems,
     BENCHMARK_REQUIRES_ITEMS: BenchmarkRequiresItems,
   },
   floors: {
