@@ -32,7 +32,7 @@ The user can [edit their own tag](reaction:tags.EditTag) as long as the tag exis
 tags.EditTag at /tags/edit-tag
 ```
 
-The user can delete a tag other than the default "Studied" collection with [the delete endpoint](reaction:tags.DeleteTag). The endpoint captures the tag's audience and tagged item IDs with `Tagging.captureTagForDeletion`, revokes sharing, and then deletes the tag.
+The user can [delete a tag other than the default "Studied" collection](reaction:tags.DeleteTag) with [the delete endpoint](reaction:tags.DeleteTag). The endpoint captures the tag's audience and tagged item IDs with `Tagging.captureTagForDeletion`, revokes sharing, and then deletes the tag.
 
 ```endpoints
 tags.DeleteTag at /tags/delete-tag
