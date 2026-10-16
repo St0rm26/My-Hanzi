@@ -4,11 +4,12 @@ import {
   now,
   reaction,
   when,
+  where,
 } from "@mit-sdg/sync-engine/language";
 import { concepts } from "../concepts.ts";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 
-const { Tagging, Registering, Sessioning } = concepts;
+const { Tagging, Registering, Sessioning, Sharing, Benchmarking } = concepts;
 
 const UserTags = former("the tags owned by a user", ({ user }, { tag, name }) =>
   each(Tagging._tags({ user }).is({ tag, name })).form({ tag, name }),
@@ -84,20 +85,40 @@ const EditTag = endpoint(
 
 const DeleteTagEndpoint = endpoint(
   "/tags/delete-tag",
-  ({ session, tag, user }) =>
+  ({ session, tag, user, audience, ids }) =>
     receive({ session, tag })
       .then(Sessioning.use({ session }).responds({ subject: user }))
+      .then(
+        Tagging.captureTagForDeletion({ user, tag }).responds({
+          audience,
+          ids,
+        }),
+      )
+      .then(Sharing.revokeItems({ author: user, items: ids, audience }))
       .then(Tagging.deleteTag({ user, tag }).responds({}))
       .then(respond({})),
   { input: { required: ["session", "tag"] } },
 );
 
-/*Combines both the FindTaggedCharactersIds and DeleteCollection reactions*/
-//TODO Sharing.deleteItems in beta
-const DeleteTag = reaction(({ user, tag }) =>
-  when(Tagging.deleteTag({ user, tag }).responds({})).then(
-    Tagging.findTaggedItemsID({ user, tag }),
-  ),
+const ShareCollectionEndpoint = endpoint(
+  "/tags/share",
+  ({ session, tag, audience, user, previousAudience, ids }) =>
+    receive({ session, tag, audience })
+      .then(Sessioning.use({ session }).responds({ subject: user }))
+      .then(
+        Tagging.captureTagSharing({ user, tag }).responds({
+          audience: previousAudience,
+          ids,
+        }),
+      )
+      .then(Sharing.revokeItems({
+        author: user,
+        items: ids,
+        audience: previousAudience,
+      }))
+      .then(Tagging.updateAudience({ user, tag, audience }).responds({}))
+      .then(respond({})),
+  { input: { required: ["session", "tag", "audience"] } },
 );
 
 const AddItemEndpoint = endpoint(
@@ -111,34 +132,64 @@ const AddItemEndpoint = endpoint(
   { input: { required: ["session", "tag", "item"] } },
 );
 
-/*Combines both the GenerateCharacterId and AddCharacter reactions*/
-//TODO Sharing.shareItem in beta
-const TagItem = reaction(({ user, tag, item }) =>
-  when(Tagging.addItemTag({ user, tag, item }).responds({})).then(
-    Tagging.generateTaggedItemID({ user, tag, item }),
-  ),
+const AddCharacter = reaction(({ user, tag, item, benchmark }) =>
+  when(Tagging.addItemTag({ user, tag, item }).responds({}))
+    .where(
+      Tagging._tags({ user }).is({ tag, name: "Studied" }),
+      Benchmarking._benchmarks({ user }).is({ benchmark }),
+      Benchmarking._items({ benchmark }).is({ item }),
+    )
+    .then(Benchmarking.checkBenchmarkItem({ benchmark, item })),
+);
+
+const ShareCharacter = reaction(({ user, tag, item, id, audience }) =>
+  when(Tagging.addItemTag({ user, tag, item }).responds({}))
+    .then(Tagging.generateTaggedItemID({ user, tag, item }).responds({ id }))
+    .then(
+      where(Tagging._audience({ user, tag }).is({ audience })).then(
+        Sharing.shareItem({ author: user, item: id, audience }),
+      ),
+    ),
+);
+
+const ShareCollection = reaction(({ user, tag, audience, ids }) =>
+  when(Tagging.updateAudience({ user, tag, audience }).responds({}))
+    .then(Tagging.findTaggedItemsID({ user, tag }).responds({ ids }))
+    .then(
+      Sharing.shareItems({
+        author: user,
+        items: ids,
+        audience,
+      }),
+    ),
+);
+
+const RemoveCharacter = reaction(({ user, tag, item, benchmark }) =>
+  when(Tagging.removeItemTag({ user, tag, item }).responds({}))
+    .where(
+      Tagging._tags({ user }).is({ tag, name: "Studied" }),
+      Benchmarking._benchmarks({ user }).is({ benchmark }),
+      Benchmarking._items({ benchmark }).is({ item }),
+    )
+    .then(Benchmarking.uncheckBenchmarkItem({ benchmark, item })),
 );
 
 const RemoveItemEndpoint = endpoint(
   "/tags/remove-item",
-  ({ session, tag, item, user }) =>
+  ({ session, tag, item, user, ids, audience }) =>
     receive({ session, tag, item })
       .then(Sessioning.use({ session }).responds({ subject: user }))
+      .then(
+        Tagging.captureItemSharing({ user, tag, item }).responds({
+          audience,
+          ids,
+        }),
+      )
+      .then(Sharing.revokeItems({ author: user, items: ids, audience }))
       .then(Tagging.removeItemTag({ user, tag, item }).responds({}))
       .then(respond({})),
   { input: { required: ["session", "tag", "item"] } },
 );
-
-/*Combines both the FindCharacterId and RemoveCharacter reactions*/
-//TODO Sharing.deleteItems in beta
-const UntagItem = reaction(({ user, tag, item }) =>
-  when(Tagging.removeItemTag({ user, tag, item }).responds({})).then(
-    Tagging.findTaggedItemID({ user, tag, item }),
-  ),
-);
-
-// TODO: AddToBenchmark
-// TODO: RemoveFromBenchmark
 
 export const tagsHttp = {
   publicErrors: {
@@ -151,12 +202,17 @@ export const tagsHttp = {
 
 export const composition = {
   Initialize,
+  ShareCollection,
+  AddCharacter,
+  ShareCharacter,
+  RemoveCharacter,
   List,
   Items,
   ItemMembership,
   CreateTag,
   EditTag,
   DeleteTag: DeleteTagEndpoint,
+  Share: ShareCollectionEndpoint,
   AddItem: AddItemEndpoint,
   RemoveItem: RemoveItemEndpoint,
 };

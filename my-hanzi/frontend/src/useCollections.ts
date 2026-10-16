@@ -83,6 +83,13 @@ function deleteCollection(collection: Collection) {
   );
 }
 
+function shareCollection(collection: Collection, audience: string[]) {
+  return change(
+    "/tags/share",
+    api["/tags/share"]({ tag: collection.tag, audience }),
+  );
+}
+
 async function getCharacterCollections(
   character: string,
 ): Promise<CollectionId[] | null> {
@@ -160,6 +167,7 @@ export function useCollections() {
     createCollection,
     renameCollection,
     deleteCollection,
+    shareCollection,
     getCharacterCollections,
     getCollectionItems,
     saveCharacterCollections,
