@@ -78,6 +78,27 @@ deleteTag (user: User, tag: Tag) : returns ()
     then
         refuses TAG_NOT_FOUND "There is no such tag."
 
+captureTagForDeletion (user: User, tag: Tag) : returns (audience: Audience, ids: IDs)
+    where the tag exists with the given user and its name is not "Studied"
+    then
+        give the tag's audience and the identifiers of its tagged items
+        returns audience, ids
+    where the tag's name is "Studied"
+    then
+        refuses DEFAULT_TAG_CANNOT_BE_DELETED "The default \"Studied\" tag cannot be deleted."
+
+captureTagSharing (user: User, tag: Tag) : returns (audience: Audience, ids: IDs)
+    where the tag exists with the given user
+    then
+        give the tag's audience and the identifiers of its tagged items
+        returns audience, ids
+
+captureItemSharing (user: User, tag: Tag, item: Item) : returns (audience: Audience, ids: IDs)
+    where the tag and tagged item exist with the given user
+    then
+        give the tagged item's identifier if one exists and the tag's audience
+        returns audience, ids
+
 addItemTag (user: User, tag: Tag, item: Item, date: Date) : returns ()
     where the tag exists with the given user, the item exists, and the tagged items set does not have an item with the given tag
     then

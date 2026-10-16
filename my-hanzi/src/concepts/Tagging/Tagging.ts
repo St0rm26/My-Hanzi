@@ -131,6 +131,63 @@ export class TaggingConcept<
     return {};
   }
 
+  async captureTagForDeletion({ user, tag }: { user: User; tag: Tag }) {
+    await this.#ready();
+    const found = await this.tags.findOne(
+      { _id: tag, author: user },
+      { projection: { _id: 0, name: 1, audience: 1 } },
+    );
+    if (found === null) throw new TagNotFound("There is no such tag.");
+    if (found.name === "Studied") {
+      throw new DefaultTagCannotBeDeleted(
+        'The default "Studied" tag cannot be deleted.',
+      );
+    }
+    return {
+      audience: [...new Set(found.audience)],
+      ids: await this.#taggedItemIDs(tag),
+    };
+  }
+
+  async captureTagSharing({ user, tag }: { user: User; tag: Tag }) {
+    await this.#ready();
+    const found = await this.tags.findOne(
+      { _id: tag, author: user },
+      { projection: { _id: 0, audience: 1 } },
+    );
+    if (found === null) throw new TagNotFound("There is no such tag.");
+    return {
+      audience: [...new Set(found.audience)],
+      ids: await this.#taggedItemIDs(tag),
+    };
+  }
+
+  async captureItemSharing({
+    user,
+    tag,
+    item,
+  }: {
+    user: User;
+    tag: Tag;
+    item: Item;
+  }) {
+    await this.#ready();
+    const foundTag = await this.tags.findOne(
+      { _id: tag, author: user },
+      { projection: { _id: 0, audience: 1 } },
+    );
+    if (foundTag === null) throw new TagNotFound("There is no such tag.");
+
+    const taggedItem = await this.taggedItems.findOne({ tag, item });
+    if (taggedItem === null) {
+      throw new TaggedItemNotFound("This item does not have the given tag.");
+    }
+    return {
+      audience: [...new Set(foundTag.audience)],
+      ids: taggedItem.identifier === undefined ? [] : [taggedItem.identifier],
+    };
+  }
+
   async addItemTag({
     user,
     tag,
@@ -239,11 +296,7 @@ export class TaggingConcept<
     await this.#ready();
     await this.#requireTag(user, tag);
 
-    const ids = await this.taggedItems.distinct("identifier", {
-      tag,
-      identifier: { $exists: true },
-    });
-    return { ids: ids as ID[] };
+    return { ids: await this.#taggedItemIDs(tag) };
   }
 
   async updateAudience({
@@ -253,7 +306,7 @@ export class TaggingConcept<
   }: {
     user: User;
     tag: Tag;
-    audience: Set<User>;
+    audience: User[];
   }) {
     await this.#ready();
     await this.#requireTag(user, tag);
@@ -328,7 +381,7 @@ export class TaggingConcept<
       { projection: { _id: 0, audience: 1 } },
     );
     if (found === null) throw new TagNotFound("There is no such tag.");
-    return [{ audience: found.audience }];
+    return [{ audience: [...new Set(found.audience)] }];
   }
 
   async #requireTag(user: User, tag: Tag) {
@@ -337,6 +390,14 @@ export class TaggingConcept<
       { projection: { _id: 1 } },
     );
     if (found === null) throw new TagNotFound("There is no such tag.");
+  }
+
+  async #taggedItemIDs(tag: Tag): Promise<ID[]> {
+    const ids = await this.taggedItems.distinct("identifier", {
+      tag,
+      identifier: { $exists: true },
+    });
+    return ids as ID[];
   }
 }
 
