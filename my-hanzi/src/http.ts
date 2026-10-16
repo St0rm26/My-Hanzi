@@ -1,5 +1,6 @@
 import { httpPolicy } from "@mit-sdg/sync-engine-http/policy";
 import { accountsHttp } from "./compositions/accounts.ts";
+import { benchmarksHttp } from "./compositions/benchmarks.ts";
 import { commonsHttp } from "./compositions/commons.ts";
 import { informationHttp } from "./compositions/information.ts";
 import { passwordsHttp } from "./compositions/passwords.ts";
@@ -10,6 +11,7 @@ export const policy = httpPolicy({
   basePath: "/api",
   publicErrors: {
     ...accountsHttp.publicErrors,
+    ...benchmarksHttp.publicErrors,
     ...passwordsHttp.publicErrors,
     ...commonsHttp.publicErrors,
     ...informationHttp.publicErrors,

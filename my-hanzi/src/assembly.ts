@@ -1,5 +1,6 @@
 import { assemble } from "@mit-sdg/sync-engine/assembly";
 import { composition as accountsComposition } from "./compositions/accounts.ts";
+import { composition as benchmarksComposition } from "./compositions/benchmarks.ts";
 import { composition as commonsComposition } from "./compositions/commons.ts";
 import { composition as informationComposition } from "./compositions/information.ts";
 import { composition as passwordsComposition } from "./compositions/passwords.ts";
@@ -24,6 +25,7 @@ export function assembleApplication() {
     },
     composition: {
       accounts: accountsComposition,
+      benchmarks: benchmarksComposition,
       commons: commonsComposition,
       information: informationComposition,
       passwords: passwordsComposition,
