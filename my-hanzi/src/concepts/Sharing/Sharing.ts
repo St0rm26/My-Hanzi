@@ -45,7 +45,7 @@ export class SharingConcept<User extends string, Item extends string> {
   }: {
     author: User;
     item: Item;
-    audience: Set<User>;
+    audience: User[];
   }) {
     await this.#ready();
 
@@ -73,7 +73,7 @@ export class SharingConcept<User extends string, Item extends string> {
   }: {
     author: User;
     items: Item[];
-    audience: Set<User>;
+    audience: User[];
   }) {
     await this.#ready();
     const sharedUsers = [...new Set(audience)];
@@ -101,7 +101,7 @@ export class SharingConcept<User extends string, Item extends string> {
   }: {
     author: User;
     item: Item;
-    audience: Set<User>;
+    audience: User[];
   }) {
     await this.#ready();
     const users = [...new Set(audience)];
@@ -136,7 +136,7 @@ export class SharingConcept<User extends string, Item extends string> {
   }: {
     author: User;
     items: Item[];
-    audience: Set<User>;
+    audience: User[];
   }) {
     await this.#ready();
     const uniqueItems = requireDistinctItems(items);

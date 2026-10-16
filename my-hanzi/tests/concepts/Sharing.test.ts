@@ -22,22 +22,22 @@ describe("Sharing", () => {
     await sharing.shareItem({
       author: "alice",
       item: "book",
-      audience: new Set(["bob", "bob"]),
+      audience: ["bob", "bob"],
     });
     await sharing.shareItem({
       author: "alice",
       item: "book",
-      audience: new Set(["bob", "carol"]),
+      audience: ["bob", "carol"],
     });
     await sharing.shareItem({
       author: "erin",
       item: "book",
-      audience: new Set(["bob"]),
+      audience: ["bob"],
     });
     await sharing.shareItem({
       author: "alice",
       item: "article",
-      audience: new Set(["bob"]),
+      audience: ["bob"],
     });
 
     expect(await sharing._sharedItems({ user: "bob" })).toEqual([
@@ -56,12 +56,12 @@ describe("Sharing", () => {
     await sharing.shareItems({
       author: "alice",
       items: ["book", "article", "book"],
-      audience: new Set(["bob", "carol", "bob"]),
+      audience: ["bob", "carol", "bob"],
     });
     await sharing.shareItems({
       author: "alice",
       items: ["book"],
-      audience: new Set(["bob"]),
+      audience: ["bob"],
     });
 
     expect(await sharing._sharedItems({ user: "bob" })).toEqual([
@@ -83,19 +83,19 @@ describe("Sharing", () => {
     await sharing.shareItem({
       author: "alice",
       item: "book",
-      audience: new Set(["bob", "carol"]),
+      audience: ["bob", "carol"],
     });
     await sharing.shareItem({
       author: "erin",
       item: "book",
-      audience: new Set(["bob"]),
+      audience: ["bob"],
     });
 
     expect(
       sharing.revokeItem({
         author: "alice",
         item: "book",
-        audience: new Set(["carol", "missing"]),
+        audience: ["carol", "missing"],
       }),
     ).rejects.toBeInstanceOf(SharedItemNotFound);
     expect(await sharing._sharedItems({ user: "carol" })).toEqual([
@@ -105,7 +105,7 @@ describe("Sharing", () => {
     await sharing.revokeItem({
       author: "alice",
       item: "book",
-      audience: new Set(["bob", "bob"]),
+      audience: ["bob", "bob"],
     });
     expect(await sharing._sharedItems({ user: "bob" })).toEqual([
       { item: "book" },
@@ -113,7 +113,7 @@ describe("Sharing", () => {
     await sharing.revokeItem({
       author: "alice",
       item: "book",
-      audience: new Set(["carol"]),
+      audience: ["carol"],
     });
     expect(await sharing._sharedItems({ user: "carol" })).toEqual([]);
   });
@@ -124,17 +124,17 @@ describe("Sharing", () => {
     await sharing.shareItem({
       author: "alice",
       item: "book",
-      audience: new Set(["bob", "carol"]),
+      audience: ["bob", "carol"],
     });
     await sharing.shareItem({
       author: "alice",
       item: "article",
-      audience: new Set(["bob"]),
+      audience: ["bob"],
     });
     await sharing.shareItem({
       author: "erin",
       item: "book",
-      audience: new Set(["carol"]),
+      audience: ["carol"],
     });
 
     await sharing.deleteItem({ author: "alice", item: "book" });
@@ -155,19 +155,19 @@ describe("Sharing", () => {
     await sharing.shareItems({
       author: "alice",
       items: ["book", "article"],
-      audience: new Set(["bob", "carol"]),
+      audience: ["bob", "carol"],
     });
     await sharing.shareItem({
       author: "erin",
       item: "book",
-      audience: new Set(["bob"]),
+      audience: ["bob"],
     });
 
     expect(
       sharing.revokeItems({
         author: "alice",
         items: ["book", "article"],
-        audience: new Set(["bob", "missing"]),
+        audience: ["bob", "missing"],
       }),
     ).rejects.toBeInstanceOf(SharedItemNotFound);
     expect(await sharing._sharedItems({ user: "bob" })).toEqual([
@@ -183,7 +183,7 @@ describe("Sharing", () => {
       sharing.revokeItems({
         author: "alice",
         items: ["book", "article", "book"],
-        audience: new Set(["bob", "carol"]),
+        audience: ["bob", "carol"],
       }),
     ).rejects.toBeInstanceOf(SharedItemsNotDistinct);
     expect(await sharing._sharedItems({ user: "bob" })).toEqual([
@@ -198,7 +198,7 @@ describe("Sharing", () => {
     await sharing.revokeItems({
       author: "alice",
       items: ["book", "article"],
-      audience: new Set(["bob", "carol"]),
+      audience: ["bob", "carol"],
     });
     expect(await sharing._sharedItems({ user: "bob" })).toEqual([
       { item: "book" },
@@ -213,7 +213,7 @@ describe("Sharing", () => {
       await sharing.shareItem({
         author: "alice",
         item,
-        audience: new Set(["bob"]),
+        audience: ["bob"],
       });
     }
     expect(
@@ -251,7 +251,7 @@ describe("Sharing", () => {
         sharing.shareItem({
           author: "alice",
           item: "book",
-          audience: new Set(["bob"]),
+          audience: ["bob"],
         }),
       ),
     );
