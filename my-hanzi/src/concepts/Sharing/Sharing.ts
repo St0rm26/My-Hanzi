@@ -1,6 +1,7 @@
 import { type Collection, type Db, MongoServerError } from "mongodb";
 
 export class SharedItemNotFound extends Error {}
+export class SharedItemsNotDistinct extends Error {}
 
 interface SharedItemDocument {
   author: string;
@@ -65,6 +66,34 @@ export class SharingConcept<User extends string, Item extends string> {
     return {};
   }
 
+  async shareItems({
+    author,
+    items,
+    audience,
+  }: {
+    author: User;
+    items: Item[];
+    audience: Set<User>;
+  }) {
+    await this.#ready();
+    const sharedUsers = [...new Set(audience)];
+
+    for (const item of new Set(items)) {
+      for (const sharedUser of sharedUsers) {
+        try {
+          await this.sharedItems.updateOne(
+            { author, item, sharedUser },
+            { $setOnInsert: { author, item, sharedUser } },
+            { upsert: true },
+          );
+        } catch (error) {
+          if (!isDuplicateSharedItem(error)) throw error;
+        }
+      }
+    }
+    return {};
+  }
+
   async revokeItem({
     author,
     item,
@@ -100,6 +129,48 @@ export class SharingConcept<User extends string, Item extends string> {
     return {};
   }
 
+  async revokeItems({
+    author,
+    items,
+    audience,
+  }: {
+    author: User;
+    items: Item[];
+    audience: Set<User>;
+  }) {
+    await this.#ready();
+    const uniqueItems = requireDistinctItems(items);
+    const users = [...new Set(audience)];
+    const existing = await this.sharedItems
+      .find(
+        { author, item: { $in: uniqueItems }, sharedUser: { $in: users } },
+        { projection: { _id: 0, item: 1, sharedUser: 1 } },
+      )
+      .toArray();
+    const existingPairs = new Set(
+      existing.map(({ item, sharedUser }) => JSON.stringify([item, sharedUser])),
+    );
+
+    if (
+      uniqueItems.some((item) =>
+        users.some((user) => !existingPairs.has(JSON.stringify([item, user]))),
+      )
+    ) {
+      throw new SharedItemNotFound(
+        "Every item must be shared with every user in the audience.",
+      );
+    }
+
+    if (uniqueItems.length > 0 && users.length > 0) {
+      await this.sharedItems.deleteMany({
+        author,
+        item: { $in: uniqueItems },
+        sharedUser: { $in: users },
+      });
+    }
+    return {};
+  }
+
   async deleteItem({ author, item }: { author: User; item: Item }) {
     await this.#ready();
     const { deletedCount } = await this.sharedItems.deleteMany({
@@ -114,7 +185,7 @@ export class SharingConcept<User extends string, Item extends string> {
 
   async deleteItems({ author, items }: { author: User; items: Item[] }) {
     await this.#ready();
-    const uniqueItems = [...new Set(items)];
+    const uniqueItems = requireDistinctItems(items);
     const existing = await this.sharedItems
       .find(
         { author, item: { $in: uniqueItems } },
@@ -158,3 +229,11 @@ const isDuplicateSharedItem = (error: unknown) =>
   error.keyPattern?.author === 1 &&
   error.keyPattern?.item === 1 &&
   error.keyPattern?.sharedUser === 1;
+
+const requireDistinctItems = <Item>(items: readonly Item[]): Item[] => {
+  const uniqueItems = [...new Set(items)];
+  if (uniqueItems.length !== items.length) {
+    throw new SharedItemsNotDistinct("All items must be distinct.");
+  }
+  return uniqueItems;
+};

@@ -37,11 +37,26 @@ shareItem (author: User, item: Item, audience: Users) : returns ()
     create a shared item with the author and item if needed, and share the item with the given audience
     returns
 
+shareItems (author: User, items: Items, audience: Users) : returns ()
+  where true
+  then
+    create shared items with the author and each item if needed, and share the items with the given audience
+    returns
+
 revokeItem (author: User, item: Item, audience: Users) : returns ()
   where the author, item, and each user in the audience exists under a shared item
   then
     revoke access to the shared item for each user in the audience by deleting the entire shared item
     returns
+
+revokeItems (author: User, items: Items, audience: Users) : returns ()
+  where the author, each item in the set of items, and each user in the audience exists under a shared item
+  then
+    revoke access to the shared items for each user in the audience by deleting the entire shared items
+    returns
+  where the items are not distinct
+  then
+    refuses SHARED_ITEMS_NOT_DISTINCT "All items must be distinct."
 
 deleteItem (author: User, item: Item) : returns ()
   where the author and item exists under a shared item
@@ -54,6 +69,9 @@ deleteItems (author: User, items: Items) : returns ()
   then
     remove the items and revoke accesses for shared users
     returns
+  where the items are not distinct
+  then
+    refuses SHARED_ITEMS_NOT_DISTINCT "All items must be distinct."
 ```
 
 ## Queries

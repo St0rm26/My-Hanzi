@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   SharedItemNotFound,
+  SharedItemsNotDistinct,
   SharingConcept,
 } from "../../src/concepts/Sharing/Sharing.ts";
 import { testDatabase } from "../support/mongo.ts";
@@ -47,6 +48,33 @@ describe("Sharing", () => {
       { item: "book" },
     ]);
     expect(await sharing._sharedItems({ user: "dave" })).toEqual([]);
+  });
+
+  test("shareItems shares every distinct item with every audience member idempotently", async () => {
+    const { sharing, database } = await setup();
+
+    await sharing.shareItems({
+      author: "alice",
+      items: ["book", "article", "book"],
+      audience: new Set(["bob", "carol", "bob"]),
+    });
+    await sharing.shareItems({
+      author: "alice",
+      items: ["book"],
+      audience: new Set(["bob"]),
+    });
+
+    expect(await sharing._sharedItems({ user: "bob" })).toEqual([
+      { item: "article" },
+      { item: "book" },
+    ]);
+    expect(await sharing._sharedItems({ user: "carol" })).toEqual([
+      { item: "article" },
+      { item: "book" },
+    ]);
+    expect(
+      await database.collection("sharing.sharedItems").countDocuments(),
+    ).toBe(4);
   });
 
   test("revokeItem removes only requested shares and rejects a partly missing audience", async () => {
@@ -121,7 +149,64 @@ describe("Sharing", () => {
     ).rejects.toBeInstanceOf(SharedItemNotFound);
   });
 
-  test("deleteItems handles repeated inputs and validates every item before deleting", async () => {
+  test("revokeItems rejects repeated items and validates all shares before revoking", async () => {
+    const { sharing } = await setup();
+
+    await sharing.shareItems({
+      author: "alice",
+      items: ["book", "article"],
+      audience: new Set(["bob", "carol"]),
+    });
+    await sharing.shareItem({
+      author: "erin",
+      item: "book",
+      audience: new Set(["bob"]),
+    });
+
+    expect(
+      sharing.revokeItems({
+        author: "alice",
+        items: ["book", "article"],
+        audience: new Set(["bob", "missing"]),
+      }),
+    ).rejects.toBeInstanceOf(SharedItemNotFound);
+    expect(await sharing._sharedItems({ user: "bob" })).toEqual([
+      { item: "article" },
+      { item: "book" },
+    ]);
+    expect(await sharing._sharedItems({ user: "carol" })).toEqual([
+      { item: "article" },
+      { item: "book" },
+    ]);
+
+    expect(
+      sharing.revokeItems({
+        author: "alice",
+        items: ["book", "article", "book"],
+        audience: new Set(["bob", "carol"]),
+      }),
+    ).rejects.toBeInstanceOf(SharedItemsNotDistinct);
+    expect(await sharing._sharedItems({ user: "bob" })).toEqual([
+      { item: "article" },
+      { item: "book" },
+    ]);
+    expect(await sharing._sharedItems({ user: "carol" })).toEqual([
+      { item: "article" },
+      { item: "book" },
+    ]);
+
+    await sharing.revokeItems({
+      author: "alice",
+      items: ["book", "article"],
+      audience: new Set(["bob", "carol"]),
+    });
+    expect(await sharing._sharedItems({ user: "bob" })).toEqual([
+      { item: "book" },
+    ]);
+    expect(await sharing._sharedItems({ user: "carol" })).toEqual([]);
+  });
+
+  test("deleteItems rejects repeated inputs and validates every item before deleting", async () => {
     const { sharing } = await setup();
 
     for (const item of ["article", "book", "card"]) {
@@ -140,10 +225,19 @@ describe("Sharing", () => {
       { item: "card" },
     ]);
 
-    await sharing.deleteItems({
-      author: "alice",
-      items: ["book", "article", "book"],
-    });
+    expect(
+      sharing.deleteItems({
+        author: "alice",
+        items: ["book", "article", "book"],
+      }),
+    ).rejects.toBeInstanceOf(SharedItemsNotDistinct);
+    expect(await sharing._sharedItems({ user: "bob" })).toEqual([
+      { item: "article" },
+      { item: "book" },
+      { item: "card" },
+    ]);
+
+    await sharing.deleteItems({ author: "alice", items: ["book", "article"] });
     expect(await sharing._sharedItems({ user: "bob" })).toEqual([
       { item: "card" },
     ]);
