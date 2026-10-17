@@ -107,6 +107,23 @@ const NotCompletedItems = former(
       .form({ item }),
 );
 
+const UserBenchmarks = former(
+  "the benchmarks belonging to a user",
+  ({ user }, { benchmark, name }) =>
+    each(Benchmarking._benchmarks({ user }).is({ benchmark, name }))
+      .arranged(name, "ascending")
+      .form({ benchmark, name }),
+);
+
+const List = endpoint(
+  "/benchmarks/list",
+  ({ session, user }) =>
+    receive({ session })
+      .then(Sessioning.use({ session }).responds({ subject: user }))
+      .then(respond({ benchmarks: UserBenchmarks({ user }) })),
+  { input: { required: ["session"] } },
+);
+
 const Items = endpoint(
   "/benchmarks/items",
   ({ session, benchmark, user }) =>
@@ -165,6 +182,7 @@ export const composition = {
   Initialize,
   AddCharacter,
   RemoveCharacter,
+  List,
   Items,
   Completed,
   NotCompleted,

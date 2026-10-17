@@ -4,7 +4,15 @@ Every endpoint below requires a signed-in session, as described in [accounts](ac
 
 When a user registers, [a reaction creates benchmarks for character lists from HSK levels 1-6](reaction:benchmarks.Initialize) for them. The lists are sourced from [HanziDB](http://hanzidb.org/character-list/hsk).
 
-The user can [view all items of one of their benchmarks](reaction:benchmarks.Items), ordered in alphabetical order.
+On the home page, the user sees their HSK 1-6 benchmarks below the Collections section. Selecting a card opens its characters, ordered alphabetically by pinyin; selecting a character opens its detail page.
+
+The user can [view their benchmarks](reaction:benchmarks.List), including each benchmark's identifier and name.
+
+```endpoints
+benchmarks.List at /benchmarks/list
+```
+
+The user can [view all items of one of their benchmarks](reaction:benchmarks.Items), ordered alphabetically by pinyin in the frontend.
 
 ```endpoints
 benchmarks.Items at /benchmarks/items

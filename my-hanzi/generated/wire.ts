@@ -116,6 +116,18 @@ export type MyHanziWire = {
     };
     error: { error: AppWideError | "BENCHMARK_NOT_FOUND" | "INVALID_INPUT" | "NOT_SIGNED_IN" };
   };
+  "/benchmarks/list": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: {
+      "benchmarks": {
+        "benchmark": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_benchmarks"]>>>, ["benchmark"]>>;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_benchmarks"]>>>, ["name"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+  };
   "/benchmarks/not-completed": {
     input: {
       "benchmark": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_benchmarks"]>>>, ["benchmark"]>>;
@@ -391,6 +403,16 @@ export type MyHanziWireHttp = {
       }[];
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/benchmarks/list": {
+    input: Record<string, never>;
+    output: {
+      "benchmarks": {
+        "benchmark": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_benchmarks"]>>>, ["benchmark"]>>;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_benchmarks"]>>>, ["name"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
   };
   "/benchmarks/not-completed": {
     input: {

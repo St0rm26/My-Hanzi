@@ -277,6 +277,17 @@ Former "an item's rating" — inputs (user, item); bindings (rating); promises a
     rating
 ```
 
+### the benchmarks belonging to a user
+
+```former
+Former "the benchmarks belonging to a user" — inputs (user); bindings (benchmark, name); promises exactly one record — forms:
+  each Benchmarking._benchmarks (user) has (benchmark, name)
+    arranged by name
+    form a record of
+      benchmark
+      name
+```
+
 ### the completed items in a benchmark
 
 ```former
@@ -425,7 +436,7 @@ then
 ### benchmarks.AddCharacter
 
 Authored path: `benchmarks.AddCharacter`.
-- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 20.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 28.
 
 ```reaction
 when requested Tagging.addItemTag (date, item, tag, user)
@@ -440,8 +451,8 @@ then
 ### benchmarks.Completed
 
 Authored path: `benchmarks.Completed`.
-- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 13.
-- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 16.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 21.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 24.
 
 ```reaction
 when RequestBoundary.request (benchmark, path: "/benchmarks/completed", requestId, session)
@@ -452,8 +463,8 @@ then
 ### benchmarks.Completed:found#2
 
 Authored path: `benchmarks.Completed`.
-- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 13.
-- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 16.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 21.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 24.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by benchmarks.Completed
@@ -467,8 +478,8 @@ then
 ### benchmarks.Completed:missing#2
 
 Authored path: `benchmarks.Completed`.
-- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 13.
-- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 16.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 21.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 24.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by benchmarks.Completed
@@ -548,8 +559,8 @@ then
 ### benchmarks.Items
 
 Authored path: `benchmarks.Items`.
-- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 7.
-- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 10.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 15.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 18.
 
 ```reaction
 when RequestBoundary.request (benchmark, path: "/benchmarks/items", requestId, session)
@@ -560,8 +571,8 @@ then
 ### benchmarks.Items:found#2
 
 Authored path: `benchmarks.Items`.
-- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 7.
-- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 10.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 15.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 18.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by benchmarks.Items
@@ -575,8 +586,8 @@ then
 ### benchmarks.Items:missing#2
 
 Authored path: `benchmarks.Items`.
-- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 7.
-- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 10.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 15.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 18.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by benchmarks.Items
@@ -587,11 +598,37 @@ then
   RequestBoundary.respond (error: "BENCHMARK_NOT_FOUND", requestId)
 ```
 
+### benchmarks.List
+
+Authored path: `benchmarks.List`.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 9.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 12.
+
+```reaction
+when RequestBoundary.request (path: "/benchmarks/list", requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### benchmarks.List#2
+
+Authored path: `benchmarks.List`.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 9.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 12.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by benchmarks.List
+where
+  earlier, RequestBoundary.request (path: "/benchmarks/list", requestId, session)
+then
+  RequestBoundary.respond (benchmarks: former "the benchmarks belonging to a user" with (user), requestId)
+```
+
 ### benchmarks.NotCompleted
 
 Authored path: `benchmarks.NotCompleted`.
-- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 13.
-- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 17.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 21.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 25.
 
 ```reaction
 when RequestBoundary.request (benchmark, path: "/benchmarks/not-completed", requestId, session)
@@ -602,8 +639,8 @@ then
 ### benchmarks.NotCompleted:found#2
 
 Authored path: `benchmarks.NotCompleted`.
-- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 13.
-- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 17.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 21.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 25.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by benchmarks.NotCompleted
@@ -617,8 +654,8 @@ then
 ### benchmarks.NotCompleted:missing#2
 
 Authored path: `benchmarks.NotCompleted`.
-- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 13.
-- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 17.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 21.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 25.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by benchmarks.NotCompleted
@@ -632,7 +669,7 @@ then
 ### benchmarks.RemoveCharacter
 
 Authored path: `benchmarks.RemoveCharacter`.
-- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 20.
+- Covered by [Benchmarks](../design/compositions/benchmarks.md), line 28.
 
 ```reaction
 when requested Tagging.removeItemTag (item, tag, user)
@@ -1758,6 +1795,7 @@ not listed here have no explicit input contract.
 - `/auth/register` — requires `password`, `username`
 - `/benchmarks/completed` — requires `session`, `benchmark`
 - `/benchmarks/items` — requires `session`, `benchmark`
+- `/benchmarks/list` — requires `session`
 - `/benchmarks/not-completed` — requires `session`, `benchmark`
 - `/information/add-field` — requires `session`, `item`, `fieldName`, `description`
 - `/information/view` — requires `session`, `item`
