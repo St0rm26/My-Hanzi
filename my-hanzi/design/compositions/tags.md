@@ -1,6 +1,6 @@
 # Tags
 
-Every endpoint below requires a signed-in session, as described in [accounts](accounts.md). Each one passes the session to `Sessioning.use`, which returns the user, and is refused with `NOT_SIGNED_IN` otherwise. The user is never read from the request's inputs, so people can only see and change their own collections.
+Every endpoint below requires a signed-in session, as described in [accounts](accounts.md). Each one passes the session to `Sessioning.use`, which returns the user, and is refused with `NOT_SIGNED_IN` otherwise. The user is never read from the request's inputs, so people can only see, change, and share their own collections.
 
 When a user registers, [a reaction creates a tag called "Studied"](reaction:tags.Initialize) for them. The [collections list](reaction:tags.List) returns all tags the signed-in user has.
 
