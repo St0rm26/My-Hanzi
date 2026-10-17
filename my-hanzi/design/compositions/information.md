@@ -19,3 +19,5 @@ The app can [add an info field](reaction:information.AddField) for an item.
 ```endpoints
 information.AddField at /information/add-field
 ```
+
+When dictionary data becomes available for a character after placeholder values were saved, the frontend uses the dictionary values instead of the known unavailable placeholders. Other saved information remains unchanged.

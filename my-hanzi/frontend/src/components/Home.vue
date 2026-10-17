@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import BenchmarkPage from "./Benchmark.vue";
 import CollectionPage from "./Collection.vue";
 import CharacterDetail from "./CharacterDetail.vue";
 import CharacterSearchResults from "./CharacterSearchResults.vue";
@@ -15,6 +16,7 @@ import {
   useCollections,
 } from "../useCollections.ts";
 import { useInformation } from "../useInformation.ts";
+import { type Benchmark, useBenchmarks } from "../useBenchmarks.ts";
 import { useSession } from "../session.ts";
 
 const { me, signOut } = useSession();
@@ -33,22 +35,36 @@ const {
   saveCharacterCollections,
 } = useCollections();
 const {
+  benchmarks,
+  loading: benchmarksLoading,
+  error: benchmarksError,
+  loadBenchmarks,
+  getBenchmarkItems,
+} = useBenchmarks();
+const {
   loading: informationLoading,
   error: informationError,
   getCharacterInformation,
 } = useInformation();
-const page = ref<"home" | "results" | "detail" | "collection">("home");
+const page = ref<
+  "home" | "results" | "detail" | "collection" | "benchmark"
+>("home");
 const searchQuery = ref("");
 const lastSearch = ref("");
 const characters = ref<CharacterEntry[]>([]);
 const activeCharacter = ref<CharacterEntry | null>(null);
 const activeCollection = ref<Collection | null>(null);
+const activeBenchmark = ref<Benchmark | null>(null);
+const benchmarkItems = ref<string[]>([]);
+const benchmarkStudiedItems = ref<string[]>([]);
+const benchmarkLoading = ref(false);
+const benchmarkSequence = ref(0);
 const collectionItems = ref<CollectionItem[]>([]);
 const collectionLoading = ref(false);
 const selectedCollectionIds = ref<CollectionId[]>([]);
 const initialCollectionIds = ref<CollectionId[]>([]);
 const membershipLoading = ref(false);
-const detailOrigin = ref<"results" | "collection">("results");
+const detailOrigin = ref<"results" | "collection" | "benchmark">("results");
 const searching = ref(false);
 const searchError = ref<string | null>(null);
 const saveStatus = ref<string | null>(null);
@@ -84,7 +100,10 @@ async function searchCharacters() {
   }
 }
 
-async function openCollectionCharacter(character: string) {
+async function openCharacterById(
+  character: string,
+  origin: "collection" | "benchmark",
+) {
   let entry: CharacterEntry | undefined;
   try {
     entry = (await lookupCharacters([character])).get(character);
@@ -100,13 +119,20 @@ async function openCollectionCharacter(character: string) {
       radical: "Not listed",
       strokeCount: null,
     },
-    "collection",
+    origin,
   );
+}
+
+function openCollectionCharacter(character: string) {
+  return openCharacterById(character, "collection");
 }
 
 function closeDetail() {
   if (detailOrigin.value === "collection" && activeCollection.value) {
     void openCollection(activeCollection.value);
+  } else if (detailOrigin.value === "benchmark") {
+    if (activeBenchmark.value) void openBenchmark(activeBenchmark.value);
+    else page.value = "home";
   } else {
     page.value = "results";
   }
@@ -114,7 +140,7 @@ function closeDetail() {
 
 async function openCharacter(
   character: CharacterEntry,
-  origin: "results" | "collection" = "results",
+  origin: "results" | "collection" | "benchmark" = "results",
 ) {
   detailOrigin.value = origin;
   const sequence = ++characterSequence;
@@ -138,6 +164,27 @@ async function openCharacter(
   } finally {
     if (sequence === characterSequence) membershipLoading.value = false;
   }
+}
+
+async function openBenchmark(benchmark: Benchmark) {
+  const sequence = ++benchmarkSequence.value;
+  activeBenchmark.value = benchmark;
+  benchmarkItems.value = [];
+  benchmarkLoading.value = true;
+  page.value = "benchmark";
+  try {
+    const result = await getBenchmarkItems(benchmark);
+    if (sequence === benchmarkSequence.value && result !== null) {
+      benchmarkItems.value = result.items;
+      benchmarkStudiedItems.value = result.studiedItems;
+    }
+  } finally {
+    if (sequence === benchmarkSequence.value) benchmarkLoading.value = false;
+  }
+}
+
+function benchmarkNumber(benchmark: Benchmark) {
+  return benchmark.name.match(/\d+/u)?.[0] ?? "";
 }
 
 function updateSelectedCollections(tagIds: CollectionId[]) {
@@ -202,7 +249,10 @@ async function removeCollection(collection: Collection) {
   await deleteCollection(collection);
 }
 
-onMounted(() => void refresh());
+onMounted(() => {
+  void refresh();
+  void loadBenchmarks();
+});
 </script>
 
 <template>
@@ -240,6 +290,17 @@ onMounted(() => void refresh());
       @select="openCharacter"
     />
 
+    <BenchmarkPage
+      v-else-if="page === 'benchmark' && activeBenchmark"
+      :benchmark="activeBenchmark"
+      :items="benchmarkItems"
+      :studied-items="benchmarkStudiedItems"
+      :loading="benchmarkLoading"
+      :error="benchmarksError"
+      @back="page = 'home'"
+      @select="openCharacterById($event, 'benchmark')"
+    />
+
     <CharacterDetail
       v-else-if="page === 'detail' && activeCharacter"
       :character="activeCharacter"
@@ -252,7 +313,11 @@ onMounted(() => void refresh());
       :error="error"
       :save-status="saveStatus"
       :back-label="
-        detailOrigin === 'collection' ? 'Back to collection' : 'Back to results'
+        detailOrigin === 'collection'
+          ? 'Back to collection'
+          : detailOrigin === 'benchmark'
+            ? 'Back to benchmark'
+            : 'Back to results'
       "
       @back="closeDetail"
       @selection="updateSelectedCollections"
@@ -339,6 +404,31 @@ onMounted(() => void refresh());
           </li>
         </ul>
       </section>
+
+      <section class="benchmarks-section" aria-labelledby="benchmarks-heading">
+        <div class="section-heading">
+          <h2 id="benchmarks-heading">Benchmarks</h2>
+        </div>
+        <p v-if="benchmarksLoading" role="status">Loading benchmarks...</p>
+        <p v-else-if="benchmarksError" role="alert">{{ benchmarksError }}</p>
+        <p v-else-if="benchmarks.length === 0">
+          No benchmarks are available.
+        </p>
+        <ul v-else class="benchmark-grid">
+          <li v-for="benchmark in benchmarks" :key="benchmark.benchmark">
+            <button
+              type="button"
+              class="benchmark-card"
+              @click="openBenchmark(benchmark)"
+            >
+              <span class="benchmark-icon" aria-hidden="true">
+                {{ benchmarkNumber(benchmark) }}
+              </span>
+              <span class="benchmark-name">{{ benchmark.name }}</span>
+            </button>
+          </li>
+        </ul>
+      </section>
     </main>
   </div>
 </template>
@@ -405,6 +495,48 @@ main {
 
 .section-heading {
   justify-content: space-between;
+}
+
+.benchmarks-section {
+  margin-top: 2.5rem;
+}
+
+.benchmark-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.benchmark-card {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 0;
+  background: transparent;
+}
+
+.benchmark-icon {
+  display: grid;
+  width: 6rem;
+  max-width: 100%;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #fff;
+  color: #111;
+  font-size: 2.75rem;
+  font-weight: 700;
+}
+
+.benchmark-name {
+  font-weight: 600;
 }
 
 main form {
