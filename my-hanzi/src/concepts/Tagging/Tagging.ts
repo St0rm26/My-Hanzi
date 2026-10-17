@@ -367,6 +367,22 @@ export class TaggingConcept<
     return taggedItems.map(({ item, addedDate }) => ({ item, addedDate }));
   }
 
+  async _tagOfItem({
+    user,
+    id,
+  }: {
+    user: User;
+    id: ID;
+  }): Promise<{ tag: Tag }[]> {
+    await this.#ready();
+    const taggedItem = await this.taggedItems.findOne({ identifier: id });
+    if (taggedItem === null) return [];
+    const tag = taggedItem.tag;
+    const found = await this.tags.findOne({ _id: tag, author: user });
+    if (found === null) return [];
+    return [{ tag }];
+  }
+
   async _audience({
     user,
     tag,

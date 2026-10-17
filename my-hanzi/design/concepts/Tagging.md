@@ -151,6 +151,9 @@ _tagsContainingItem (user: User, item: Item) : many (tag: Tag)
 _taggedItems (user: User, tag: Tag) : many (item: Item, addedDate: Date)
   Returns every item under the user's tag, newest added first.
 
+_tagOfItem (user: User, id: ID) : optional (tag: Tag)
+  Returns the tag of the given item with the specified ID for the user if it exists.
+
 _audience (user: User, tag: Tag) : many (audience: Audience)
   Returns the audience with which the user's tag is shared.
 ```
