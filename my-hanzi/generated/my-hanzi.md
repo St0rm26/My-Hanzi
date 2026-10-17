@@ -233,6 +233,7 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 - `_tags(user: User) : many (tag: Tag, name: String)`
 - `_tagsContainingItem(user: User, item: Item) : many (tag: Tag)`
 - `_taggedItems(user: User, tag: Tag) : many (item: Item, addedDate: Date)`
+- `_tagOfItem(id: ID) : optional (tag: Tag)`
 - `_audience(user: User, tag: Tag) : many (audience: Audience)`
 
 #### Instances
@@ -284,6 +285,17 @@ Former "the completed items in a benchmark" — inputs (benchmark); bindings (it
     arranged by item
     form a record of
       item
+```
+
+### the items and tags shared with a user
+
+```former
+Former "the items and tags shared with a user" — inputs (user); bindings (item, tag); promises exactly one record — forms:
+  each Sharing._sharedItems (user) has (item)
+    where whether Tagging._tagOfItem (id: item) has (tag)
+    form a record of
+      item
+      tag
 ```
 
 ### the items in a benchmark
@@ -1211,6 +1223,32 @@ then
   RequestBoundary.respond (rating: former "an item's rating" with (item, user), requestId)
 ```
 
+### shares.Shared
+
+Authored path: `shares.Shared`.
+- Covered by [Sharing](../design/compositions/shares.md), line 5.
+- Covered by [Sharing](../design/compositions/shares.md), line 8.
+
+```reaction
+when RequestBoundary.request (path: "/shares/shared", requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### shares.Shared#2
+
+Authored path: `shares.Shared`.
+- Covered by [Sharing](../design/compositions/shares.md), line 5.
+- Covered by [Sharing](../design/compositions/shares.md), line 8.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by shares.Shared
+where
+  earlier, RequestBoundary.request (path: "/shares/shared", requestId, session)
+then
+  RequestBoundary.respond (items: former "the items and tags shared with a user" with (user), requestId)
+```
+
 ### tags.AddCharacter
 
 Authored path: `tags.AddCharacter`.
@@ -1728,6 +1766,7 @@ not listed here have no explicit input contract.
 - `/rating/rate` — requires `session`, `item`, `rating`
 - `/rating/remove` — requires `session`, `item`
 - `/rating/view` — requires `session`, `item`
+- `/shares/shared` — requires `session`
 - `/tags/add-item` — requires `session`, `tag`, `item`
 - `/tags/create-tag` — requires `session`, `name`
 - `/tags/delete-tag` — requires `session`, `tag`

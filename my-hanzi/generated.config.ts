@@ -15,6 +15,7 @@ export default {
       new URL("./design/compositions/commons.md", import.meta.url),
       new URL("./design/compositions/information.md", import.meta.url),
       new URL("./design/compositions/ratings.md", import.meta.url),
+      new URL("./design/compositions/shares.md", import.meta.url),
       new URL("./design/compositions/tags.md", import.meta.url),
       new URL("./design/compositions/benchmarks.md", import.meta.url),
     ],
