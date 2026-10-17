@@ -47,4 +47,7 @@ _byUsername(username: String) : optional (user: User)
 
 _username(user: User) : optional (username: String)
   Returns the user's username, or no row for an unknown user.
+
+_searchUsers(term: String, except: User) : many (user: User, username: String)
+  Returns at most 25 users whose username contains the term, without regard to case, excluding the given user. An empty term or one longer than 32 characters returns no users as no users can have such long usernames.
 ```
