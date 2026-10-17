@@ -1,10 +1,21 @@
 import type { HttpCookieBinding } from "@mit-sdg/sync-engine-http/policy";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
-import { where } from "@mit-sdg/sync-engine/language";
+import { each, former, where } from "@mit-sdg/sync-engine/language";
 import { concepts } from "../concepts.ts";
 import { textInput } from "./inputs.ts";
 
 const { Registering, Sessioning } = concepts;
+
+const MatchingUsers = former(
+  "the users whose usernames match a search term",
+  ({ term, user }, { candidate, username }) =>
+    each(
+      Registering._searchUsers({ term, except: user }).is({
+        user: candidate,
+        username,
+      }),
+    ).form({ user: candidate, username }),
+);
 
 const Me = endpoint(
   "/auth/me",
@@ -25,6 +36,15 @@ const SignOut = endpoint(
     receive({ session })
       .then(Sessioning.end({ session }).responds({}))
       .then(respond({})),
+  { validators: { input: textInput } },
+);
+
+const SearchUsers = endpoint(
+  "/users/search",
+  ({ session, term, user }) =>
+    receive({ session, term })
+      .then(Sessioning.use({ session }).responds({ subject: user }))
+      .then(respond({ users: MatchingUsers({ term, user }) })),
   { validators: { input: textInput } },
 );
 
@@ -56,4 +76,5 @@ export const accountsHttp = {
 export const composition = {
   identifying: { Me },
   leaving: { SignOut },
+  SearchUsers,
 };
