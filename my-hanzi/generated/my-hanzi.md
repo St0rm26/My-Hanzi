@@ -155,6 +155,7 @@ Defined in [Registering](../design/concepts/Registering.md), line 1.
 
 - `_byUsername(username: String) : optional (user: User)`
 - `_username(user: User) : optional (username: String)`
+- `_searchUsers(term: String, except: User) : many (user: User, username: String)`
 
 #### Instances
 
@@ -234,7 +235,8 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 - `_tagsContainingItem(user: User, item: Item) : many (tag: Tag)`
 - `_taggedItems(user: User, tag: Tag) : many (item: Item, addedDate: Date)`
 - `_tagOfItem(id: ID) : optional (tag: Tag)`
-- `_audience(user: User, tag: Tag) : many (audience: Audience)`
+- `_audience(user: User, tag: Tag) : many (audience: User)`
+- `_audienceList(user: User, tag: Tag) : optional (audience: Audience)`
 
 #### Instances
 
@@ -358,6 +360,27 @@ Former "the user's collections containing an item" — inputs (user, item); bind
       tag
 ```
 
+### the users in a collection's sharing audience
+
+```former
+Former "the users in a collection's sharing audience" — inputs (user, tag); bindings (audience, username); promises exactly one record — forms:
+  each Tagging._audience (tag, user) has (audience)
+    where whether Registering._username (user: audience) has (username)
+    form a record of
+      user: audience
+      username
+```
+
+### the users whose usernames match a search term
+
+```former
+Former "the users whose usernames match a search term" — inputs (term, user); bindings (candidate, username); promises exactly one record — forms:
+  each Registering._searchUsers (except: user, term) has (user: candidate, username)
+    form a record of
+      user: candidate
+      username
+```
+
 ## Reactions
 
 ### DeliverFaultToAsker
@@ -378,6 +401,32 @@ where
   earlier, RequestBoundary.request (requestId)
 then
   RequestBoundary.respond (error: message, requestId)
+```
+
+### accounts.SearchUsers
+
+Authored path: `accounts.SearchUsers`.
+- Covered by [Accounts](../design/compositions/accounts.md), line 17.
+- Covered by [Accounts](../design/compositions/accounts.md), line 20.
+
+```reaction
+when RequestBoundary.request (path: "/users/search", requestId, session, term)
+then
+  Sessioning.use (session)
+```
+
+### accounts.SearchUsers#2
+
+Authored path: `accounts.SearchUsers`.
+- Covered by [Accounts](../design/compositions/accounts.md), line 17.
+- Covered by [Accounts](../design/compositions/accounts.md), line 20.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by accounts.SearchUsers
+where
+  earlier, RequestBoundary.request (path: "/users/search", requestId, session, term)
+then
+  RequestBoundary.respond (requestId, users: former "the users whose usernames match a search term" with (term, user))
 ```
 
 ### accounts.identifying.Me
@@ -1289,7 +1338,7 @@ then
 ### tags.AddCharacter
 
 Authored path: `tags.AddCharacter`.
-- Covered by [Tags](../design/compositions/tags.md), line 53.
+- Covered by [Tags](../design/compositions/tags.md), line 59.
 
 ```reaction
 when Tagging.addItemTag (item, tag, user)
@@ -1304,8 +1353,8 @@ then
 ### tags.AddItem
 
 Authored path: `tags.AddItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 41.
-- Covered by [Tags](../design/compositions/tags.md), line 44.
+- Covered by [Tags](../design/compositions/tags.md), line 47.
+- Covered by [Tags](../design/compositions/tags.md), line 50.
 
 ```reaction
 when RequestBoundary.request (item, path: "/tags/add-item", requestId, session, tag)
@@ -1318,8 +1367,8 @@ then
 ### tags.AddItem#2
 
 Authored path: `tags.AddItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 41.
-- Covered by [Tags](../design/compositions/tags.md), line 44.
+- Covered by [Tags](../design/compositions/tags.md), line 47.
+- Covered by [Tags](../design/compositions/tags.md), line 50.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by tags.AddItem
@@ -1333,8 +1382,8 @@ then
 ### tags.AddItem#3
 
 Authored path: `tags.AddItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 41.
-- Covered by [Tags](../design/compositions/tags.md), line 44.
+- Covered by [Tags](../design/compositions/tags.md), line 47.
+- Covered by [Tags](../design/compositions/tags.md), line 50.
 
 ```reaction
 when Tagging.addItemTag (date, item, tag, user), asked by tags.AddItem#2
@@ -1342,6 +1391,32 @@ where
   earlier, RequestBoundary.request (item, path: "/tags/add-item", requestId, session, tag)
 then
   RequestBoundary.respond (requestId)
+```
+
+### tags.Audience
+
+Authored path: `tags.Audience`.
+- Covered by [Tags](../design/compositions/tags.md), line 29.
+- Covered by [Tags](../design/compositions/tags.md), line 32.
+
+```reaction
+when RequestBoundary.request (path: "/tags/audience", requestId, session, tag)
+then
+  Sessioning.use (session)
+```
+
+### tags.Audience#2
+
+Authored path: `tags.Audience`.
+- Covered by [Tags](../design/compositions/tags.md), line 29.
+- Covered by [Tags](../design/compositions/tags.md), line 32.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by tags.Audience
+where
+  earlier, RequestBoundary.request (path: "/tags/audience", requestId, session, tag)
+then
+  RequestBoundary.respond (requestId, users: former "the users in a collection's sharing audience" with (tag, user))
 ```
 
 ### tags.CreateTag
@@ -1387,9 +1462,9 @@ then
 ### tags.DeleteTag
 
 Authored path: `tags.DeleteTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 35.
-- Covered by [Tags](../design/compositions/tags.md), line 35.
-- Covered by [Tags](../design/compositions/tags.md), line 38.
+- Covered by [Tags](../design/compositions/tags.md), line 41.
+- Covered by [Tags](../design/compositions/tags.md), line 41.
+- Covered by [Tags](../design/compositions/tags.md), line 44.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/delete-tag", requestId, session, tag)
@@ -1400,9 +1475,9 @@ then
 ### tags.DeleteTag#2
 
 Authored path: `tags.DeleteTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 35.
-- Covered by [Tags](../design/compositions/tags.md), line 35.
-- Covered by [Tags](../design/compositions/tags.md), line 38.
+- Covered by [Tags](../design/compositions/tags.md), line 41.
+- Covered by [Tags](../design/compositions/tags.md), line 41.
+- Covered by [Tags](../design/compositions/tags.md), line 44.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by tags.DeleteTag
@@ -1415,9 +1490,9 @@ then
 ### tags.DeleteTag#3
 
 Authored path: `tags.DeleteTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 35.
-- Covered by [Tags](../design/compositions/tags.md), line 35.
-- Covered by [Tags](../design/compositions/tags.md), line 38.
+- Covered by [Tags](../design/compositions/tags.md), line 41.
+- Covered by [Tags](../design/compositions/tags.md), line 41.
+- Covered by [Tags](../design/compositions/tags.md), line 44.
 
 ```reaction
 when Tagging.captureTagForDeletion (tag, user, audience, ids), asked by tags.DeleteTag#2
@@ -1428,9 +1503,9 @@ then
 ### tags.DeleteTag#4
 
 Authored path: `tags.DeleteTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 35.
-- Covered by [Tags](../design/compositions/tags.md), line 35.
-- Covered by [Tags](../design/compositions/tags.md), line 38.
+- Covered by [Tags](../design/compositions/tags.md), line 41.
+- Covered by [Tags](../design/compositions/tags.md), line 41.
+- Covered by [Tags](../design/compositions/tags.md), line 44.
 
 ```reaction
 when Sharing.revokeItems (audience, author: user, items: ids), asked by tags.DeleteTag#3
@@ -1443,9 +1518,9 @@ then
 ### tags.DeleteTag#5
 
 Authored path: `tags.DeleteTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 35.
-- Covered by [Tags](../design/compositions/tags.md), line 35.
-- Covered by [Tags](../design/compositions/tags.md), line 38.
+- Covered by [Tags](../design/compositions/tags.md), line 41.
+- Covered by [Tags](../design/compositions/tags.md), line 41.
+- Covered by [Tags](../design/compositions/tags.md), line 44.
 
 ```reaction
 when Tagging.deleteTag (tag, user), asked by tags.DeleteTag#4
@@ -1458,8 +1533,8 @@ then
 ### tags.EditTag
 
 Authored path: `tags.EditTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 29.
-- Covered by [Tags](../design/compositions/tags.md), line 32.
+- Covered by [Tags](../design/compositions/tags.md), line 35.
+- Covered by [Tags](../design/compositions/tags.md), line 38.
 
 ```reaction
 when RequestBoundary.request (name, path: "/tags/edit-tag", requestId, session, tag)
@@ -1470,8 +1545,8 @@ then
 ### tags.EditTag#2
 
 Authored path: `tags.EditTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 29.
-- Covered by [Tags](../design/compositions/tags.md), line 32.
+- Covered by [Tags](../design/compositions/tags.md), line 35.
+- Covered by [Tags](../design/compositions/tags.md), line 38.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by tags.EditTag
@@ -1484,8 +1559,8 @@ then
 ### tags.EditTag#3
 
 Authored path: `tags.EditTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 29.
-- Covered by [Tags](../design/compositions/tags.md), line 32.
+- Covered by [Tags](../design/compositions/tags.md), line 35.
+- Covered by [Tags](../design/compositions/tags.md), line 38.
 
 ```reaction
 when Tagging.renameTag (newName: name, tag, user), asked by tags.EditTag#2
@@ -1509,8 +1584,8 @@ then
 ### tags.ItemMembership
 
 Authored path: `tags.ItemMembership`.
-- Covered by [Tags](../design/compositions/tags.md), line 47.
-- Covered by [Tags](../design/compositions/tags.md), line 50.
+- Covered by [Tags](../design/compositions/tags.md), line 53.
+- Covered by [Tags](../design/compositions/tags.md), line 56.
 
 ```reaction
 when RequestBoundary.request (item, path: "/tags/item-membership", requestId, session)
@@ -1521,8 +1596,8 @@ then
 ### tags.ItemMembership#2
 
 Authored path: `tags.ItemMembership`.
-- Covered by [Tags](../design/compositions/tags.md), line 47.
-- Covered by [Tags](../design/compositions/tags.md), line 50.
+- Covered by [Tags](../design/compositions/tags.md), line 53.
+- Covered by [Tags](../design/compositions/tags.md), line 56.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by tags.ItemMembership
@@ -1587,7 +1662,7 @@ then
 ### tags.RemoveCharacter
 
 Authored path: `tags.RemoveCharacter`.
-- Covered by [Tags](../design/compositions/tags.md), line 55.
+- Covered by [Tags](../design/compositions/tags.md), line 61.
 
 ```reaction
 when Tagging.removeItemTag (item, tag, user)
@@ -1602,8 +1677,8 @@ then
 ### tags.RemoveItem
 
 Authored path: `tags.RemoveItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 55.
-- Covered by [Tags](../design/compositions/tags.md), line 58.
+- Covered by [Tags](../design/compositions/tags.md), line 61.
+- Covered by [Tags](../design/compositions/tags.md), line 64.
 
 ```reaction
 when RequestBoundary.request (item, path: "/tags/remove-item", requestId, session, tag)
@@ -1614,8 +1689,8 @@ then
 ### tags.RemoveItem#2
 
 Authored path: `tags.RemoveItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 55.
-- Covered by [Tags](../design/compositions/tags.md), line 58.
+- Covered by [Tags](../design/compositions/tags.md), line 61.
+- Covered by [Tags](../design/compositions/tags.md), line 64.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by tags.RemoveItem
@@ -1628,8 +1703,8 @@ then
 ### tags.RemoveItem#3
 
 Authored path: `tags.RemoveItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 55.
-- Covered by [Tags](../design/compositions/tags.md), line 58.
+- Covered by [Tags](../design/compositions/tags.md), line 61.
+- Covered by [Tags](../design/compositions/tags.md), line 64.
 
 ```reaction
 when Tagging.captureItemSharing (item, tag, user, audience, ids), asked by tags.RemoveItem#2
@@ -1640,8 +1715,8 @@ then
 ### tags.RemoveItem#4
 
 Authored path: `tags.RemoveItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 55.
-- Covered by [Tags](../design/compositions/tags.md), line 58.
+- Covered by [Tags](../design/compositions/tags.md), line 61.
+- Covered by [Tags](../design/compositions/tags.md), line 64.
 
 ```reaction
 when Sharing.revokeItems (audience, author: user, items: ids), asked by tags.RemoveItem#3
@@ -1654,8 +1729,8 @@ then
 ### tags.RemoveItem#5
 
 Authored path: `tags.RemoveItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 55.
-- Covered by [Tags](../design/compositions/tags.md), line 58.
+- Covered by [Tags](../design/compositions/tags.md), line 61.
+- Covered by [Tags](../design/compositions/tags.md), line 64.
 
 ```reaction
 when Tagging.removeItemTag (item, tag, user), asked by tags.RemoveItem#4
@@ -1735,7 +1810,7 @@ then
 ### tags.ShareCharacter
 
 Authored path: `tags.ShareCharacter`.
-- Covered by [Tags](../design/compositions/tags.md), line 53.
+- Covered by [Tags](../design/compositions/tags.md), line 59.
 
 ```reaction
 when Tagging.addItemTag (item, tag, user)
@@ -1746,12 +1821,12 @@ then
 ### tags.ShareCharacter#2
 
 Authored path: `tags.ShareCharacter`.
-- Covered by [Tags](../design/compositions/tags.md), line 53.
+- Covered by [Tags](../design/compositions/tags.md), line 59.
 
 ```reaction
 when Tagging.generateTaggedItemID (item, tag, user, id), asked by tags.ShareCharacter
 where
-  Tagging._audience (tag, user) has (audience)
+  Tagging._audienceList (tag, user) has (audience)
 then
   Sharing.shareItem (audience, author: user, item: id)
 ```
@@ -1806,6 +1881,7 @@ not listed here have no explicit input contract.
 - `/rating/view` — requires `session`, `item`
 - `/shares/shared` — requires `session`
 - `/tags/add-item` — requires `session`, `tag`, `item`
+- `/tags/audience` — requires `session`, `tag`
 - `/tags/create-tag` — requires `session`, `name`
 - `/tags/delete-tag` — requires `session`, `tag`
 - `/tags/edit-tag` — requires `session`, `tag`, `name`
@@ -1814,3 +1890,4 @@ not listed here have no explicit input contract.
 - `/tags/list` — requires `session`
 - `/tags/remove-item` — requires `session`, `tag`, `item`
 - `/tags/share` — requires `session`, `tag`, `audience`
+- `/users/search` — requires `session`, `term`

@@ -233,6 +233,19 @@ export type MyHanziWire = {
     output: Record<string, never>;
     error: { error: AppWideError | "BENCHMARK_ITEM_ALREADY_FINISHED" | "BENCHMARK_ITEM_NOT_FOUND" | "BENCHMARK_NOT_FOUND" | "INVALID_INPUT" | "ITEM_ALREADY_TAGGED" | "NOT_SIGNED_IN" };
   };
+  "/tags/audience": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_audience"]>[0], ["tag"]>>;
+    };
+    output: {
+      "users": ({
+        "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_audience"]>>>, ["audience"]>]>>;
+        "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>>>, ["username"]>> | null;
+      })[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+  };
   "/tags/create-tag": {
     input: {
       "name": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["createTag"]>[0], ["name"]>>;
@@ -316,6 +329,19 @@ export type MyHanziWire = {
     };
     output: Record<string, never>;
     error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" | "SHARED_ITEMS_NOT_DISTINCT" };
+  };
+  "/users/search": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+      "term": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Registering"]["_searchUsers"]>[0], ["term"]>>;
+    };
+    output: {
+      "users": {
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_searchUsers"]>>>, ["user"]>>;
+        "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_searchUsers"]>>>, ["username"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
   };
 };
 
@@ -508,6 +534,18 @@ export type MyHanziWireHttp = {
     output: Record<string, never>;
     error: { error: HttpAppWideError | "CONFLICT" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
+  "/tags/audience": {
+    input: {
+      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_audience"]>[0], ["tag"]>>;
+    };
+    output: {
+      "users": ({
+        "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_audience"]>>>, ["audience"]>]>>;
+        "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>>>, ["username"]>> | null;
+      })[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
   "/tags/create-tag": {
     input: {
       "name": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["createTag"]>[0], ["name"]>>;
@@ -582,5 +620,17 @@ export type MyHanziWireHttp = {
     };
     output: Record<string, never>;
     error: { error: HttpAppWideError | "INTERNAL_ERROR" | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/users/search": {
+    input: {
+      "term": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Registering"]["_searchUsers"]>[0], ["term"]>>;
+    };
+    output: {
+      "users": {
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_searchUsers"]>>>, ["user"]>>;
+        "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_searchUsers"]>>>, ["username"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
   };
 };

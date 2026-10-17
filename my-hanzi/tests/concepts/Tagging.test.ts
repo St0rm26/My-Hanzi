@@ -40,7 +40,8 @@ describe("Tagging", () => {
   test("tags start with an empty audience and updateAudience replaces it", async () => {
     const tag = await createTag();
 
-    expect(await tagging._audience({ user: "alice", tag })).toEqual([
+    expect(await tagging._audience({ user: "alice", tag })).toEqual([]);
+    expect(await tagging._audienceList({ user: "alice", tag })).toEqual([
       { audience: [] },
     ]);
     expect(
@@ -51,6 +52,10 @@ describe("Tagging", () => {
       }),
     ).toEqual({});
     expect(await tagging._audience({ user: "alice", tag })).toEqual([
+      { audience: "bob" },
+      { audience: "carol" },
+    ]);
+    expect(await tagging._audienceList({ user: "alice", tag })).toEqual([
       { audience: ["bob", "carol"] },
     ]);
 
@@ -60,6 +65,9 @@ describe("Tagging", () => {
       audience: ["dave"],
     });
     expect(await tagging._audience({ user: "alice", tag })).toEqual([
+      { audience: "dave" },
+    ]);
+    expect(await tagging._audienceList({ user: "alice", tag })).toEqual([
       { audience: ["dave"] },
     ]);
     expect(
@@ -69,9 +77,29 @@ describe("Tagging", () => {
         audience: ["mallory"],
       }),
     ).rejects.toBeInstanceOf(TagNotFound);
-    expect(
-      tagging._audience({ user: "bob", tag }),
-    ).rejects.toBeInstanceOf(TagNotFound);
+    expect(tagging._audience({ user: "bob", tag })).rejects.toBeInstanceOf(
+      TagNotFound,
+    );
+  });
+
+  test("_audience returns distinct users only for the tag owner", async () => {
+    const tag = await createTag();
+    await tagging.updateAudience({
+      user: "alice",
+      tag,
+      audience: ["bob", "carol", "bob"],
+    });
+
+    expect(await tagging._audience({ user: "alice", tag })).toEqual([
+      { audience: "bob" },
+      { audience: "carol" },
+    ]);
+    expect(tagging._audience({ user: "bob", tag })).rejects.toBeInstanceOf(
+      TagNotFound,
+    );
+    expect(tagging._audienceList({ user: "bob", tag })).rejects.toBeInstanceOf(
+      TagNotFound,
+    );
   });
 
   test("_tags returns only the user's tags sorted by name", async () => {
@@ -276,10 +304,12 @@ describe("Tagging", () => {
       audience: ["bob", "carol"],
       ids: [id],
     });
-    expect(await tagging.captureTagForDeletion({ user: "alice", tag })).toEqual({
-      audience: ["bob", "carol"],
-      ids: [id],
-    });
+    expect(await tagging.captureTagForDeletion({ user: "alice", tag })).toEqual(
+      {
+        audience: ["bob", "carol"],
+        ids: [id],
+      },
+    );
     expect(
       await tagging.captureItemSharing({ user: "alice", tag, item: "book" }),
     ).toEqual({ audience: ["bob", "carol"], ids: [id] });

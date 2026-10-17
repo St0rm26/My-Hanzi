@@ -154,6 +154,9 @@ _taggedItems (user: User, tag: Tag) : many (item: Item, addedDate: Date)
 _tagOfItem (id: ID) : optional (tag: Tag)
   Returns the tag of the item with the given ID if it exists.
 
-_audience (user: User, tag: Tag) : many (audience: Audience)
-  Returns the audience with which the user's tag is shared.
+_audience (user: User, tag: Tag) : many (audience: User)
+  Returns each user in the audience with which the user's tag is shared.
+
+_audienceList (user: User, tag: Tag) : optional (audience: Audience)
+  Returns the complete audience set for the user's tag, or no row if the user does not own the tag.
 ```

@@ -26,6 +26,12 @@ The user can share their tag with a specific audience using [the share endpoint]
 tags.Share at /tags/share
 ```
 
+The user can view the usernames and identities in a tag's current sharing audience before editing it with [the audience endpoint](reaction:tags.Audience).
+
+```endpoints
+tags.Audience at /tags/audience
+```
+
 The user can [edit their own tag](reaction:tags.EditTag) as long as the tag exists.
 
 ```endpoints

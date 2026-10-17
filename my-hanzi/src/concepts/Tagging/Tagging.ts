@@ -384,9 +384,24 @@ export class TaggingConcept<
   }: {
     user: User;
     tag: Tag;
+  }): Promise<{ audience: User }[]> {
+    await this.#ready();
+    const found = await this.tags.findOne(
+      { _id: tag, author: user },
+      { projection: { _id: 0, audience: 1 } },
+    );
+    if (found === null) throw new TagNotFound("There is no such tag.");
+    return [...new Set(found.audience)].map((audience) => ({ audience }));
+  }
+
+  async _audienceList({
+    user,
+    tag,
+  }: {
+    user: User;
+    tag: Tag;
   }): Promise<{ audience: User[] }[]> {
     await this.#ready();
-    await this.#requireTag(user, tag);
     const found = await this.tags.findOne(
       { _id: tag, author: user },
       { projection: { _id: 0, audience: 1 } },

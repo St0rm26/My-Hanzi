@@ -4,6 +4,7 @@ import {
   now,
   reaction,
   when,
+  whether,
   where,
 } from "@mit-sdg/sync-engine/language";
 import { concepts } from "../concepts.ts";
@@ -30,6 +31,16 @@ const TaggedItems = former(
     }),
 );
 
+const AudienceUsers = former(
+  "the users in a collection's sharing audience",
+  ({ user, tag }, { audience, username }) =>
+    each(Tagging._audience({ user, tag }).is({ audience }))
+      .where(
+        whether(Registering._username({ user: audience }).is({ username })),
+      )
+      .form({ user: audience, username }),
+);
+
 const List = endpoint(
   "/tags/list",
   ({ session, user }) =>
@@ -45,6 +56,15 @@ const Items = endpoint(
     receive({ session, tag })
       .then(Sessioning.use({ session }).responds({ subject: user }))
       .then(respond({ items: TaggedItems({ user, tag }) })),
+  { input: { required: ["session", "tag"] } },
+);
+
+const GetAudience = endpoint(
+  "/tags/audience",
+  ({ session, tag, user }) =>
+    receive({ session, tag })
+      .then(Sessioning.use({ session }).responds({ subject: user }))
+      .then(respond({ users: AudienceUsers({ user, tag }) })),
   { input: { required: ["session", "tag"] } },
 );
 
@@ -146,7 +166,7 @@ const ShareCharacter = reaction(({ user, tag, item, id, audience }) =>
   when(Tagging.addItemTag({ user, tag, item }).responds({}))
     .then(Tagging.generateTaggedItemID({ user, tag, item }).responds({ id }))
     .then(
-      where(Tagging._audience({ user, tag }).is({ audience })).then(
+      where(Tagging._audienceList({ user, tag }).is({ audience })).then(
         Sharing.shareItem({ author: user, item: id, audience }),
       ),
     ),
@@ -208,6 +228,7 @@ export const composition = {
   RemoveCharacter,
   List,
   Items,
+  Audience: GetAudience,
   ItemMembership,
   CreateTag,
   EditTag,
