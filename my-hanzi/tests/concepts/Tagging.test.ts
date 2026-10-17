@@ -347,17 +347,10 @@ describe("Tagging", () => {
     ).rejects.toBeInstanceOf(TagNotFound);
   });
 
-  test("_tagOfItem returns the owning tag only for the tag's owner", async () => {
+  test("_tagOfItem returns the tag for any existing item identifier", async () => {
     const tag = await createTag("alice", "Favorites");
-    const anotherTag = await createTag("alice", "Studied");
     const otherUsersTag = await createTag("bob", "Favorites");
     await tagging.addItemTag({ user: "alice", tag, item: "你", date });
-    await tagging.addItemTag({
-      user: "alice",
-      tag: anotherTag,
-      item: "我",
-      date,
-    });
     await tagging.addItemTag({
       user: "bob",
       tag: otherUsersTag,
@@ -375,15 +368,11 @@ describe("Tagging", () => {
       item: "他",
     });
 
-    expect(await tagging._tagOfItem({ user: "alice", id })).toEqual([{ tag }]);
-    expect(await tagging._tagOfItem({ user: "bob", id })).toEqual([]);
-    expect(
-      await tagging._tagOfItem({ user: "alice", id: otherUsersId }),
-    ).toEqual([]);
-    expect(
-      await tagging._tagOfItem({ user: "alice", id: "unknown-id" }),
-    ).toEqual([]);
-    expect(await tagging._tagOfItem({ user: "nobody", id })).toEqual([]);
+    expect(await tagging._tagOfItem({ id })).toEqual([{ tag }]);
+    expect(await tagging._tagOfItem({ id: otherUsersId })).toEqual([
+      { tag: otherUsersTag },
+    ]);
+    expect(await tagging._tagOfItem({ id: "unknown-id" })).toEqual([]);
   });
 
   test("generated ID collisions are retried across tags", async () => {
