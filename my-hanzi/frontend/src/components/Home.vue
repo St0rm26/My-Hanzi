@@ -16,6 +16,8 @@ import {
   useCollections,
 } from "../useCollections.ts";
 import { useInformation } from "../useInformation.ts";
+import { usePersonalRating } from "../usePersonalRating.ts";
+import type { PersonalRating } from "../api/ratings.ts";
 import { type Benchmark, useBenchmarks } from "../useBenchmarks.ts";
 import { useSession } from "../session.ts";
 
@@ -46,9 +48,17 @@ const {
   error: informationError,
   getCharacterInformation,
 } = useInformation();
-const page = ref<
-  "home" | "results" | "detail" | "collection" | "benchmark"
->("home");
+const {
+  currentRating,
+  loading: ratingLoading,
+  saving: ratingSaving,
+  error: ratingError,
+  loadRating,
+  saveRating,
+} = usePersonalRating();
+const page = ref<"home" | "results" | "detail" | "collection" | "benchmark">(
+  "home",
+);
 const searchQuery = ref("");
 const lastSearch = ref("");
 const characters = ref<CharacterEntry[]>([]);
@@ -154,6 +164,7 @@ async function openCharacter(
     const [containingTags, information] = await Promise.all([
       getCharacterCollections(character.character),
       getCharacterInformation(character),
+      loadRating(character.character),
     ]);
     if (sequence !== characterSequence) return;
     if (containingTags !== null) {
@@ -163,6 +174,12 @@ async function openCharacter(
     if (information !== null) activeCharacter.value = information;
   } finally {
     if (sequence === characterSequence) membershipLoading.value = false;
+  }
+}
+
+async function savePersonalRating(rating: PersonalRating) {
+  if (activeCharacter.value) {
+    await saveRating(activeCharacter.value.character, rating);
   }
 }
 
@@ -312,6 +329,10 @@ onMounted(() => {
       :working="working"
       :error="error"
       :save-status="saveStatus"
+      :personal-rating="currentRating"
+      :rating-loading="ratingLoading"
+      :rating-saving="ratingSaving"
+      :rating-error="ratingError"
       :back-label="
         detailOrigin === 'collection'
           ? 'Back to collection'
@@ -322,6 +343,7 @@ onMounted(() => {
       @back="closeDetail"
       @selection="updateSelectedCollections"
       @save="saveSelectedCollections"
+      @rate="savePersonalRating"
     />
 
     <CollectionPage
@@ -407,13 +429,11 @@ onMounted(() => {
 
       <section class="benchmarks-section" aria-labelledby="benchmarks-heading">
         <div class="section-heading">
-          <h2 id="benchmarks-heading">Benchmarks</h2>
+          <h1 id="benchmarks-heading">Benchmarks</h1>
         </div>
         <p v-if="benchmarksLoading" role="status">Loading benchmarks...</p>
         <p v-else-if="benchmarksError" role="alert">{{ benchmarksError }}</p>
-        <p v-else-if="benchmarks.length === 0">
-          No benchmarks are available.
-        </p>
+        <p v-else-if="benchmarks.length === 0">No benchmarks are available.</p>
         <ul v-else class="benchmark-grid">
           <li v-for="benchmark in benchmarks" :key="benchmark.benchmark">
             <button

@@ -2,6 +2,7 @@
 import HanziWriter from "hanzi-writer";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import type { CharacterEntry } from "../api/characters.ts";
+import { ratingOptions, type PersonalRating } from "../api/ratings.ts";
 import type { Collection, CollectionId } from "../useCollections.ts";
 
 const props = defineProps<{
@@ -14,6 +15,10 @@ const props = defineProps<{
   working: boolean;
   error: string | null;
   saveStatus: string | null;
+  personalRating: PersonalRating | null;
+  ratingLoading: boolean;
+  ratingSaving: boolean;
+  ratingError: string | null;
   backLabel?: string;
 }>();
 
@@ -21,11 +26,29 @@ const emit = defineEmits<{
   back: [];
   selection: [tagIds: CollectionId[]];
   save: [];
+  rate: [rating: PersonalRating];
 }>();
 
 const writerTarget = ref<HTMLDivElement | null>(null);
+const ratingDialog = ref<HTMLDialogElement | null>(null);
 const strokeError = ref(false);
 let writer: HanziWriter | undefined;
+const ratings = ratingOptions;
+
+function openRatingPicker() {
+  if (!props.ratingLoading && !props.ratingSaving) {
+    ratingDialog.value?.showModal();
+  }
+}
+
+function closeRatingPicker() {
+  ratingDialog.value?.close();
+}
+
+function chooseRating(rating: PersonalRating) {
+  closeRatingPicker();
+  emit("rate", rating);
+}
 
 onMounted(() => {
   if (!writerTarget.value) return;
@@ -114,6 +137,25 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
           </div>
         </dl>
 
+        <section class="rating-picker" aria-labelledby="rating-heading">
+          <h2 id="rating-heading">Personal rating</h2>
+          <button
+            type="button"
+            :disabled="ratingLoading || ratingSaving"
+            @click="openRatingPicker"
+          >
+            {{
+              ratingSaving
+                ? "Saving rating..."
+                : personalRating
+                  ? `Change rating: ${personalRating}`
+                  : "Add a personal rating"
+            }}
+          </button>
+          <p v-if="ratingLoading" role="status">Loading rating...</p>
+          <p v-if="ratingError" role="alert">{{ ratingError }}</p>
+        </section>
+
         <section
           class="collection-picker"
           aria-labelledby="collection-picker-heading"
@@ -144,6 +186,75 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
         </section>
       </section>
     </div>
+
+    <dialog
+      ref="ratingDialog"
+      class="rating-dialog"
+      aria-labelledby="rating-dialog-heading"
+      @click.self="closeRatingPicker"
+    >
+      <div class="rating-dialog-content">
+        <div class="rating-dialog-heading">
+          <h2 id="rating-dialog-heading">Rate this character</h2>
+          <button
+            type="button"
+            class="close-rating"
+            aria-label="Close rating options"
+            @click="closeRatingPicker"
+          >
+            ×
+          </button>
+        </div>
+        <div class="rating-options">
+          <button
+            v-for="option in ratings"
+            :key="option.value"
+            type="button"
+            class="rating-option"
+            :aria-pressed="personalRating === option.value"
+            @click="chooseRating(option.value)"
+          >
+            <svg
+              class="rating-icon"
+              viewBox="0 0 48 48"
+              aria-hidden="true"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="24" cy="24" r="21" />
+              <path
+                v-if="option.icon === 'star'"
+                d="m24 12 3.7 7.5 8.3 1.2-6 5.9 1.4 8.3-7.4-3.9-7.4 3.9 1.4-8.3-6-5.9 8.3-1.2z"
+              />
+              <g
+                v-else-if="
+                  option.icon === 'thumbs-up' || option.icon === 'thumbs-down'
+                "
+                transform="translate(12 12)"
+              >
+                <path
+                  :transform="
+                    option.icon === 'thumbs-down'
+                      ? 'rotate(180 12 12)'
+                      : undefined
+                  "
+                  d="M7 10v12m0-12h2.5c1 0 1.8-.6 2.2-1.5l2-5.2c.4-1.1 2-1.1 2.4 0 .5 1.2.6 2.6.2 3.9L15.5 10H20a2 2 0 0 1 1.9 2.6l-2.2 7A2 2 0 0 1 17.8 21H7m-3-11h3v12H4z"
+                />
+              </g>
+              <path
+                v-else-if="option.icon === 'horizontal-line'"
+                d="M17 24h14"
+              />
+              <path v-else d="m18 18 12 12m0-12L18 30" />
+            </svg>
+            <span>{{ option.value }}</span>
+          </button>
+        </div>
+      </div>
+    </dialog>
   </main>
 </template>
 
@@ -206,6 +317,74 @@ dd {
   display: grid;
   gap: 0.55rem;
   margin-top: 1.5rem;
+}
+
+.rating-picker {
+  display: grid;
+  justify-items: start;
+  gap: 0.55rem;
+  margin-top: 1.5rem;
+}
+
+.rating-dialog {
+  width: min(42rem, calc(100% - 2rem));
+  max-width: none;
+  margin: auto;
+  padding: 1.25rem;
+  border: 1px solid #aaa;
+  border-radius: 12px;
+  background: #fff;
+  color: #000;
+}
+
+.rating-dialog::backdrop {
+  background: rgb(0 0 0 / 35%);
+}
+
+.rating-dialog-content {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.rating-dialog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.close-rating {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #000;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.rating-options {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.rating-option {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.1rem;
+  border: 0;
+  background: transparent;
+  color: #000;
+  font-size: 0.8rem;
+}
+
+.rating-icon {
+  width: clamp(2.5rem, 12vw, 3.5rem);
+  height: clamp(2.5rem, 12vw, 3.5rem);
 }
 
 .collection-picker label {

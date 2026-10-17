@@ -1088,7 +1088,7 @@ then
 
 Authored path: `ratings.AddDefinedRatings`.
 - Covered by [Rating](../design/compositions/ratings.md), line 23.
-- Covered by [Rating](../design/compositions/ratings.md), line 26.
+- Covered by [Rating](../design/compositions/ratings.md), line 28.
 
 ```reaction
 when RequestBoundary.request (path: "/rating/add-defined-ratings", ratings, requestId, session)
@@ -1100,7 +1100,7 @@ then
 
 Authored path: `ratings.AddDefinedRatings`.
 - Covered by [Rating](../design/compositions/ratings.md), line 23.
-- Covered by [Rating](../design/compositions/ratings.md), line 26.
+- Covered by [Rating](../design/compositions/ratings.md), line 28.
 
 ```reaction
 when Sessioning.use (session), asked by ratings.AddDefinedRatings
@@ -1114,7 +1114,7 @@ then
 
 Authored path: `ratings.AddDefinedRatings`.
 - Covered by [Rating](../design/compositions/ratings.md), line 23.
-- Covered by [Rating](../design/compositions/ratings.md), line 26.
+- Covered by [Rating](../design/compositions/ratings.md), line 28.
 
 ```reaction
 when PersonalRating.addDefinedRatings (ratings), asked by ratings.AddDefinedRatings#2
