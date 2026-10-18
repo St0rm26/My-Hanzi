@@ -13,8 +13,10 @@ import {
   type Collection,
   type CollectionId,
   type CollectionItem,
+  type SharedUser,
   useCollections,
 } from "../useCollections.ts";
+import { useSharing } from "../useSharing.ts";
 import { useInformation } from "../useInformation.ts";
 import { usePersonalRating } from "../usePersonalRating.ts";
 import type { PersonalRating } from "../api/ratings.ts";
@@ -26,16 +28,26 @@ const { me, signOut } = useSession();
 const {
   collections,
   error,
+  sharingError,
   loading,
   working,
   refresh,
   createCollection,
   renameCollection,
   deleteCollection,
+  shareCollection,
   getCharacterCollections,
   getCollectionItems,
+  getCollectionAudience,
   saveCharacterCollections,
 } = useCollections();
+const {
+  searchResults: userSearchResults,
+  searching: userSearchLoading,
+  error: userSearchError,
+  searchUsers,
+  resetSearch,
+} = useSharing();
 const {
   benchmarks,
   loading: benchmarksLoading,
@@ -70,6 +82,7 @@ const benchmarkStudiedItems = ref<string[]>([]);
 const benchmarkLoading = ref(false);
 const benchmarkSequence = ref(0);
 const collectionItems = ref<CollectionItem[]>([]);
+const sharedUsers = ref<SharedUser[]>([]);
 const collectionLoading = ref(false);
 const selectedCollectionIds = ref<CollectionId[]>([]);
 const initialCollectionIds = ref<CollectionId[]>([]);
@@ -78,6 +91,7 @@ const detailOrigin = ref<"results" | "collection" | "benchmark">("results");
 const searching = ref(false);
 const searchError = ref<string | null>(null);
 const saveStatus = ref<string | null>(null);
+const shareStatus = ref<string | null>(null);
 let searchSequence = 0;
 let characterSequence = 0;
 let collectionSequence = 0;
@@ -232,15 +246,42 @@ async function openCollection(collection: Collection) {
   const sequence = ++collectionSequence;
   activeCollection.value = collection;
   collectionItems.value = [];
+  sharedUsers.value = [];
+  shareStatus.value = null;
   collectionLoading.value = true;
+  resetSearch();
   page.value = "collection";
   try {
-    const items = await getCollectionItems(collection);
+    const [items, audience] = await Promise.all([
+      getCollectionItems(collection),
+      getCollectionAudience(collection),
+    ]);
     if (sequence === collectionSequence && items !== null) {
       collectionItems.value = items;
     }
+    if (sequence === collectionSequence && audience !== null) {
+      sharedUsers.value = audience;
+    }
   } finally {
     if (sequence === collectionSequence) collectionLoading.value = false;
+  }
+}
+
+function searchForShareUsers(term: string) {
+  shareStatus.value = null;
+  void searchUsers(term);
+}
+
+async function saveCollectionAudience(users: SharedUser[]) {
+  if (!activeCollection.value) return;
+  shareStatus.value = null;
+  const saved = await shareCollection(
+    activeCollection.value,
+    users.map(({ user }) => user),
+  );
+  if (saved) {
+    sharedUsers.value = [...users];
+    shareStatus.value = "Sharing updated.";
   }
 }
 
@@ -352,9 +393,18 @@ onMounted(() => {
       :items="collectionItems"
       :loading="collectionLoading"
       :error="error"
+      :shared-users="sharedUsers"
+      :search-results="userSearchResults"
+      :searching-users="userSearchLoading"
+      :search-error="userSearchError"
+      :share-error="sharingError"
+      :sharing="working"
+      :share-status="shareStatus"
       :selected-character="activeCharacter"
       @back="page = 'home'"
       @select="openCollectionCharacter"
+      @search-users="searchForShareUsers"
+      @save-audience="saveCollectionAudience"
     />
 
     <main v-else>

@@ -42,6 +42,12 @@ const endpointMessages: Record<string, Record<string, string>> = {
   "/rating/add-defined-ratings": {
     INVALID_REQUEST: "Could not initialize the personal rating options.",
   },
+  "/users/search": {
+    INVALID_REQUEST: "Check the username search and try again.",
+  },
+  "/tags/audience": {
+    NOT_FOUND: "That collection no longer exists.",
+  },
 };
 
 export function messageFor(path: string, error: string): string {

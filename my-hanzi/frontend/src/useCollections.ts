@@ -9,11 +9,13 @@ type Path = keyof Wire;
 export type Collection = Wire["/tags/list"]["output"]["tags"][number];
 export type CollectionId = Collection["tag"];
 export type CollectionItem = Wire["/tags/items"]["output"]["items"][number];
+export type SharedUser = Wire["/tags/audience"]["output"]["users"][number];
 type ErrorResult = { error: string; detail?: string };
 
 const { sessionEnded } = useSession();
 const collections = ref<Collection[]>([]);
 const error = ref<string | null>(null);
+const sharingError = ref<string | null>(null);
 const loading = ref(false);
 const working = ref(false);
 
@@ -84,10 +86,28 @@ function deleteCollection(collection: Collection) {
 }
 
 function shareCollection(collection: Collection, audience: string[]) {
-  return change(
-    "/tags/share",
-    api["/tags/share"]({ tag: collection.tag, audience }),
-  );
+  if (working.value) return Promise.resolve(false);
+  working.value = true;
+  sharingError.value = null;
+  return (async () => {
+    try {
+      const result = await call(
+        "/tags/share",
+        api["/tags/share"]({ tag: collection.tag, audience }),
+      );
+      if ("error" in result) {
+        sharingError.value = result.error;
+        return false;
+      }
+      return true;
+    } catch (cause) {
+      sharingError.value =
+        cause instanceof Error ? cause.message : "Could not share collection.";
+      return false;
+    } finally {
+      working.value = false;
+    }
+  })();
 }
 
 async function getCharacterCollections(
@@ -117,6 +137,21 @@ async function getCollectionItems(
     return null;
   }
   return result.items;
+}
+
+async function getCollectionAudience(
+  collection: Collection,
+): Promise<SharedUser[] | null> {
+  error.value = null;
+  const result = await call(
+    "/tags/audience",
+    api["/tags/audience"]({ tag: collection.tag }),
+  );
+  if ("error" in result) {
+    error.value = result.error;
+    return null;
+  }
+  return result.users;
 }
 
 async function saveCharacterCollections(
@@ -161,6 +196,7 @@ export function useCollections() {
   return {
     collections,
     error,
+    sharingError,
     loading,
     working,
     refresh,
@@ -170,6 +206,7 @@ export function useCollections() {
     shareCollection,
     getCharacterCollections,
     getCollectionItems,
+    getCollectionAudience,
     saveCharacterCollections,
   };
 }
