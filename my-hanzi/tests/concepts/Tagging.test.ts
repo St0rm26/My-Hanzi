@@ -405,6 +405,21 @@ describe("Tagging", () => {
     expect(await tagging._tagOfItem({ id: "unknown-id" })).toEqual([]);
   });
 
+  test("_tagDetailsOfItem resolves a shared item to its collection owner and name", async () => {
+    const tag = await createTag("alice", "Favorites");
+    await tagging.addItemTag({ user: "alice", tag, item: "你", date });
+    const { id } = await tagging.generateTaggedItemID({
+      user: "alice",
+      tag,
+      item: "你",
+    });
+
+    expect(await tagging._tagDetailsOfItem({ id })).toEqual([
+      { tag, author: "alice", name: "Favorites", item: "你", addedDate: date },
+    ]);
+    expect(await tagging._tagDetailsOfItem({ id: "missing" })).toEqual([]);
+  });
+
   test("generated ID collisions are retried across tags", async () => {
     const values = ["tag-one", "tag-two", "same-id", "same-id", "new-id"];
     const deterministic = new TaggingConcept<string, string, string>(

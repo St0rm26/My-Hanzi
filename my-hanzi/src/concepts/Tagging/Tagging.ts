@@ -378,6 +378,38 @@ export class TaggingConcept<
     return [{ tag: taggedItem.tag }];
   }
 
+  async _tagDetailsOfItem({
+    id,
+  }: {
+    id: ID;
+  }): Promise<{
+    tag: Tag;
+    author: User;
+    name: string;
+    item: Item;
+    addedDate: Date;
+  }[]> {
+    await this.#ready();
+    const taggedItem = await this.taggedItems.findOne(
+      { identifier: id },
+      { projection: { _id: 0, tag: 1, item: 1, addedDate: 1 } },
+    );
+    if (taggedItem === null) return [];
+
+    const foundTag = await this.tags.findOne(
+      { _id: taggedItem.tag },
+      { projection: { _id: 0, author: 1, name: 1 } },
+    );
+    if (foundTag === null) return [];
+    return [{
+      tag: taggedItem.tag,
+      author: foundTag.author,
+      name: foundTag.name,
+      item: taggedItem.item,
+      addedDate: taggedItem.addedDate,
+    }];
+  }
+
   async _audience({
     user,
     tag,
