@@ -235,6 +235,7 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 - `_tagsContainingItem(user: User, item: Item) : many (tag: Tag)`
 - `_taggedItems(user: User, tag: Tag) : many (item: Item, addedDate: Date)`
 - `_tagOfItem(id: ID) : optional (tag: Tag)`
+- `_tagDetailsOfItem(id: ID) : optional (tag: Tag, author: User, name: String, item: Item, addedDate: Date)`
 - `_audience(user: User, tag: Tag) : many (audience: User)`
 - `_audienceList(user: User, tag: Tag) : optional (audience: Audience)`
 
@@ -300,14 +301,17 @@ Former "the completed items in a benchmark" — inputs (benchmark); bindings (it
       item
 ```
 
-### the items and tags shared with a user
+### the distinct collections shared with a user
 
 ```former
-Former "the items and tags shared with a user" — inputs (user); bindings (item, tag); promises exactly one record — forms:
+Former "the distinct collections shared with a user" — inputs (user); bindings (item, tag, name, author, authorUsername); promises exactly one record — forms:
   each Sharing._sharedItems (user) has (item)
-    where whether Tagging._tagOfItem (id: item) has (tag)
+    where whether Tagging._tagDetailsOfItem (id: item) has (author, name, tag)
+    where whether Registering._username (user: author) has (username: authorUsername)
     form a record of
-      item
+      author
+      authorUsername
+      name
       tag
 ```
 
@@ -318,6 +322,17 @@ Former "the items in a benchmark" — inputs (benchmark); bindings (item); promi
   each Benchmarking._items (benchmark) has (item)
     arranged by item
     form a record of
+      item
+```
+
+### the items in a collection shared with a user
+
+```former
+Former "the items in a collection shared with a user" — inputs (user, tag); bindings (sharedItem, item, addedDate); promises exactly one record — forms:
+  each Sharing._sharedItems (user) has (item: sharedItem)
+    where whether Tagging._tagDetailsOfItem (id: sharedItem) has (addedDate, item, tag)
+    form a record of
+      addedDate
       item
 ```
 
@@ -1309,30 +1324,56 @@ then
   RequestBoundary.respond (rating: former "an item's rating" with (item, user), requestId)
 ```
 
-### shares.Shared
+### shares.CollectionItems
 
-Authored path: `shares.Shared`.
-- Covered by [Sharing](../design/compositions/shares.md), line 5.
-- Covered by [Sharing](../design/compositions/shares.md), line 8.
+Authored path: `shares.CollectionItems`.
+- Covered by [Sharing](../design/compositions/shares.md), line 11.
+- Covered by [Sharing](../design/compositions/shares.md), line 14.
 
 ```reaction
-when RequestBoundary.request (path: "/shares/shared", requestId, session)
+when RequestBoundary.request (path: "/shares/collection-items", requestId, session, tag)
 then
   Sessioning.use (session)
 ```
 
-### shares.Shared#2
+### shares.CollectionItems#2
 
-Authored path: `shares.Shared`.
+Authored path: `shares.CollectionItems`.
+- Covered by [Sharing](../design/compositions/shares.md), line 11.
+- Covered by [Sharing](../design/compositions/shares.md), line 14.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by shares.CollectionItems
+where
+  earlier, RequestBoundary.request (path: "/shares/collection-items", requestId, session, tag)
+then
+  RequestBoundary.respond (items: former "the items in a collection shared with a user" with (tag, user), requestId)
+```
+
+### shares.Collections
+
+Authored path: `shares.Collections`.
 - Covered by [Sharing](../design/compositions/shares.md), line 5.
 - Covered by [Sharing](../design/compositions/shares.md), line 8.
 
 ```reaction
-when Sessioning.use (session, subject: user), asked by shares.Shared
-where
-  earlier, RequestBoundary.request (path: "/shares/shared", requestId, session)
+when RequestBoundary.request (path: "/shares/collections", requestId, session)
 then
-  RequestBoundary.respond (items: former "the items and tags shared with a user" with (user), requestId)
+  Sessioning.use (session)
+```
+
+### shares.Collections#2
+
+Authored path: `shares.Collections`.
+- Covered by [Sharing](../design/compositions/shares.md), line 5.
+- Covered by [Sharing](../design/compositions/shares.md), line 8.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by shares.Collections
+where
+  earlier, RequestBoundary.request (path: "/shares/collections", requestId, session)
+then
+  RequestBoundary.respond (collections: former "the distinct collections shared with a user" with (user), requestId)
 ```
 
 ### tags.AddCharacter
@@ -1879,7 +1920,8 @@ not listed here have no explicit input contract.
 - `/rating/rate` — requires `session`, `item`, `rating`
 - `/rating/remove` — requires `session`, `item`
 - `/rating/view` — requires `session`, `item`
-- `/shares/shared` — requires `session`
+- `/shares/collection-items` — requires `session`, `tag`
+- `/shares/collections` — requires `session`
 - `/tags/add-item` — requires `session`, `tag`, `item`
 - `/tags/audience` — requires `session`, `tag`
 - `/tags/create-tag` — requires `session`, `name`
