@@ -4,6 +4,7 @@ import BenchmarkPage from "./Benchmark.vue";
 import CollectionPage from "./Collection.vue";
 import CharacterDetail from "./CharacterDetail.vue";
 import CharacterSearchResults from "./CharacterSearchResults.vue";
+import SharedCollectionsPage from "./SharedCollections.vue";
 import {
   type CharacterEntry,
   lookupCharacters,
@@ -16,7 +17,10 @@ import {
   type SharedUser,
   useCollections,
 } from "../useCollections.ts";
-import { useSharing } from "../useSharing.ts";
+import {
+  type SharedCollection,
+  useSharing,
+} from "../useSharing.ts";
 import { useInformation } from "../useInformation.ts";
 import { usePersonalRating } from "../usePersonalRating.ts";
 import type { PersonalRating } from "../api/ratings.ts";
@@ -47,6 +51,14 @@ const {
   error: userSearchError,
   searchUsers,
   resetSearch,
+  sharedCollections,
+  sharedCollectionsLoading,
+  sharedCollectionsError,
+  loadSharedCollections,
+  sharedCollectionItems,
+  sharedCollectionItemsLoading,
+  sharedCollectionItemsError,
+  loadSharedCollectionItems,
 } = useSharing();
 const {
   benchmarks,
@@ -68,14 +80,21 @@ const {
   loadRating,
   saveRating,
 } = usePersonalRating();
-const page = ref<"home" | "results" | "detail" | "collection" | "benchmark">(
-  "home",
-);
+const page = ref<
+  | "home"
+  | "results"
+  | "benchmark"
+  | "detail"
+  | "collection"
+  | "shared"
+  | "shared-collection"
+>("home");
 const searchQuery = ref("");
 const lastSearch = ref("");
 const characters = ref<CharacterEntry[]>([]);
 const activeCharacter = ref<CharacterEntry | null>(null);
 const activeCollection = ref<Collection | null>(null);
+const activeSharedCollection = ref<Collection | null>(null);
 const activeBenchmark = ref<Benchmark | null>(null);
 const benchmarkItems = ref<string[]>([]);
 const benchmarkStudiedItems = ref<string[]>([]);
@@ -87,7 +106,9 @@ const collectionLoading = ref(false);
 const selectedCollectionIds = ref<CollectionId[]>([]);
 const initialCollectionIds = ref<CollectionId[]>([]);
 const membershipLoading = ref(false);
-const detailOrigin = ref<"results" | "collection" | "benchmark">("results");
+const detailOrigin = ref<
+  "results" | "collection" | "benchmark" | "shared-collection"
+>("results");
 const searching = ref(false);
 const searchError = ref<string | null>(null);
 const saveStatus = ref<string | null>(null);
@@ -154,6 +175,8 @@ function openCollectionCharacter(character: string) {
 function closeDetail() {
   if (detailOrigin.value === "collection" && activeCollection.value) {
     void openCollection(activeCollection.value);
+  } else if (detailOrigin.value === "shared-collection") {
+    page.value = "shared-collection";
   } else if (detailOrigin.value === "benchmark") {
     if (activeBenchmark.value) void openBenchmark(activeBenchmark.value);
     else page.value = "home";
@@ -164,7 +187,11 @@ function closeDetail() {
 
 async function openCharacter(
   character: CharacterEntry,
-  origin: "results" | "collection" | "benchmark" = "results",
+  origin:
+    | "results"
+    | "collection"
+    | "benchmark"
+    | "shared-collection" = "results",
 ) {
   detailOrigin.value = origin;
   const sequence = ++characterSequence;
@@ -285,6 +312,37 @@ async function saveCollectionAudience(users: SharedUser[]) {
   }
 }
 
+async function openSharedCollections() {
+  page.value = "shared";
+  await loadSharedCollections();
+}
+
+async function openSharedCollection(collection: SharedCollection) {
+  if (collection.tag === null || collection.name === null) return;
+  activeSharedCollection.value = {
+    tag: collection.tag,
+    name: collection.name,
+  };
+  page.value = "shared-collection";
+  await loadSharedCollectionItems(collection.tag);
+}
+
+function openSharedCollectionCharacter(character: string) {
+  if (!activeSharedCollection.value) return;
+  const entry = {
+    character,
+    pinyin: "",
+    meaning: "No definition available.",
+    radical: "Not listed",
+    strokeCount: null,
+  };
+  void lookupCharacters([character])
+    .then((entries) =>
+      openCharacter(entries.get(character) ?? entry, "shared-collection"),
+    )
+    .catch(() => openCharacter(entry, "shared-collection"));
+}
+
 function cancelForm() {
   isEditing.value = false;
   activeCollection.value = null;
@@ -326,6 +384,13 @@ onMounted(() => {
         />
       </form>
       <div class="account">
+        <button
+          type="button"
+          class="shared-with-me"
+          @click="openSharedCollections"
+        >
+          Shared with me
+        </button>
         <span>{{ me?.username }}</span>
         <button
           type="button"
@@ -400,11 +465,30 @@ onMounted(() => {
       :share-error="sharingError"
       :sharing="working"
       :share-status="shareStatus"
-      :selected-character="activeCharacter"
       @back="page = 'home'"
       @select="openCollectionCharacter"
       @search-users="searchForShareUsers"
       @save-audience="saveCollectionAudience"
+    />
+
+    <SharedCollectionsPage
+      v-else-if="page === 'shared'"
+      :collections="sharedCollections"
+      :loading="sharedCollectionsLoading"
+      :error="sharedCollectionsError"
+      @back="page = 'home'"
+      @select="openSharedCollection"
+    />
+
+    <CollectionPage
+      v-else-if="page === 'shared-collection' && activeSharedCollection"
+      :collection="activeSharedCollection"
+      :items="sharedCollectionItems"
+      :loading="sharedCollectionItemsLoading"
+      :error="sharedCollectionItemsError"
+      shared
+      @back="page = 'shared'"
+      @select="openSharedCollectionCharacter"
     />
 
     <main v-else>
@@ -545,6 +629,13 @@ onMounted(() => {
 }
 
 .sign-out {
+  background: white;
+  color: black;
+  font-weight: 600;
+  border-radius: 6px;
+}
+
+.shared-with-me {
   background: white;
   color: black;
   font-weight: 600;

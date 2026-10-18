@@ -3,8 +3,8 @@ import { computed, ref, watch } from "vue";
 import {
   lookupCharacters,
   normalizePinyin,
-  type CharacterEntry,
 } from "../api/characters.ts";
+import type { CharacterEntry } from "../api/characters.ts";
 import type {
   Collection,
   CollectionItem,
@@ -14,20 +14,29 @@ import type { ShareCandidate } from "../useSharing.ts";
 
 type SortOrder = "newest" | "oldest" | "alphabetical";
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   collection: Collection;
   items: CollectionItem[];
   loading: boolean;
   error: string | null;
-  selectedCharacter: CharacterEntry | null;
-  sharedUsers: SharedUser[];
-  searchResults: ShareCandidate[];
-  searchingUsers: boolean;
-  searchError: string | null;
-  shareError: string | null;
-  sharing: boolean;
-  shareStatus: string | null;
-}>();
+  shared?: boolean;
+  sharedUsers?: SharedUser[];
+  searchResults?: ShareCandidate[];
+  searchingUsers?: boolean;
+  searchError?: string | null;
+  shareError?: string | null;
+  sharing?: boolean;
+  shareStatus?: string | null;
+}>(), {
+  shared: false,
+  sharedUsers: () => [],
+  searchResults: () => [],
+  searchingUsers: false,
+  searchError: null,
+  shareError: null,
+  sharing: false,
+  shareStatus: null,
+});
 
 const emit = defineEmits<{
   back: [];
@@ -160,9 +169,11 @@ function formatAddedDate(value: string) {
 
 <template>
   <main>
-    <button type="button" @click="emit('back')">Back to collections</button>
+    <button type="button" @click="emit('back')">
+      {{ shared ? "Back to shared collections" : "Back to collections" }}
+    </button>
     <h1>{{ collection.name }}</h1>
-    <section class="sharing-panel">
+    <section v-if="!shared" class="sharing-panel">
       <button
         type="button"
         :aria-expanded="sharePanelOpen"
@@ -277,7 +288,7 @@ function formatAddedDate(value: string) {
         >
           <span class="character">{{ item.item }}</span>
           <span class="pinyin">{{ pinyinFor(item.item) }}</span>
-          <time class="added-date" :datetime="item.addedDate">
+          <time v-if="!shared" class="added-date" :datetime="item.addedDate">
             Added {{ formatAddedDate(item.addedDate) }}
           </time>
         </button>
