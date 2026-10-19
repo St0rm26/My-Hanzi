@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "typecheck": "vue-tsc -b"
+    "typecheck": "vue-tsc -b",
+    "start": "bun src/main.ts"
   },
   "dependencies": {
     "vue": "^3.5.43",
