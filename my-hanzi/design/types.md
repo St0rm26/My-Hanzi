@@ -19,7 +19,7 @@ concrete TagName
   A generated identifier for a tag.
 
 concrete CompletionState
-  Whether a benchmark item is finished.
+  A binary state for benchmark completion and collection visibility.
 
 ```
 
@@ -47,6 +47,8 @@ instantiate Sessioning with
 instantiate Sharing with
   User is Name
   Item is ItemName
+  Tag is TagName
+  Boolean is CompletionState
 
 instantiate Tagging with
   User is Name
