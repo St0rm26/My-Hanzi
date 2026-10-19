@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
   DefaultTagCannotBeDeleted,
+  CollectionEmpty,
   ItemAlreadyTagged,
   type Tag,
   TagAlreadyExists,
@@ -271,6 +272,7 @@ describe("Tagging", () => {
 
   test("removeItemTag removes one item and checks ownership and existence", async () => {
     const tag = await createTag();
+    await tagging.updateAudience({ user: "alice", tag, audience: ["bob"] });
     await tagging.addItemTag({ user: "alice", tag, item: "book", date });
     await tagging.addItemTag({ user: "alice", tag, item: "article", date });
     expect(
@@ -280,6 +282,13 @@ describe("Tagging", () => {
     expect(await tagging._taggedItems({ user: "alice", tag })).toEqual([
       { item: "article", addedDate: date },
     ]);
+    expect(await tagging._audienceList({ user: "alice", tag })).toEqual([
+      { audience: ["bob"] },
+    ]);
+    await tagging.removeItemTag({ user: "alice", tag, item: "article" });
+    expect(await tagging._audienceList({ user: "alice", tag })).toEqual([
+      { audience: [] },
+    ]);
     expect(
       tagging.removeItemTag({ user: "alice", tag, item: "book" }),
     ).rejects.toBeInstanceOf(TaggedItemNotFound);
@@ -288,6 +297,9 @@ describe("Tagging", () => {
   test("sharing snapshots capture audience and IDs before endpoint mutations", async () => {
     const tag = await createTag("alice", "Favorites");
     const studied = await createTag("alice", "Studied");
+    expect(
+      tagging.captureTagSharing({ user: "alice", tag }),
+    ).rejects.toBeInstanceOf(CollectionEmpty);
     await tagging.updateAudience({
       user: "alice",
       tag,
@@ -403,6 +415,16 @@ describe("Tagging", () => {
       { tag: otherUsersTag },
     ]);
     expect(await tagging._tagOfItem({ id: "unknown-id" })).toEqual([]);
+  });
+
+  test("_tagDetails returns the owner and name for existing collection tags", async () => {
+    const tag = await createTag("alice", "Favorites");
+
+    expect(await tagging._tagDetails({ tag })).toEqual([
+      { author: "alice", name: "Favorites" },
+    ]);
+    await tagging.deleteTag({ user: "alice", tag });
+    expect(await tagging._tagDetails({ tag })).toEqual([]);
   });
 
   test("_tagDetailsOfItem resolves a shared item to its collection owner and name", async () => {

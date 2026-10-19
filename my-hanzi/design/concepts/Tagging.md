@@ -88,10 +88,13 @@ captureTagForDeletion (user: User, tag: Tag) : returns (audience: Audience, ids:
         refuses DEFAULT_TAG_CANNOT_BE_DELETED "The default \"Studied\" tag cannot be deleted."
 
 captureTagSharing (user: User, tag: Tag) : returns (audience: Audience, ids: IDs)
-    where the tag exists with the given user
+    where the tag exists with the given user and has at least one tagged item
     then
         give the tag's audience and the identifiers of its tagged items
         returns audience, ids
+    where the tag exists with the given user and has no tagged items
+    then
+        refuses COLLECTION_EMPTY "Add at least one item before sharing this collection."
 
 captureItemSharing (user: User, tag: Tag, item: Item) : returns (audience: Audience, ids: IDs)
     where the tag and tagged item exist with the given user
@@ -112,6 +115,7 @@ removeItemTag (user: User, tag: Tag, item: Item) : returns ()
     where the tag exists with the given user, the item exists, and the tagged items set does have an item with the given tag
     then
         removes the given item from the tagged item set with the given tag
+        if the tag has no remaining items, clear its audience
         returns
 
 generateTaggedItemID (user: User, tag: Tag, item: Item) : returns (id: ID)
@@ -153,6 +157,9 @@ _taggedItems (user: User, tag: Tag) : many (item: Item, addedDate: Date)
 
 _tagOfItem (id: ID) : optional (tag: Tag)
   Returns the tag of the item with the given ID if it exists.
+
+_tagDetails (tag: Tag) : optional (author: User, name: String)
+  Returns the owner and name of the tag if it exists.
 
 _tagDetailsOfItem (id: ID) : optional (tag: Tag, author: User, name: String, item: Item, addedDate: Date)
   Returns the tag, owner, name, and tagged item with its added date of the given ID, or no row if the item does not exist.

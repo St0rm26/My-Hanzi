@@ -6,6 +6,7 @@ export class DefaultTagCannotBeDeleted extends Error {}
 export class ItemAlreadyTagged extends Error {}
 export class TaggedItemNotFound extends Error {}
 export class TaggedItemIDNotFound extends Error {}
+export class CollectionEmpty extends Error {}
 
 export type Tag = string & { readonly __brand: "Tag" };
 
@@ -156,6 +157,11 @@ export class TaggingConcept<
       { projection: { _id: 0, audience: 1 } },
     );
     if (found === null) throw new TagNotFound("There is no such tag.");
+    if ((await this.taggedItems.countDocuments({ tag })) === 0) {
+      throw new CollectionEmpty(
+        "Add at least one item before sharing this collection.",
+      );
+    }
     return {
       audience: [...new Set(found.audience)],
       ids: await this.#taggedItemIDs(tag),
@@ -233,6 +239,12 @@ export class TaggingConcept<
     const { deletedCount } = await this.taggedItems.deleteOne({ tag, item });
     if (deletedCount === 0) {
       throw new TaggedItemNotFound("This item does not have the given tag.");
+    }
+    if ((await this.taggedItems.countDocuments({ tag })) === 0) {
+      await this.tags.updateOne(
+        { _id: tag, author: user },
+        { $set: { audience: [] } },
+      );
     }
     return {};
   }
@@ -376,6 +388,19 @@ export class TaggingConcept<
     const taggedItem = await this.taggedItems.findOne({ identifier: id });
     if (taggedItem === null) return [];
     return [{ tag: taggedItem.tag }];
+  }
+
+  async _tagDetails({
+    tag,
+  }: {
+    tag: Tag;
+  }): Promise<{ author: User; name: string }[]> {
+    await this.#ready();
+    const foundTag = await this.tags.findOne(
+      { _id: tag },
+      { projection: { _id: 0, author: 1, name: 1 } },
+    );
+    return foundTag === null ? [] : [foundTag];
   }
 
   async _tagDetailsOfItem({
