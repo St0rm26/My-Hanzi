@@ -8,7 +8,7 @@ import { ratingsHttp } from "./compositions/ratings.ts";
 import { tagsHttp } from "./compositions/tags.ts";
 
 export const policy = httpPolicy({
-  publicOrigin: process.env.APP_ORIGIN ?? "http://localhost:8080",
+  publicOrigin: process.env.APP_ORIGIN ?? "http://localhost:5173",
   basePath: "/api",
   publicErrors: {
     ...accountsHttp.publicErrors,
