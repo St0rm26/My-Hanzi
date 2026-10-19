@@ -2,6 +2,8 @@ import { type Collection, type Db, MongoServerError } from "mongodb";
 
 export class SharedItemNotFound extends Error {}
 export class SharedItemsNotDistinct extends Error {}
+export class PublicItemsEmpty extends Error {}
+export class TagNotPublic extends Error {}
 
 interface SharedItemDocument {
   author: string;
@@ -9,13 +11,30 @@ interface SharedItemDocument {
   sharedUser: string;
 }
 
+interface PublicItemDocument<
+  User extends string,
+  Item extends string,
+  Tag extends string,
+> {
+  author: User;
+  tag: Tag;
+  item: Item;
+}
+
 /** Lets authors grant and revoke other users' access to their items. */
-export class SharingConcept<User extends string, Item extends string> {
+export class SharingConcept<
+  User extends string,
+  Item extends string,
+  Tag extends string,
+> {
   private readonly sharedItems: Collection<SharedItemDocument>;
+  private readonly publicItems: Collection<PublicItemDocument<User, Item, Tag>>;
   private indexes: Promise<unknown> | undefined;
 
   constructor(database: Db, name = "Sharing") {
-    this.sharedItems = database.collection(`${name.toLowerCase()}.sharedItems`);
+    const namespace = name.toLowerCase();
+    this.sharedItems = database.collection(`${namespace}.sharedItems`);
+    this.publicItems = database.collection(`${namespace}.publicItems`);
   }
 
   /**
@@ -23,14 +42,20 @@ export class SharingConcept<User extends string, Item extends string> {
    * creation fails, the next operation tries again.
    */
   #ready() {
-    this.indexes ??= this.sharedItems
-      .createIndexes([
+    this.indexes ??= Promise.all([
+      this.sharedItems.createIndexes([
         {
           key: { author: 1, item: 1, sharedUser: 1 },
           unique: true,
         },
         { key: { sharedUser: 1, item: 1 } },
-      ])
+      ]),
+      this.publicItems.createIndex(
+        { author: 1, tag: 1, item: 1 },
+        { unique: true },
+      ),
+      this.publicItems.createIndex({ tag: 1 }),
+    ])
       .catch((error: unknown) => {
         this.indexes = undefined;
         throw error;
@@ -92,6 +117,153 @@ export class SharingConcept<User extends string, Item extends string> {
       }
     }
     return {};
+  }
+
+  async setPublic({
+    author,
+    tag,
+    items,
+  }: {
+    author: User;
+    tag: Tag;
+    items: Item[];
+  }) {
+    await this.#ready();
+    if (items.length === 0) {
+      throw new PublicItemsEmpty(
+        "Add at least one item before making this collection public.",
+      );
+    }
+    await this.#insertPublicItems(author, tag, items);
+    return {};
+  }
+
+  async setPrivate({
+    author,
+    tag,
+  }: {
+    author: User;
+    tag: Tag;
+  }) {
+    await this.#ready();
+    await this.publicItems.deleteMany({ author, tag });
+    return {};
+  }
+
+  async addPublicItems({
+    author,
+    tag,
+    items,
+  }: {
+    author: User;
+    tag: Tag;
+    items: Item[];
+  }) {
+    await this.#ready();
+    await this.#requirePublicTag(author, tag);
+    await this.#insertPublicItems(author, tag, items);
+    return {};
+  }
+
+  async #insertPublicItems(author: User, tag: Tag, items: Item[]) {
+    for (const item of new Set(items)) {
+      await this.publicItems.updateOne(
+        { author, tag, item },
+        { $setOnInsert: { author, tag, item } },
+        { upsert: true },
+      );
+    }
+  }
+
+  async addPublicItem({
+    author,
+    tag,
+    item,
+  }: {
+    author: User;
+    tag: Tag;
+    item: Item;
+  }) {
+    await this.#ready();
+    await this.#requirePublicTag(author, tag);
+    await this.publicItems.updateOne(
+      { author, tag, item },
+      { $setOnInsert: { author, tag, item } },
+      { upsert: true },
+    );
+    return {};
+  }
+
+  async #requirePublicTag(author: User, tag: Tag) {
+    const exists = await this.publicItems.findOne(
+      { author, tag },
+      { projection: { _id: 1 } },
+    );
+    if (exists === null) {
+      throw new TagNotPublic("The tag is not public.");
+    }
+  }
+
+  async removePublicItems({
+    author,
+    tag,
+    items,
+  }: {
+    author: User;
+    tag: Tag;
+    items: Item[];
+  }) {
+    await this.#ready();
+    for (const item of new Set(items)) {
+      await this.publicItems.deleteOne({ author, tag, item });
+    }
+    return {};
+  }
+
+  async _publicItems({
+    tag,
+  }: {
+    tag: Tag;
+  }): Promise<{ author: User; item: Item }[]> {
+    await this.#ready();
+    const items = await this.publicItems
+      .find(
+        { tag },
+        { projection: { _id: 0, author: 1, item: 1 } },
+      )
+      .sort({ item: 1 })
+      .toArray();
+    return items;
+  }
+
+  async _publicCollections({}: { user: User }): Promise<
+    { author: User; tag: Tag }[]
+  > {
+    await this.#ready();
+    const items = await this.publicItems
+      .find({}, { projection: { _id: 0, author: 1, tag: 1 } })
+      .sort({ tag: 1 })
+      .toArray();
+    const collections = new Map<string, { author: User; tag: Tag }>();
+    for (const { author, tag } of items) {
+      collections.set(
+        JSON.stringify([author, tag]),
+        { author, tag },
+      );
+    }
+    return [...collections.values()];
+  }
+
+  async _publicStatus({
+    author,
+    tag,
+  }: {
+    author: User;
+    tag: Tag;
+  }): Promise<{ isPublic: boolean }[]> {
+    await this.#ready();
+    const count = await this.publicItems.countDocuments({ author, tag });
+    return [{ isPublic: count > 0 }];
   }
 
   async revokeItem({

@@ -1,15 +1,17 @@
 import { describe, expect, test } from "bun:test";
 import {
+  PublicItemsEmpty,
   SharedItemNotFound,
   SharedItemsNotDistinct,
   SharingConcept,
+  TagNotPublic,
 } from "../../src/concepts/Sharing/Sharing.ts";
 import { testDatabase } from "../support/mongo.ts";
 
 async function setup() {
   const database = await testDatabase();
   return {
-    sharing: new SharingConcept<string, string>(database),
+    sharing: new SharingConcept<string, string, string>(database),
     database,
   };
 }
@@ -258,5 +260,104 @@ describe("Sharing", () => {
     expect(
       await database.collection("sharing.sharedItems").countDocuments(),
     ).toBe(1);
+  });
+
+  test("public collections are derived from public items and clear when made private", async () => {
+    const { sharing } = await setup();
+
+    expect(
+      await sharing._publicStatus({
+        author: "alice",
+        tag: "collection",
+      }),
+    ).toEqual([{ isPublic: false }]);
+    expect(
+      sharing.setPublic({
+        author: "alice",
+        tag: "collection",
+        items: [],
+      }),
+    ).rejects.toBeInstanceOf(PublicItemsEmpty);
+    expect(
+      sharing.addPublicItems({
+        author: "alice",
+        tag: "collection",
+        items: ["item-1"],
+      }),
+    ).rejects.toBeInstanceOf(TagNotPublic);
+    expect(
+      sharing.addPublicItem({
+        author: "alice",
+        tag: "collection",
+        item: "item-1",
+      }),
+    ).rejects.toBeInstanceOf(TagNotPublic);
+    await sharing.setPublic({
+      author: "alice",
+      tag: "collection",
+      items: ["item-1", "item-2", "item-1"],
+    });
+    expect(await sharing._publicStatus({
+      author: "alice",
+      tag: "collection",
+    })).toEqual([{ isPublic: true }]);
+    expect(await sharing._publicCollections({ user: "bob" })).toEqual([
+      { author: "alice", tag: "collection" },
+    ]);
+    expect(await sharing._publicItems({ tag: "collection" })).toEqual([
+      { author: "alice", item: "item-1" },
+      { author: "alice", item: "item-2" },
+    ]);
+    await sharing.addPublicItems({
+      author: "alice",
+      tag: "collection",
+      items: ["item-3"],
+    });
+    await sharing.addPublicItem({
+      author: "alice",
+      tag: "collection",
+      item: "item-4",
+    });
+    expect(await sharing._publicItems({ tag: "collection" })).toEqual([
+      { author: "alice", item: "item-1" },
+      { author: "alice", item: "item-2" },
+      { author: "alice", item: "item-3" },
+      { author: "alice", item: "item-4" },
+    ]);
+
+    await sharing.removePublicItems({
+      author: "alice",
+      tag: "collection",
+      items: ["item-1"],
+    });
+    expect(await sharing._publicItems({ tag: "collection" })).toEqual([
+      { author: "alice", item: "item-2" },
+      { author: "alice", item: "item-3" },
+      { author: "alice", item: "item-4" },
+    ]);
+    expect(await sharing._publicStatus({
+      author: "alice",
+      tag: "collection",
+    })).toEqual([{ isPublic: true }]);
+
+    await sharing.removePublicItems({
+      author: "alice",
+      tag: "collection",
+      items: ["item-2", "item-3", "item-4"],
+    });
+    expect(await sharing._publicStatus({
+      author: "alice",
+      tag: "collection",
+    })).toEqual([{ isPublic: false }]);
+    expect(await sharing._publicCollections({ user: "bob" })).toEqual([]);
+    expect(await sharing._publicItems({ tag: "collection" })).toEqual([]);
+
+    await sharing.setPublic({
+      author: "alice",
+      tag: "collection",
+      items: ["item-3"],
+    });
+    await sharing.setPrivate({ author: "alice", tag: "collection" });
+    expect(await sharing._publicItems({ tag: "collection" })).toEqual([]);
   });
 });

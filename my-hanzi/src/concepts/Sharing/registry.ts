@@ -4,16 +4,20 @@ import type { Db } from "mongodb";
 import {
   SharedItemNotFound,
   SharedItemsNotDistinct,
+  PublicItemsEmpty,
+  TagNotPublic,
   SharingConcept,
 } from "./Sharing.ts";
 
-class Sharing extends SharingConcept<string, string> {}
+class Sharing extends SharingConcept<string, string, string> {}
 
 export const sharing = registerConcept({
   class: Sharing,
   spec,
   refusals: {
     SHARED_ITEMS_NOT_DISTINCT: SharedItemsNotDistinct,
+    PUBLIC_ITEMS_EMPTY: PublicItemsEmpty,
+    TAG_NOT_PUBLIC: TagNotPublic,
   },
   floors: {
     mongo: ({ database }: { database: Db }, name: string) =>
