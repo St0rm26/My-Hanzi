@@ -8,10 +8,22 @@ The user can view the distinct collections shared with them using [the collectio
 shares.Collections at /shares/collections
 ```
 
+The user can view public collections using [the public collections endpoint](reaction:shares.PublicCollections), including each collection's name and author username, in alphabetical order. Public collections are not included in the shared-with-me list.
+
+```endpoints
+shares.PublicCollections at /shares/public-collections
+```
+
 The user can view the characters in a collection shared with them using [the collection items endpoint](reaction:shares.CollectionItems), ordered by newest added date.
 
 ```endpoints
 shares.CollectionItems at /shares/collection-items
+```
+
+The user can view the characters in a public collection using [the public collection items endpoint](reaction:shares.PublicCollectionItems), ordered by newest added date.
+
+```endpoints
+shares.PublicCollectionItems at /shares/public-collection-items
 ```
 
 Note: Compositions regarding sharing collections with others are located in the [tags composition file](./tags.md).

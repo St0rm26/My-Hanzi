@@ -59,10 +59,10 @@ Defined in [Benchmarking](../design/concepts/Benchmarking.md), line 1.
 
 #### Instances
 
-- `Benchmarking` — instance of `Benchmarking` — [Application types](../design/types.md), line 57.
-  - `Boolean` is `CompletionState` — [Application types](../design/types.md), line 60.
-  - `Item` is `ItemName` — [Application types](../design/types.md), line 59.
-  - `User` is `Name` — [Application types](../design/types.md), line 58.
+- `Benchmarking` — instance of `Benchmarking` — [Application types](../design/types.md), line 59.
+  - `Boolean` is `CompletionState` — [Application types](../design/types.md), line 62.
+  - `Item` is `ItemName` — [Application types](../design/types.md), line 61.
+  - `User` is `Name` — [Application types](../design/types.md), line 60.
 
 ### Federating
 
@@ -189,6 +189,14 @@ Defined in [Sharing](../design/concepts/Sharing.md), line 1.
 - `revokeItem(author: User, item: Item, audience: Users) : returns ()`
 - `revokeItems(author: User, items: Items, audience: Users) : returns ()`
   - Refuses `SHARED_ITEMS_NOT_DISTINCT`: All items must be distinct.
+- `setPublic(author: User, tag: Tag, items: Items) : returns ()`
+  - Refuses `PUBLIC_ITEMS_EMPTY`: Add at least one item before making this collection public.
+- `setPrivate(author: User, tag: Tag) : returns ()`
+- `addPublicItems(author: User, tag: Tag, items: Items) : returns ()`
+  - Refuses `TAG_NOT_PUBLIC`: The tag is not public.
+- `addPublicItem(author: User, tag: Tag, item: Item) : returns ()`
+  - Refuses `TAG_NOT_PUBLIC`: The tag is not public.
+- `removePublicItems(author: User, tag: Tag, items: Items) : returns ()`
 - `deleteItem(author: User, item: Item) : returns ()`
 - `deleteItems(author: User, items: Items) : returns ()`
   - Refuses `SHARED_ITEMS_NOT_DISTINCT`: All items must be distinct.
@@ -196,11 +204,16 @@ Defined in [Sharing](../design/concepts/Sharing.md), line 1.
 #### Queries
 
 - `_sharedItems(user: User) : many (item: Item)`
+- `_publicItems(tag: Tag) : many (author: User, item: Item)`
+- `_publicCollections(user: User) : many (author: User, tag: Tag)`
+- `_publicStatus(author: User, tag: Tag) : many (isPublic: Boolean)`
 
 #### Instances
 
 - `Sharing` — instance of `Sharing` — [Application types](../design/types.md), line 47.
+  - `Boolean` is `CompletionState` — [Application types](../design/types.md), line 51.
   - `Item` is `ItemName` — [Application types](../design/types.md), line 49.
+  - `Tag` is `TagName` — [Application types](../design/types.md), line 50.
   - `User` is `Name` — [Application types](../design/types.md), line 48.
 
 ### Tagging
@@ -220,6 +233,7 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 - `captureTagForDeletion(user: User, tag: Tag) : returns (audience: Audience, ids: IDs)`
   - Refuses `DEFAULT_TAG_CANNOT_BE_DELETED`: The default "Studied" tag cannot be deleted.
 - `captureTagSharing(user: User, tag: Tag) : returns (audience: Audience, ids: IDs)`
+  - Refuses `COLLECTION_EMPTY`: Add at least one item before sharing this collection.
 - `captureItemSharing(user: User, tag: Tag, item: Item) : returns (audience: Audience, ids: IDs)`
 - `addItemTag(user: User, tag: Tag, item: Item, date: Date) : returns ()`
   - Refuses `ITEM_ALREADY_TAGGED`: This item already has the given tag.
@@ -235,17 +249,18 @@ Defined in [Tagging](../design/concepts/Tagging.md), line 1.
 - `_tagsContainingItem(user: User, item: Item) : many (tag: Tag)`
 - `_taggedItems(user: User, tag: Tag) : many (item: Item, addedDate: Date)`
 - `_tagOfItem(id: ID) : optional (tag: Tag)`
+- `_tagDetails(tag: Tag) : optional (author: User, name: String)`
 - `_tagDetailsOfItem(id: ID) : optional (tag: Tag, author: User, name: String, item: Item, addedDate: Date)`
 - `_audience(user: User, tag: Tag) : many (audience: User)`
 - `_audienceList(user: User, tag: Tag) : optional (audience: Audience)`
 
 #### Instances
 
-- `Tagging` — instance of `Tagging` — [Application types](../design/types.md), line 51.
-  - `Audience` is `Name` — [Application types](../design/types.md), line 55.
-  - `ID` is `TagName` — [Application types](../design/types.md), line 54.
-  - `Item` is `ItemName` — [Application types](../design/types.md), line 53.
-  - `User` is `Name` — [Application types](../design/types.md), line 52.
+- `Tagging` — instance of `Tagging` — [Application types](../design/types.md), line 53.
+  - `Audience` is `Name` — [Application types](../design/types.md), line 57.
+  - `ID` is `TagName` — [Application types](../design/types.md), line 56.
+  - `Item` is `ItemName` — [Application types](../design/types.md), line 55.
+  - `User` is `Name` — [Application types](../design/types.md), line 54.
 
 ## Application types
 
@@ -336,6 +351,17 @@ Former "the items in a collection shared with a user" — inputs (user, tag); bi
       item
 ```
 
+### the items in a public collection
+
+```former
+Former "the items in a public collection" — inputs (tag); bindings (publicItem, item, addedDate); promises exactly one record — forms:
+  each Sharing._publicItems (tag) has (item: publicItem)
+    where whether Tagging._tagDetailsOfItem (id: publicItem) has (addedDate, item, tag)
+    form a record of
+      addedDate
+      item
+```
+
 ### the items in a user's collection
 
 ```former
@@ -354,6 +380,21 @@ Former "the not-completed items in a benchmark" — inputs (benchmark); bindings
     arranged by item
     form a record of
       item
+```
+
+### the public collections
+
+```former
+Former "the public collections" — inputs (user); bindings (tag, name, author, authorUsername); promises exactly one record — forms:
+  each Sharing._publicCollections (user) has (author, tag)
+    where whether Tagging._tagDetails (tag) has (author, name)
+    where whether Registering._username (user: author) has (username: authorUsername)
+    arranged by name
+    form a record of
+      author
+      authorUsername
+      name
+      tag
 ```
 
 ### the tags owned by a user
@@ -394,6 +435,16 @@ Former "the users whose usernames match a search term" — inputs (term, user); 
     form a record of
       user: candidate
       username
+```
+
+### whether a user's tag is public
+
+```former
+Former "whether a user's tag is public" — inputs (user, tag); bindings (isPublic); promises exactly one record — forms:
+  each Tagging._tags (user) has (tag)
+    where whether Sharing._publicStatus (author: user, tag) has (isPublic)
+    form a record of
+      isPublic
 ```
 
 ## Reactions
@@ -1327,8 +1378,8 @@ then
 ### shares.CollectionItems
 
 Authored path: `shares.CollectionItems`.
-- Covered by [Sharing](../design/compositions/shares.md), line 11.
-- Covered by [Sharing](../design/compositions/shares.md), line 14.
+- Covered by [Sharing](../design/compositions/shares.md), line 17.
+- Covered by [Sharing](../design/compositions/shares.md), line 20.
 
 ```reaction
 when RequestBoundary.request (path: "/shares/collection-items", requestId, session, tag)
@@ -1339,8 +1390,8 @@ then
 ### shares.CollectionItems#2
 
 Authored path: `shares.CollectionItems`.
-- Covered by [Sharing](../design/compositions/shares.md), line 11.
-- Covered by [Sharing](../design/compositions/shares.md), line 14.
+- Covered by [Sharing](../design/compositions/shares.md), line 17.
+- Covered by [Sharing](../design/compositions/shares.md), line 20.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by shares.CollectionItems
@@ -1376,10 +1427,62 @@ then
   RequestBoundary.respond (collections: former "the distinct collections shared with a user" with (user), requestId)
 ```
 
+### shares.PublicCollectionItems
+
+Authored path: `shares.PublicCollectionItems`.
+- Covered by [Sharing](../design/compositions/shares.md), line 23.
+- Covered by [Sharing](../design/compositions/shares.md), line 26.
+
+```reaction
+when RequestBoundary.request (path: "/shares/public-collection-items", requestId, session, tag)
+then
+  Sessioning.use (session)
+```
+
+### shares.PublicCollectionItems#2
+
+Authored path: `shares.PublicCollectionItems`.
+- Covered by [Sharing](../design/compositions/shares.md), line 23.
+- Covered by [Sharing](../design/compositions/shares.md), line 26.
+
+```reaction
+when Sessioning.use (session), asked by shares.PublicCollectionItems
+where
+  earlier, RequestBoundary.request (path: "/shares/public-collection-items", requestId, session, tag)
+then
+  RequestBoundary.respond (items: former "the items in a public collection" with (tag), requestId)
+```
+
+### shares.PublicCollections
+
+Authored path: `shares.PublicCollections`.
+- Covered by [Sharing](../design/compositions/shares.md), line 11.
+- Covered by [Sharing](../design/compositions/shares.md), line 14.
+
+```reaction
+when RequestBoundary.request (path: "/shares/public-collections", requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### shares.PublicCollections#2
+
+Authored path: `shares.PublicCollections`.
+- Covered by [Sharing](../design/compositions/shares.md), line 11.
+- Covered by [Sharing](../design/compositions/shares.md), line 14.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by shares.PublicCollections
+where
+  earlier, RequestBoundary.request (path: "/shares/public-collections", requestId, session)
+then
+  RequestBoundary.respond (collections: former "the public collections" with (user), requestId)
+```
+
 ### tags.AddCharacter
 
 Authored path: `tags.AddCharacter`.
-- Covered by [Tags](../design/compositions/tags.md), line 59.
+- Covered by [Tags](../design/compositions/tags.md), line 66.
 
 ```reaction
 when Tagging.addItemTag (item, tag, user)
@@ -1394,8 +1497,8 @@ then
 ### tags.AddItem
 
 Authored path: `tags.AddItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 47.
-- Covered by [Tags](../design/compositions/tags.md), line 50.
+- Covered by [Tags](../design/compositions/tags.md), line 54.
+- Covered by [Tags](../design/compositions/tags.md), line 57.
 
 ```reaction
 when RequestBoundary.request (item, path: "/tags/add-item", requestId, session, tag)
@@ -1408,8 +1511,8 @@ then
 ### tags.AddItem#2
 
 Authored path: `tags.AddItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 47.
-- Covered by [Tags](../design/compositions/tags.md), line 50.
+- Covered by [Tags](../design/compositions/tags.md), line 54.
+- Covered by [Tags](../design/compositions/tags.md), line 57.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by tags.AddItem
@@ -1423,8 +1526,8 @@ then
 ### tags.AddItem#3
 
 Authored path: `tags.AddItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 47.
-- Covered by [Tags](../design/compositions/tags.md), line 50.
+- Covered by [Tags](../design/compositions/tags.md), line 54.
+- Covered by [Tags](../design/compositions/tags.md), line 57.
 
 ```reaction
 when Tagging.addItemTag (date, item, tag, user), asked by tags.AddItem#2
@@ -1437,8 +1540,8 @@ then
 ### tags.Audience
 
 Authored path: `tags.Audience`.
-- Covered by [Tags](../design/compositions/tags.md), line 29.
-- Covered by [Tags](../design/compositions/tags.md), line 32.
+- Covered by [Tags](../design/compositions/tags.md), line 36.
+- Covered by [Tags](../design/compositions/tags.md), line 39.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/audience", requestId, session, tag)
@@ -1449,15 +1552,15 @@ then
 ### tags.Audience#2
 
 Authored path: `tags.Audience`.
-- Covered by [Tags](../design/compositions/tags.md), line 29.
-- Covered by [Tags](../design/compositions/tags.md), line 32.
+- Covered by [Tags](../design/compositions/tags.md), line 36.
+- Covered by [Tags](../design/compositions/tags.md), line 39.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by tags.Audience
 where
   earlier, RequestBoundary.request (path: "/tags/audience", requestId, session, tag)
 then
-  RequestBoundary.respond (requestId, users: former "the users in a collection's sharing audience" with (tag, user))
+  RequestBoundary.respond (isPublic: former "whether a user's tag is public" with (tag, user), requestId, users: former "the users in a collection's sharing audience" with (tag, user))
 ```
 
 ### tags.CreateTag
@@ -1503,9 +1606,9 @@ then
 ### tags.DeleteTag
 
 Authored path: `tags.DeleteTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 41.
-- Covered by [Tags](../design/compositions/tags.md), line 41.
-- Covered by [Tags](../design/compositions/tags.md), line 44.
+- Covered by [Tags](../design/compositions/tags.md), line 48.
+- Covered by [Tags](../design/compositions/tags.md), line 48.
+- Covered by [Tags](../design/compositions/tags.md), line 51.
 
 ```reaction
 when RequestBoundary.request (path: "/tags/delete-tag", requestId, session, tag)
@@ -1516,9 +1619,9 @@ then
 ### tags.DeleteTag#2
 
 Authored path: `tags.DeleteTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 41.
-- Covered by [Tags](../design/compositions/tags.md), line 41.
-- Covered by [Tags](../design/compositions/tags.md), line 44.
+- Covered by [Tags](../design/compositions/tags.md), line 48.
+- Covered by [Tags](../design/compositions/tags.md), line 48.
+- Covered by [Tags](../design/compositions/tags.md), line 51.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by tags.DeleteTag
@@ -1531,9 +1634,9 @@ then
 ### tags.DeleteTag#3
 
 Authored path: `tags.DeleteTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 41.
-- Covered by [Tags](../design/compositions/tags.md), line 41.
-- Covered by [Tags](../design/compositions/tags.md), line 44.
+- Covered by [Tags](../design/compositions/tags.md), line 48.
+- Covered by [Tags](../design/compositions/tags.md), line 48.
+- Covered by [Tags](../design/compositions/tags.md), line 51.
 
 ```reaction
 when Tagging.captureTagForDeletion (tag, user, audience, ids), asked by tags.DeleteTag#2
@@ -1544,27 +1647,40 @@ then
 ### tags.DeleteTag#4
 
 Authored path: `tags.DeleteTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 41.
-- Covered by [Tags](../design/compositions/tags.md), line 41.
-- Covered by [Tags](../design/compositions/tags.md), line 44.
+- Covered by [Tags](../design/compositions/tags.md), line 48.
+- Covered by [Tags](../design/compositions/tags.md), line 48.
+- Covered by [Tags](../design/compositions/tags.md), line 51.
 
 ```reaction
 when Sharing.revokeItems (audience, author: user, items: ids), asked by tags.DeleteTag#3
 where
   earlier, Tagging.captureTagForDeletion (tag, user, audience, ids), asked by tags.DeleteTag#2
 then
-  Tagging.deleteTag (tag, user)
+  Sharing.setPrivate (author: user, tag)
 ```
 
 ### tags.DeleteTag#5
 
 Authored path: `tags.DeleteTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 41.
-- Covered by [Tags](../design/compositions/tags.md), line 41.
-- Covered by [Tags](../design/compositions/tags.md), line 44.
+- Covered by [Tags](../design/compositions/tags.md), line 48.
+- Covered by [Tags](../design/compositions/tags.md), line 48.
+- Covered by [Tags](../design/compositions/tags.md), line 51.
 
 ```reaction
-when Tagging.deleteTag (tag, user), asked by tags.DeleteTag#4
+when Sharing.setPrivate (author: user, tag), asked by tags.DeleteTag#4
+then
+  Tagging.deleteTag (tag, user)
+```
+
+### tags.DeleteTag#6
+
+Authored path: `tags.DeleteTag`.
+- Covered by [Tags](../design/compositions/tags.md), line 48.
+- Covered by [Tags](../design/compositions/tags.md), line 48.
+- Covered by [Tags](../design/compositions/tags.md), line 51.
+
+```reaction
+when Tagging.deleteTag (tag, user), asked by tags.DeleteTag#5
 where
   earlier, RequestBoundary.request (path: "/tags/delete-tag", requestId, session, tag)
 then
@@ -1574,8 +1690,8 @@ then
 ### tags.EditTag
 
 Authored path: `tags.EditTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 35.
-- Covered by [Tags](../design/compositions/tags.md), line 38.
+- Covered by [Tags](../design/compositions/tags.md), line 42.
+- Covered by [Tags](../design/compositions/tags.md), line 45.
 
 ```reaction
 when RequestBoundary.request (name, path: "/tags/edit-tag", requestId, session, tag)
@@ -1586,8 +1702,8 @@ then
 ### tags.EditTag#2
 
 Authored path: `tags.EditTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 35.
-- Covered by [Tags](../design/compositions/tags.md), line 38.
+- Covered by [Tags](../design/compositions/tags.md), line 42.
+- Covered by [Tags](../design/compositions/tags.md), line 45.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by tags.EditTag
@@ -1600,8 +1716,8 @@ then
 ### tags.EditTag#3
 
 Authored path: `tags.EditTag`.
-- Covered by [Tags](../design/compositions/tags.md), line 35.
-- Covered by [Tags](../design/compositions/tags.md), line 38.
+- Covered by [Tags](../design/compositions/tags.md), line 42.
+- Covered by [Tags](../design/compositions/tags.md), line 45.
 
 ```reaction
 when Tagging.renameTag (newName: name, tag, user), asked by tags.EditTag#2
@@ -1625,8 +1741,8 @@ then
 ### tags.ItemMembership
 
 Authored path: `tags.ItemMembership`.
-- Covered by [Tags](../design/compositions/tags.md), line 53.
-- Covered by [Tags](../design/compositions/tags.md), line 56.
+- Covered by [Tags](../design/compositions/tags.md), line 60.
+- Covered by [Tags](../design/compositions/tags.md), line 63.
 
 ```reaction
 when RequestBoundary.request (item, path: "/tags/item-membership", requestId, session)
@@ -1637,8 +1753,8 @@ then
 ### tags.ItemMembership#2
 
 Authored path: `tags.ItemMembership`.
-- Covered by [Tags](../design/compositions/tags.md), line 53.
-- Covered by [Tags](../design/compositions/tags.md), line 56.
+- Covered by [Tags](../design/compositions/tags.md), line 60.
+- Covered by [Tags](../design/compositions/tags.md), line 63.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by tags.ItemMembership
@@ -1700,10 +1816,142 @@ then
   RequestBoundary.respond (requestId, tags: former "the tags owned by a user" with (user))
 ```
 
+### tags.MakePrivate
+
+Authored path: `tags.MakePrivate`.
+- Covered by [Tags](../design/compositions/tags.md), line 29.
+- Covered by [Tags](../design/compositions/tags.md), line 33.
+
+```reaction
+when RequestBoundary.request (path: "/tags/make-private", requestId, session, tag)
+then
+  Sessioning.use (session)
+```
+
+### tags.MakePrivate#2
+
+Authored path: `tags.MakePrivate`.
+- Covered by [Tags](../design/compositions/tags.md), line 29.
+- Covered by [Tags](../design/compositions/tags.md), line 33.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by tags.MakePrivate
+where
+  earlier, RequestBoundary.request (path: "/tags/make-private", requestId, session, tag)
+then
+  Tagging.updateAudience (audience: [], tag, user)
+```
+
+### tags.MakePrivate#3
+
+Authored path: `tags.MakePrivate`.
+- Covered by [Tags](../design/compositions/tags.md), line 29.
+- Covered by [Tags](../design/compositions/tags.md), line 33.
+
+```reaction
+when Tagging.updateAudience (audience: [], tag, user), asked by tags.MakePrivate#2
+then
+  Sharing.setPrivate (author: user, tag)
+```
+
+### tags.MakePrivate#4
+
+Authored path: `tags.MakePrivate`.
+- Covered by [Tags](../design/compositions/tags.md), line 29.
+- Covered by [Tags](../design/compositions/tags.md), line 33.
+
+```reaction
+when Sharing.setPrivate (author: user, tag), asked by tags.MakePrivate#3
+where
+  earlier, RequestBoundary.request (path: "/tags/make-private", requestId, session, tag)
+then
+  RequestBoundary.respond (requestId)
+```
+
+### tags.MakePublic
+
+Authored path: `tags.MakePublic`.
+- Covered by [Tags](../design/compositions/tags.md), line 29.
+- Covered by [Tags](../design/compositions/tags.md), line 32.
+
+```reaction
+when RequestBoundary.request (path: "/tags/make-public", requestId, session, tag)
+then
+  Sessioning.use (session)
+```
+
+### tags.MakePublic#2
+
+Authored path: `tags.MakePublic`.
+- Covered by [Tags](../design/compositions/tags.md), line 29.
+- Covered by [Tags](../design/compositions/tags.md), line 32.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by tags.MakePublic
+where
+  earlier, RequestBoundary.request (path: "/tags/make-public", requestId, session, tag)
+then
+  Tagging.captureTagSharing (tag, user)
+```
+
+### tags.MakePublic#3
+
+Authored path: `tags.MakePublic`.
+- Covered by [Tags](../design/compositions/tags.md), line 29.
+- Covered by [Tags](../design/compositions/tags.md), line 32.
+
+```reaction
+when Tagging.captureTagSharing (tag, user, audience, ids), asked by tags.MakePublic#2
+then
+  Sharing.revokeItems (audience, author: user, items: ids)
+```
+
+### tags.MakePublic#4
+
+Authored path: `tags.MakePublic`.
+- Covered by [Tags](../design/compositions/tags.md), line 29.
+- Covered by [Tags](../design/compositions/tags.md), line 32.
+
+```reaction
+when Sharing.revokeItems (audience, author: user, items: ids), asked by tags.MakePublic#3
+where
+  earlier, Tagging.captureTagSharing (tag, user, audience, ids), asked by tags.MakePublic#2
+then
+  Tagging.updateAudience (audience: [], tag, user)
+```
+
+### tags.MakePublic#5
+
+Authored path: `tags.MakePublic`.
+- Covered by [Tags](../design/compositions/tags.md), line 29.
+- Covered by [Tags](../design/compositions/tags.md), line 32.
+
+```reaction
+when Tagging.updateAudience (audience: [], tag, user), asked by tags.MakePublic#4
+where
+  earlier, Tagging.captureTagSharing (tag, user, audience, ids), asked by tags.MakePublic#2
+then
+  Sharing.setPublic (author: user, items: ids, tag)
+```
+
+### tags.MakePublic#6
+
+Authored path: `tags.MakePublic`.
+- Covered by [Tags](../design/compositions/tags.md), line 29.
+- Covered by [Tags](../design/compositions/tags.md), line 32.
+
+```reaction
+when Sharing.setPublic (author: user, items: ids, tag), asked by tags.MakePublic#5
+where
+  earlier, RequestBoundary.request (path: "/tags/make-public", requestId, session, tag)
+then
+  RequestBoundary.respond (requestId)
+```
+
 ### tags.RemoveCharacter
 
 Authored path: `tags.RemoveCharacter`.
-- Covered by [Tags](../design/compositions/tags.md), line 61.
+- Covered by [Tags](../design/compositions/tags.md), line 68.
 
 ```reaction
 when Tagging.removeItemTag (item, tag, user)
@@ -1718,8 +1966,8 @@ then
 ### tags.RemoveItem
 
 Authored path: `tags.RemoveItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 61.
-- Covered by [Tags](../design/compositions/tags.md), line 64.
+- Covered by [Tags](../design/compositions/tags.md), line 68.
+- Covered by [Tags](../design/compositions/tags.md), line 71.
 
 ```reaction
 when RequestBoundary.request (item, path: "/tags/remove-item", requestId, session, tag)
@@ -1730,8 +1978,8 @@ then
 ### tags.RemoveItem#2
 
 Authored path: `tags.RemoveItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 61.
-- Covered by [Tags](../design/compositions/tags.md), line 64.
+- Covered by [Tags](../design/compositions/tags.md), line 68.
+- Covered by [Tags](../design/compositions/tags.md), line 71.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by tags.RemoveItem
@@ -1744,8 +1992,8 @@ then
 ### tags.RemoveItem#3
 
 Authored path: `tags.RemoveItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 61.
-- Covered by [Tags](../design/compositions/tags.md), line 64.
+- Covered by [Tags](../design/compositions/tags.md), line 68.
+- Covered by [Tags](../design/compositions/tags.md), line 71.
 
 ```reaction
 when Tagging.captureItemSharing (item, tag, user, audience, ids), asked by tags.RemoveItem#2
@@ -1756,25 +2004,39 @@ then
 ### tags.RemoveItem#4
 
 Authored path: `tags.RemoveItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 61.
-- Covered by [Tags](../design/compositions/tags.md), line 64.
+- Covered by [Tags](../design/compositions/tags.md), line 68.
+- Covered by [Tags](../design/compositions/tags.md), line 71.
 
 ```reaction
 when Sharing.revokeItems (audience, author: user, items: ids), asked by tags.RemoveItem#3
 where
   earlier, Tagging.captureItemSharing (item, tag, user, audience, ids), asked by tags.RemoveItem#2
 then
-  Tagging.removeItemTag (item, tag, user)
+  Sharing.removePublicItems (author: user, items: ids, tag)
 ```
 
 ### tags.RemoveItem#5
 
 Authored path: `tags.RemoveItem`.
-- Covered by [Tags](../design/compositions/tags.md), line 61.
-- Covered by [Tags](../design/compositions/tags.md), line 64.
+- Covered by [Tags](../design/compositions/tags.md), line 68.
+- Covered by [Tags](../design/compositions/tags.md), line 71.
 
 ```reaction
-when Tagging.removeItemTag (item, tag, user), asked by tags.RemoveItem#4
+when Sharing.removePublicItems (author: user, items: ids, tag), asked by tags.RemoveItem#4
+where
+  earlier, Tagging.captureItemSharing (item, tag, user, audience, ids), asked by tags.RemoveItem#2
+then
+  Tagging.removeItemTag (item, tag, user)
+```
+
+### tags.RemoveItem#6
+
+Authored path: `tags.RemoveItem`.
+- Covered by [Tags](../design/compositions/tags.md), line 68.
+- Covered by [Tags](../design/compositions/tags.md), line 71.
+
+```reaction
+when Tagging.removeItemTag (item, tag, user), asked by tags.RemoveItem#5
 where
   earlier, RequestBoundary.request (item, path: "/tags/remove-item", requestId, session, tag)
 then
@@ -1803,6 +2065,7 @@ Authored path: `tags.Share`.
 when Sessioning.use (session, subject: user), asked by tags.Share
 where
   earlier, RequestBoundary.request (audience, path: "/tags/share", requestId, session, tag)
+  no Sharing._publicStatus (author: user, tag) has (isPublic: true)
 then
   Tagging.captureTagSharing (tag, user)
 ```
@@ -1851,7 +2114,7 @@ then
 ### tags.ShareCharacter
 
 Authored path: `tags.ShareCharacter`.
-- Covered by [Tags](../design/compositions/tags.md), line 59.
+- Covered by [Tags](../design/compositions/tags.md), line 66.
 
 ```reaction
 when Tagging.addItemTag (item, tag, user)
@@ -1862,7 +2125,7 @@ then
 ### tags.ShareCharacter#2
 
 Authored path: `tags.ShareCharacter`.
-- Covered by [Tags](../design/compositions/tags.md), line 59.
+- Covered by [Tags](../design/compositions/tags.md), line 66.
 
 ```reaction
 when Tagging.generateTaggedItemID (item, tag, user, id), asked by tags.ShareCharacter
@@ -1870,6 +2133,20 @@ where
   Tagging._audienceList (tag, user) has (audience)
 then
   Sharing.shareItem (audience, author: user, item: id)
+```
+
+### tags.ShareCharacter#3
+
+Authored path: `tags.ShareCharacter`.
+- Covered by [Tags](../design/compositions/tags.md), line 66.
+
+```reaction
+when Sharing.shareItem (audience, author: user, item: id), asked by tags.ShareCharacter#2
+where
+  earlier, Tagging.generateTaggedItemID (item, tag, user, id), asked by tags.ShareCharacter
+  Sharing._publicStatus (author: user, tag) has (isPublic: true)
+then
+  Sharing.addPublicItem (author: user, item: id, tag)
 ```
 
 ### tags.ShareCollection
@@ -1922,6 +2199,8 @@ not listed here have no explicit input contract.
 - `/rating/view` — requires `session`, `item`
 - `/shares/collection-items` — requires `session`, `tag`
 - `/shares/collections` — requires `session`
+- `/shares/public-collection-items` — requires `session`, `tag`
+- `/shares/public-collections` — requires `session`
 - `/tags/add-item` — requires `session`, `tag`, `item`
 - `/tags/audience` — requires `session`, `tag`
 - `/tags/create-tag` — requires `session`, `name`
@@ -1930,6 +2209,8 @@ not listed here have no explicit input contract.
 - `/tags/item-membership` — requires `session`, `item`
 - `/tags/items` — requires `session`, `tag`
 - `/tags/list` — requires `session`
+- `/tags/make-private` — requires `session`, `tag`
+- `/tags/make-public` — requires `session`, `tag`
 - `/tags/remove-item` — requires `session`, `tag`, `item`
 - `/tags/share` — requires `session`, `tag`, `audience`
 - `/users/search` — requires `session`, `term`

@@ -41,6 +41,40 @@ const UserSharedCollectionItems = former(
       .form({ item, addedDate }),
 );
 
+const UserPublicCollections = former(
+  "the public collections",
+  ({ user }, { tag, name, author, authorUsername }) =>
+    each(
+      Sharing._publicCollections({ user }).is({ author, tag }),
+    )
+      .where(
+        whether(Tagging._tagDetails({ tag }).is({ author, name })),
+        whether(
+          Registering._username({ user: author }).is({
+            username: authorUsername,
+          }),
+        ),
+      )
+      .arranged(name, "ascending")
+      .form({ tag, name, author, authorUsername }),
+);
+
+const UserPublicCollectionItems = former(
+  "the items in a public collection",
+  ({ tag }, { publicItem, item, addedDate }) =>
+    each(Sharing._publicItems({ tag }).is({ item: publicItem }))
+      .where(
+        whether(
+          Tagging._tagDetailsOfItem({ id: publicItem }).is({
+            tag,
+            item,
+            addedDate,
+          }),
+        ),
+      )
+      .form({ item, addedDate }),
+);
+
 const Collections = endpoint(
   "/shares/collections",
   ({ session, user }) =>
@@ -59,7 +93,33 @@ const CollectionItems = endpoint(
   { input: { required: ["session", "tag"] } },
 );
 
+const PublicCollections = endpoint(
+  "/shares/public-collections",
+  ({ session, user }) =>
+    receive({ session })
+      .then(Sessioning.use({ session }).responds({ subject: user }))
+      .then(
+        respond({ collections: UserPublicCollections({ user }) }),
+      ),
+  { input: { required: ["session"] } },
+);
+
+const PublicCollectionItems = endpoint(
+  "/shares/public-collection-items",
+  ({ session, tag }) =>
+    receive({ session, tag })
+      .then(Sessioning.use({ session }).responds({}))
+      .then(
+        respond({
+          items: UserPublicCollectionItems({ tag }),
+        }),
+      ),
+  { input: { required: ["session", "tag"] } },
+);
+
 export const composition = {
   Collections,
   CollectionItems,
+  PublicCollections,
+  PublicCollectionItems,
 };

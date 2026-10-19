@@ -239,6 +239,33 @@ export type MyHanziWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
   };
+  "/shares/public-collection-items": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+      "tag": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicItems"]>[0], ["tag"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["tag"]>]>>;
+    };
+    output: {
+      "items": ({
+        "addedDate": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["addedDate"]>> | null;
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["item"]>> | null;
+      })[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+  };
+  "/shares/public-collections": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: {
+      "collections": ({
+        "author": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicCollections"]>>>, ["author"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetails"]>>>, ["author"]>]>>;
+        "authorUsername": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>>>, ["username"]>> | null;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetails"]>>>, ["name"]>> | null;
+        "tag": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetails"]>[0], ["tag"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicCollections"]>>>, ["tag"]>]>>;
+      })[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+  };
   "/tags/add-item": {
     input: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["addItemTag"]>[0], ["item"]>>;
@@ -246,14 +273,17 @@ export type MyHanziWire = {
       "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["addItemTag"]>[0], ["tag"]>>;
     };
     output: Record<string, never>;
-    error: { error: AppWideError | "BENCHMARK_ITEM_ALREADY_FINISHED" | "BENCHMARK_ITEM_NOT_FOUND" | "BENCHMARK_NOT_FOUND" | "INVALID_INPUT" | "ITEM_ALREADY_TAGGED" | "NOT_SIGNED_IN" };
+    error: { error: AppWideError | "BENCHMARK_ITEM_ALREADY_FINISHED" | "BENCHMARK_ITEM_NOT_FOUND" | "BENCHMARK_NOT_FOUND" | "INVALID_INPUT" | "ITEM_ALREADY_TAGGED" | "NOT_SIGNED_IN" | "TAG_NOT_PUBLIC" };
   };
   "/tags/audience": {
     input: {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
-      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_audience"]>[0], ["tag"]>>;
+      "tag": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicStatus"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_audience"]>[0], ["tag"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tags"]>>>, ["tag"]>]>>;
     };
     output: {
+      "isPublic": ({
+        "isPublic": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicStatus"]>>>, ["isPublic"]>> | null;
+      })[];
       "users": ({
         "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_audience"]>>>, ["audience"]>]>>;
         "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>>>, ["username"]>> | null;
@@ -327,6 +357,22 @@ export type MyHanziWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
   };
+  "/tags/make-private": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+      "tag": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["updateAudience"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["setPrivate"]>[0], ["tag"]>]>>;
+    };
+    output: Record<string, never>;
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+  };
+  "/tags/make-public": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+      "tag": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["captureTagSharing"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["setPublic"]>[0], ["tag"]>]>>;
+    };
+    output: Record<string, never>;
+    error: { error: AppWideError | "COLLECTION_EMPTY" | "INVALID_INPUT" | "NOT_SIGNED_IN" | "PUBLIC_ITEMS_EMPTY" | "SHARED_ITEMS_NOT_DISTINCT" };
+  };
   "/tags/remove-item": {
     input: {
       "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["captureItemSharing"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["removeItemTag"]>[0], ["item"]>]>>;
@@ -340,10 +386,10 @@ export type MyHanziWire = {
     input: {
       "audience": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["updateAudience"]>[0], ["audience"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
-      "tag": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["captureTagSharing"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["updateAudience"]>[0], ["tag"]>]>>;
+      "tag": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["captureTagSharing"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicStatus"]>[0], ["tag"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["updateAudience"]>[0], ["tag"]>]>>;
     };
     output: Record<string, never>;
-    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" | "SHARED_ITEMS_NOT_DISTINCT" };
+    error: { error: AppWideError | "COLLECTION_EMPTY" | "INVALID_INPUT" | "NOT_SIGNED_IN" | "SHARED_ITEMS_NOT_DISTINCT" };
   };
   "/users/search": {
     input: {
@@ -555,6 +601,30 @@ export type MyHanziWireHttp = {
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
   };
+  "/shares/public-collection-items": {
+    input: {
+      "tag": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicItems"]>[0], ["tag"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["tag"]>]>>;
+    };
+    output: {
+      "items": ({
+        "addedDate": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["addedDate"]>> | null;
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["item"]>> | null;
+      })[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/shares/public-collections": {
+    input: Record<string, never>;
+    output: {
+      "collections": ({
+        "author": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicCollections"]>>>, ["author"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetails"]>>>, ["author"]>]>>;
+        "authorUsername": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>>>, ["username"]>> | null;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetails"]>>>, ["name"]>> | null;
+        "tag": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetails"]>[0], ["tag"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicCollections"]>>>, ["tag"]>]>>;
+      })[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
   "/tags/add-item": {
     input: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["addItemTag"]>[0], ["item"]>>;
@@ -565,9 +635,12 @@ export type MyHanziWireHttp = {
   };
   "/tags/audience": {
     input: {
-      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_audience"]>[0], ["tag"]>>;
+      "tag": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicStatus"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_audience"]>[0], ["tag"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tags"]>>>, ["tag"]>]>>;
     };
     output: {
+      "isPublic": ({
+        "isPublic": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicStatus"]>>>, ["isPublic"]>> | null;
+      })[];
       "users": ({
         "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_audience"]>>>, ["audience"]>]>>;
         "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>>>, ["username"]>> | null;
@@ -634,6 +707,20 @@ export type MyHanziWireHttp = {
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
   };
+  "/tags/make-private": {
+    input: {
+      "tag": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["updateAudience"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["setPrivate"]>[0], ["tag"]>]>>;
+    };
+    output: Record<string, never>;
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/tags/make-public": {
+    input: {
+      "tag": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["captureTagSharing"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["setPublic"]>[0], ["tag"]>]>>;
+    };
+    output: Record<string, never>;
+    error: { error: HttpAppWideError | "CONFLICT" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
   "/tags/remove-item": {
     input: {
       "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["captureItemSharing"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["removeItemTag"]>[0], ["item"]>]>>;
@@ -645,10 +732,10 @@ export type MyHanziWireHttp = {
   "/tags/share": {
     input: {
       "audience": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["updateAudience"]>[0], ["audience"]>>;
-      "tag": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["captureTagSharing"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["updateAudience"]>[0], ["tag"]>]>>;
+      "tag": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["captureTagSharing"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicStatus"]>[0], ["tag"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["updateAudience"]>[0], ["tag"]>]>>;
     };
     output: Record<string, never>;
-    error: { error: HttpAppWideError | "INTERNAL_ERROR" | "INVALID_REQUEST" | "UNAUTHORIZED" };
+    error: { error: HttpAppWideError | "CONFLICT" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "UNAUTHORIZED" };
   };
   "/users/search": {
     input: {
