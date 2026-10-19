@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import type { SharedCollection } from "../useSharing.ts";
 
 const props = defineProps<{
@@ -15,22 +15,33 @@ const emit = defineEmits<{
   select: [collection: SharedCollection];
 }>();
 
+const searchTerm = ref("");
+
 const sortedCollections = computed(() => {
   const unique = new Map<string, SharedCollection>();
   for (const collection of props.collections) {
     if (collection.tag !== null) unique.set(collection.tag, collection);
   }
-  return [...unique.values()].sort(
-    (left, right) =>
-      (left.name ?? "").localeCompare(right.name ?? "", undefined, {
-        sensitivity: "base",
-      }) ||
-      (left.authorUsername ?? "").localeCompare(
-        right.authorUsername ?? "",
-        undefined,
-        { sensitivity: "base" },
-      ),
-  );
+  const term = searchTerm.value.trim().toLocaleLowerCase();
+  return [...unique.values()]
+    .filter(
+      (collection) =>
+        term === "" ||
+        `${collection.name ?? ""} ${collection.authorUsername ?? ""}`
+          .toLocaleLowerCase()
+          .includes(term),
+    )
+    .sort(
+      (left, right) =>
+        (left.name ?? "").localeCompare(right.name ?? "", undefined, {
+          sensitivity: "base",
+        }) ||
+        (left.authorUsername ?? "").localeCompare(
+          right.authorUsername ?? "",
+          undefined,
+          { sensitivity: "base" },
+        ),
+    );
 });
 </script>
 
@@ -40,27 +51,39 @@ const sortedCollections = computed(() => {
     <h1>{{ title ?? "Shared with me" }}</h1>
     <p v-if="loading" role="status">Loading shared collections...</p>
     <p v-else-if="error" role="alert">{{ error }}</p>
-    <p v-else-if="sortedCollections.length === 0">
+    <p v-else-if="props.collections.length === 0">
       {{ emptyMessage ?? "No collections have been shared with you." }}
     </p>
-    <ul v-else class="shared-collection-list">
-      <li
-        v-for="collection in sortedCollections"
-        :key="collection.tag ?? ''"
-        class="shared-collection-row"
-      >
-        <button
-          type="button"
-          class="shared-collection-name"
-          @click="emit('select', collection)"
+    <template v-else>
+      <input
+        v-model="searchTerm"
+        type="search"
+        class="collection-search"
+        placeholder="Search by collection or author name"
+        aria-label="Search by collection or author name"
+      />
+      <p v-if="sortedCollections.length === 0">
+        No collections match your search.
+      </p>
+      <ul v-else class="shared-collection-list">
+        <li
+          v-for="collection in sortedCollections"
+          :key="collection.tag ?? ''"
+          class="shared-collection-row"
         >
-          {{ collection.name ?? "Unnamed collection" }}
-        </button>
-        <span class="shared-author">
-          {{ collection.authorUsername ?? "Unknown user" }}
-        </span>
-      </li>
-    </ul>
+          <button
+            type="button"
+            class="shared-collection-name"
+            @click="emit('select', collection)"
+          >
+            {{ collection.name ?? "Unnamed collection" }}
+          </button>
+          <span class="shared-author">
+            {{ collection.authorUsername ?? "Unknown user" }}
+          </span>
+        </li>
+      </ul>
+    </template>
   </main>
 </template>
 
@@ -72,6 +95,12 @@ main {
 
 h1 {
   margin: 1rem 0;
+}
+
+.collection-search {
+  box-sizing: border-box;
+  width: min(100%, 28rem);
+  margin: 0.5rem 0;
 }
 
 .shared-collection-list {
