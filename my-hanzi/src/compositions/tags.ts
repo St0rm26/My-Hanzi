@@ -1,6 +1,7 @@
 import {
   each,
   former,
+  no,
   now,
   reaction,
   when,
@@ -14,6 +15,20 @@ const { Tagging, Registering, Sessioning, Sharing, Benchmarking } = concepts;
 
 const UserTags = former("the tags owned by a user", ({ user }, { tag, name }) =>
   each(Tagging._tags({ user }).is({ tag, name })).form({ tag, name }),
+);
+
+const TagPublicStatus = former(
+  "whether a user's tag is public",
+  ({ user, tag }, { isPublic }) =>
+    each(Tagging._tags({ user }).is({ tag }))
+      .where(
+        whether(
+          Sharing._publicStatus({ author: user, tag }).is({
+            isPublic,
+          }),
+        ),
+      )
+      .form({ isPublic }),
 );
 
 const ItemTags = former(
@@ -64,7 +79,12 @@ const GetAudience = endpoint(
   ({ session, tag, user }) =>
     receive({ session, tag })
       .then(Sessioning.use({ session }).responds({ subject: user }))
-      .then(respond({ users: AudienceUsers({ user, tag }) })),
+      .then(
+        respond({
+          users: AudienceUsers({ user, tag }),
+          isPublic: TagPublicStatus({ user, tag }),
+        }),
+      ),
   { input: { required: ["session", "tag"] } },
 );
 
@@ -115,6 +135,7 @@ const DeleteTagEndpoint = endpoint(
         }),
       )
       .then(Sharing.revokeItems({ author: user, items: ids, audience }))
+      .then(Sharing.setPrivate({ author: user, tag }))
       .then(Tagging.deleteTag({ user, tag }).responds({}))
       .then(respond({})),
   { input: { required: ["session", "tag"] } },
@@ -126,19 +147,59 @@ const ShareCollectionEndpoint = endpoint(
     receive({ session, tag, audience })
       .then(Sessioning.use({ session }).responds({ subject: user }))
       .then(
+        where(
+          no(
+            Sharing._publicStatus({ author: user, tag }).is({
+              isPublic: true,
+            }),
+          ),
+        )
+          .then(
+            Tagging.captureTagSharing({ user, tag }).responds({
+              audience: previousAudience,
+              ids,
+            }),
+          )
+          .then(
+            Sharing.revokeItems({
+              author: user,
+              items: ids,
+              audience: previousAudience,
+            }),
+          )
+          .then(Tagging.updateAudience({ user, tag, audience }).responds({}))
+          .then(respond({})),
+      ),
+  { input: { required: ["session", "tag", "audience"] } },
+);
+
+const MakePublic = endpoint(
+  "/tags/make-public",
+  ({ session, tag, user, audience, ids }) =>
+    receive({ session, tag })
+      .then(Sessioning.use({ session }).responds({ subject: user }))
+      .then(
         Tagging.captureTagSharing({ user, tag }).responds({
-          audience: previousAudience,
+          audience,
           ids,
         }),
       )
-      .then(Sharing.revokeItems({
-        author: user,
-        items: ids,
-        audience: previousAudience,
-      }))
-      .then(Tagging.updateAudience({ user, tag, audience }).responds({}))
+      .then(Sharing.revokeItems({ author: user, items: ids, audience }))
+      .then(Tagging.updateAudience({ user, tag, audience: [] }).responds({}))
+      .then(Sharing.setPublic({ author: user, tag, items: ids }))
       .then(respond({})),
-  { input: { required: ["session", "tag", "audience"] } },
+  { input: { required: ["session", "tag"] } },
+);
+
+const MakePrivate = endpoint(
+  "/tags/make-private",
+  ({ session, tag, user }) =>
+    receive({ session, tag })
+      .then(Sessioning.use({ session }).responds({ subject: user }))
+      .then(Tagging.updateAudience({ user, tag, audience: [] }).responds({}))
+      .then(Sharing.setPrivate({ author: user, tag }))
+      .then(respond({})),
+  { input: { required: ["session", "tag"] } },
 );
 
 const AddItemEndpoint = endpoint(
@@ -168,6 +229,19 @@ const ShareCharacter = reaction(({ user, tag, item, id, audience }) =>
     .then(
       where(Tagging._audienceList({ user, tag }).is({ audience })).then(
         Sharing.shareItem({ author: user, item: id, audience }),
+      ),
+    )
+    .then(
+      where(
+        Sharing._publicStatus({ author: user, tag }).is({
+          isPublic: true,
+        }),
+      ).then(
+        Sharing.addPublicItem({
+          author: user,
+          tag,
+          item: id,
+        }),
       ),
     ),
 );
@@ -206,6 +280,13 @@ const RemoveItemEndpoint = endpoint(
         }),
       )
       .then(Sharing.revokeItems({ author: user, items: ids, audience }))
+      .then(
+        Sharing.removePublicItems({
+          author: user,
+          tag,
+          items: ids,
+        }),
+      )
       .then(Tagging.removeItemTag({ user, tag, item }).responds({}))
       .then(respond({})),
   { input: { required: ["session", "tag", "item"] } },
@@ -213,6 +294,9 @@ const RemoveItemEndpoint = endpoint(
 
 export const tagsHttp = {
   publicErrors: {
+    COLLECTION_EMPTY: "CONFLICT",
+    PUBLIC_ITEMS_EMPTY: "CONFLICT",
+    TAG_NOT_PUBLIC: "CONFLICT",
     TAG_ALREADY_EXISTS: "CONFLICT",
     TAG_NOT_FOUND: "NOT_FOUND",
     DEFAULT_TAG_CANNOT_BE_DELETED: "CONFLICT",
@@ -234,6 +318,8 @@ export const composition = {
   EditTag,
   DeleteTag: DeleteTagEndpoint,
   Share: ShareCollectionEndpoint,
+  MakePublic,
+  MakePrivate,
   AddItem: AddItemEndpoint,
   RemoveItem: RemoveItemEndpoint,
 };

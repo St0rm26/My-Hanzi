@@ -20,10 +20,17 @@ The user can [create a tag](reaction:tags.CreateTag) for themselves as long as t
 tags.CreateTag at /tags/create-tag
 ```
 
-The user can share their tag with a specific audience using [the share endpoint](reaction:tags.Share). The endpoint captures the current audience and tagged item IDs with `Tagging.captureTagSharing`, revokes the previous shares, and replaces the tag's audience; [a reaction shares the tagged items with each new audience member](reaction:tags.ShareCollection).
+The user can share their tag with a specific audience using [the share endpoint](reaction:tags.Share). The endpoint captures the current audience and tagged item IDs with `Tagging.captureTagSharing`, revokes the previous shares, and replaces the tag's audience; [a reaction shares the tagged items with each new audience member](reaction:tags.ShareCollection). Empty collections cannot be shared.
 
 ```endpoints
 tags.Share at /tags/share
+```
+
+The audience endpoint also reports whether the collection is public. The user can [make a non-empty collection public](reaction:tags.MakePublic), which removes any individually shared audience and creates public access for each current collection item, or [make it private](reaction:tags.MakePrivate), which revokes public access without restoring the former audience. New items added to a public collection are made public, and removing an item revokes its public access. Removing the final item also clears the audience and makes the collection private. Deleting the collection removes its public item access.
+
+```endpoints
+tags.MakePublic at /tags/make-public
+tags.MakePrivate at /tags/make-private
 ```
 
 The user can view the usernames and identities in a tag's current sharing audience before editing it with [the audience endpoint](reaction:tags.Audience).
