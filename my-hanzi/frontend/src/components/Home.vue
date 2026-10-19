@@ -40,6 +40,7 @@ const {
   renameCollection,
   deleteCollection,
   shareCollection,
+  setCollectionPublic,
   getCharacterCollections,
   getCollectionItems,
   getCollectionAudience,
@@ -59,6 +60,14 @@ const {
   sharedCollectionItemsLoading,
   sharedCollectionItemsError,
   loadSharedCollectionItems,
+  publicCollections,
+  publicCollectionsLoading,
+  publicCollectionsError,
+  loadPublicCollections,
+  publicCollectionItems,
+  publicCollectionItemsLoading,
+  publicCollectionItemsError,
+  loadPublicCollectionItems,
 } = useSharing();
 const {
   benchmarks,
@@ -88,6 +97,8 @@ const page = ref<
   | "collection"
   | "shared"
   | "shared-collection"
+  | "public"
+  | "public-collection"
 >("home");
 const searchQuery = ref("");
 const lastSearch = ref("");
@@ -95,6 +106,7 @@ const characters = ref<CharacterEntry[]>([]);
 const activeCharacter = ref<CharacterEntry | null>(null);
 const activeCollection = ref<Collection | null>(null);
 const activeSharedCollection = ref<Collection | null>(null);
+const activePublicCollection = ref<Collection | null>(null);
 const activeBenchmark = ref<Benchmark | null>(null);
 const benchmarkItems = ref<string[]>([]);
 const benchmarkStudiedItems = ref<string[]>([]);
@@ -102,12 +114,17 @@ const benchmarkLoading = ref(false);
 const benchmarkSequence = ref(0);
 const collectionItems = ref<CollectionItem[]>([]);
 const sharedUsers = ref<SharedUser[]>([]);
+const collectionIsPublic = ref(false);
 const collectionLoading = ref(false);
 const selectedCollectionIds = ref<CollectionId[]>([]);
 const initialCollectionIds = ref<CollectionId[]>([]);
 const membershipLoading = ref(false);
 const detailOrigin = ref<
-  "results" | "collection" | "benchmark" | "shared-collection"
+  | "results"
+  | "collection"
+  | "benchmark"
+  | "shared-collection"
+  | "public-collection"
 >("results");
 const searching = ref(false);
 const searchError = ref<string | null>(null);
@@ -147,7 +164,11 @@ async function searchCharacters() {
 
 async function openCharacterById(
   character: string,
-  origin: "collection" | "benchmark",
+  origin:
+    | "collection"
+    | "benchmark"
+    | "shared-collection"
+    | "public-collection",
 ) {
   let entry: CharacterEntry | undefined;
   try {
@@ -177,6 +198,8 @@ function closeDetail() {
     void openCollection(activeCollection.value);
   } else if (detailOrigin.value === "shared-collection") {
     page.value = "shared-collection";
+  } else if (detailOrigin.value === "public-collection") {
+    page.value = "public-collection";
   } else if (detailOrigin.value === "benchmark") {
     if (activeBenchmark.value) void openBenchmark(activeBenchmark.value);
     else page.value = "home";
@@ -191,7 +214,8 @@ async function openCharacter(
     | "results"
     | "collection"
     | "benchmark"
-    | "shared-collection" = "results",
+    | "shared-collection"
+    | "public-collection" = "results",
 ) {
   detailOrigin.value = origin;
   const sequence = ++characterSequence;
@@ -274,6 +298,7 @@ async function openCollection(collection: Collection) {
   activeCollection.value = collection;
   collectionItems.value = [];
   sharedUsers.value = [];
+  collectionIsPublic.value = false;
   shareStatus.value = null;
   collectionLoading.value = true;
   resetSearch();
@@ -287,7 +312,8 @@ async function openCollection(collection: Collection) {
       collectionItems.value = items;
     }
     if (sequence === collectionSequence && audience !== null) {
-      sharedUsers.value = audience;
+      sharedUsers.value = audience.users;
+      collectionIsPublic.value = audience.isPublic;
     }
   } finally {
     if (sequence === collectionSequence) collectionLoading.value = false;
@@ -300,7 +326,7 @@ function searchForShareUsers(term: string) {
 }
 
 async function saveCollectionAudience(users: SharedUser[]) {
-  if (!activeCollection.value) return;
+  if (!activeCollection.value || collectionIsPublic.value) return;
   shareStatus.value = null;
   const saved = await shareCollection(
     activeCollection.value,
@@ -312,9 +338,39 @@ async function saveCollectionAudience(users: SharedUser[]) {
   }
 }
 
+async function toggleCollectionPublic(isPublic: boolean) {
+  if (!activeCollection.value) return;
+  shareStatus.value = null;
+  const saved = await setCollectionPublic(activeCollection.value, isPublic);
+  if (saved) {
+    collectionIsPublic.value = isPublic;
+    if (isPublic) {
+      sharedUsers.value = [];
+      shareStatus.value = "Collection is public.";
+    } else {
+      shareStatus.value = "Collection is private.";
+    }
+  }
+}
+
 async function openSharedCollections() {
   page.value = "shared";
   await loadSharedCollections();
+}
+
+async function openPublicCollections() {
+  page.value = "public";
+  await loadPublicCollections();
+}
+
+async function openPublicCollection(collection: SharedCollection) {
+  if (collection.tag === null || collection.name === null) return;
+  activePublicCollection.value = {
+    tag: collection.tag,
+    name: collection.name,
+  };
+  page.value = "public-collection";
+  await loadPublicCollectionItems(collection.tag);
 }
 
 async function openSharedCollection(collection: SharedCollection) {
@@ -328,19 +384,11 @@ async function openSharedCollection(collection: SharedCollection) {
 }
 
 function openSharedCollectionCharacter(character: string) {
-  if (!activeSharedCollection.value) return;
-  const entry = {
-    character,
-    pinyin: "",
-    meaning: "No definition available.",
-    radical: "Not listed",
-    strokeCount: null,
-  };
-  void lookupCharacters([character])
-    .then((entries) =>
-      openCharacter(entries.get(character) ?? entry, "shared-collection"),
-    )
-    .catch(() => openCharacter(entry, "shared-collection"));
+  return openCharacterById(character, "shared-collection");
+}
+
+function openPublicCollectionCharacter(character: string) {
+  return openCharacterById(character, "public-collection");
 }
 
 function cancelForm() {
@@ -390,6 +438,13 @@ onMounted(() => {
           @click="openSharedCollections"
         >
           Shared with me
+        </button>
+        <button
+          type="button"
+          class="shared-with-me"
+          @click="openPublicCollections"
+        >
+          Public collections
         </button>
         <span>{{ me?.username }}</span>
         <button
@@ -442,9 +497,13 @@ onMounted(() => {
       :back-label="
         detailOrigin === 'collection'
           ? 'Back to collection'
-          : detailOrigin === 'benchmark'
-            ? 'Back to benchmark'
-            : 'Back to results'
+          : detailOrigin === 'shared-collection'
+            ? 'Back to shared collection'
+            : detailOrigin === 'public-collection'
+              ? 'Back to public collection'
+              : detailOrigin === 'benchmark'
+                ? 'Back to benchmark'
+                : 'Back to results'
       "
       @back="closeDetail"
       @selection="updateSelectedCollections"
@@ -465,10 +524,12 @@ onMounted(() => {
       :share-error="sharingError"
       :sharing="working"
       :share-status="shareStatus"
+      :is-public="collectionIsPublic"
       @back="page = 'home'"
       @select="openCollectionCharacter"
       @search-users="searchForShareUsers"
       @save-audience="saveCollectionAudience"
+      @toggle-public="toggleCollectionPublic"
     />
 
     <SharedCollectionsPage
@@ -480,6 +541,17 @@ onMounted(() => {
       @select="openSharedCollection"
     />
 
+    <SharedCollectionsPage
+      v-else-if="page === 'public'"
+      :collections="publicCollections"
+      :loading="publicCollectionsLoading"
+      :error="publicCollectionsError"
+      title="Public collections"
+      empty-message="No public collections are available."
+      @back="page = 'home'"
+      @select="openPublicCollection"
+    />
+
     <CollectionPage
       v-else-if="page === 'shared-collection' && activeSharedCollection"
       :collection="activeSharedCollection"
@@ -489,6 +561,18 @@ onMounted(() => {
       shared
       @back="page = 'shared'"
       @select="openSharedCollectionCharacter"
+    />
+
+    <CollectionPage
+      v-else-if="page === 'public-collection' && activePublicCollection"
+      :collection="activePublicCollection"
+      :items="publicCollectionItems"
+      :loading="publicCollectionItemsLoading"
+      :error="publicCollectionItemsError"
+      shared
+      back-label="Back to public collections"
+      @back="page = 'public'"
+      @select="openPublicCollectionCharacter"
     />
 
     <main v-else>
