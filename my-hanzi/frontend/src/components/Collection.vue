@@ -27,6 +27,8 @@ const props = withDefaults(defineProps<{
   shareError?: string | null;
   sharing?: boolean;
   shareStatus?: string | null;
+  isPublic?: boolean;
+  backLabel?: string;
 }>(), {
   shared: false,
   sharedUsers: () => [],
@@ -36,6 +38,8 @@ const props = withDefaults(defineProps<{
   shareError: null,
   sharing: false,
   shareStatus: null,
+  isPublic: false,
+  backLabel: undefined,
 });
 
 const emit = defineEmits<{
@@ -43,6 +47,7 @@ const emit = defineEmits<{
   select: [character: string];
   searchUsers: [term: string];
   saveAudience: [users: SharedUser[]];
+  togglePublic: [isPublic: boolean];
 }>();
 
 const query = ref("");
@@ -67,6 +72,29 @@ watch(
     sharePanelOpen.value = false;
     searchTerm.value = "";
     searchSubmitted.value = false;
+  },
+);
+
+watch(
+  () => props.items.length,
+  (length) => {
+    if (length === 0) {
+      sharePanelOpen.value = false;
+      searchTerm.value = "";
+      searchSubmitted.value = false;
+      selectedAudience.value = [];
+    }
+  },
+);
+
+watch(
+  () => props.isPublic,
+  (isPublic) => {
+    if (isPublic) {
+      sharePanelOpen.value = false;
+      searchTerm.value = "";
+      searchSubmitted.value = false;
+    }
   },
 );
 
@@ -162,6 +190,19 @@ function cancelSharing() {
   sharePanelOpen.value = false;
 }
 
+function togglePublic() {
+  const nextIsPublic = !props.isPublic;
+  if (
+    nextIsPublic &&
+    !window.confirm(
+      "Making this collection public removes all previously shared users from its audience. You will need to add them again if you make it private. Continue?",
+    )
+  ) {
+    return;
+  }
+  emit("togglePublic", nextIsPublic);
+}
+
 function formatAddedDate(value: string) {
   return new Date(value).toLocaleDateString();
 }
@@ -170,19 +211,38 @@ function formatAddedDate(value: string) {
 <template>
   <main>
     <button type="button" @click="emit('back')">
-      {{ shared ? "Back to shared collections" : "Back to collections" }}
+      {{
+        backLabel ??
+        (shared ? "Back to shared collections" : "Back to collections")
+      }}
     </button>
     <h1>{{ collection.name }}</h1>
     <section v-if="!shared" class="sharing-panel">
-      <button
-        type="button"
-        :aria-expanded="sharePanelOpen"
-        :disabled="loading"
-        @click="sharePanelOpen = !sharePanelOpen"
-      >
-        Share
-      </button>
-      <div v-if="sharePanelOpen" class="sharing-content">
+      <div class="sharing-buttons">
+        <button
+          type="button"
+          :aria-expanded="sharePanelOpen"
+          :disabled="loading || isPublic || items.length === 0"
+          @click="sharePanelOpen = !sharePanelOpen"
+        >
+          Share
+        </button>
+        <button
+          type="button"
+          :disabled="loading || sharing || items.length === 0"
+          @click="togglePublic"
+        >
+          {{ isPublic ? "Make Private" : "Make Public" }}
+        </button>
+      </div>
+      <p v-if="items.length === 0" class="sharing-note">
+        Add at least one item before this collection can be shared.
+      </p>
+      <p v-if="shareError" role="alert">{{ shareError }}</p>
+      <p v-if="shareStatus && !audienceChanged" role="status">
+        {{ shareStatus }}
+      </p>
+      <div v-if="sharePanelOpen && !isPublic" class="sharing-content">
         <form class="user-search" @submit.prevent="searchForUsers">
           <label for="user-search">Find users to share with</label>
           <div>
@@ -233,10 +293,6 @@ function formatAddedDate(value: string) {
             </li>
           </ul>
         </section>
-        <p v-if="shareError" role="alert">{{ shareError }}</p>
-        <p v-if="shareStatus && !audienceChanged" role="status">
-          {{ shareStatus }}
-        </p>
         <div class="sharing-actions">
           <button
             type="button"
@@ -312,6 +368,11 @@ h1 {
   justify-items: start;
   gap: 0.75rem;
   margin: 1rem 0 1.5rem;
+}
+
+.sharing-buttons {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .sharing-content {

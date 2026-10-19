@@ -6,6 +6,8 @@ const props = defineProps<{
   collections: SharedCollection[];
   loading: boolean;
   error: string | null;
+  title?: string;
+  emptyMessage?: string;
 }>();
 
 const emit = defineEmits<{
@@ -35,11 +37,11 @@ const sortedCollections = computed(() => {
 <template>
   <main>
     <button type="button" @click="emit('back')">Back</button>
-    <h1>Shared with me</h1>
+    <h1>{{ title ?? "Shared with me" }}</h1>
     <p v-if="loading" role="status">Loading shared collections...</p>
     <p v-else-if="error" role="alert">{{ error }}</p>
     <p v-else-if="sortedCollections.length === 0">
-      No collections have been shared with you.
+      {{ emptyMessage ?? "No collections have been shared with you." }}
     </p>
     <ul v-else class="shared-collection-list">
       <li

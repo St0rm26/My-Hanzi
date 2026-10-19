@@ -10,6 +10,11 @@ export type Collection = Wire["/tags/list"]["output"]["tags"][number];
 export type CollectionId = Collection["tag"];
 export type CollectionItem = Wire["/tags/items"]["output"]["items"][number];
 export type SharedUser = Wire["/tags/audience"]["output"]["users"][number];
+type CollectionPrivacy = Wire["/tags/audience"]["output"]["isPublic"][number];
+export type CollectionSharingState = {
+  users: SharedUser[];
+  isPublic: boolean;
+};
 type ErrorResult = { error: string; detail?: string };
 
 const { sessionEnded } = useSession();
@@ -110,6 +115,33 @@ function shareCollection(collection: Collection, audience: string[]) {
   })();
 }
 
+async function setCollectionPublic(
+  collection: Collection,
+  isPublic: boolean,
+): Promise<boolean> {
+  if (working.value) return false;
+  working.value = true;
+  sharingError.value = null;
+  const path = isPublic ? "/tags/make-public" : "/tags/make-private";
+  try {
+    const result =
+      isPublic
+        ? await call(path, api["/tags/make-public"]({ tag: collection.tag }))
+        : await call(path, api["/tags/make-private"]({ tag: collection.tag }));
+    if ("error" in result) {
+      sharingError.value = result.error;
+      return false;
+    }
+    return true;
+  } catch (cause) {
+    sharingError.value =
+      cause instanceof Error ? cause.message : "Could not update collection visibility.";
+    return false;
+  } finally {
+    working.value = false;
+  }
+}
+
 async function getCharacterCollections(
   character: string,
 ): Promise<CollectionId[] | null> {
@@ -141,7 +173,7 @@ async function getCollectionItems(
 
 async function getCollectionAudience(
   collection: Collection,
-): Promise<SharedUser[] | null> {
+): Promise<CollectionSharingState | null> {
   error.value = null;
   const result = await call(
     "/tags/audience",
@@ -151,7 +183,11 @@ async function getCollectionAudience(
     error.value = result.error;
     return null;
   }
-  return result.users;
+  const publicState: CollectionPrivacy | undefined = result.isPublic[0];
+  return {
+    users: result.users,
+    isPublic: publicState?.isPublic === true,
+  };
 }
 
 async function saveCharacterCollections(
@@ -204,6 +240,7 @@ export function useCollections() {
     renameCollection,
     deleteCollection,
     shareCollection,
+    setCollectionPublic,
     getCharacterCollections,
     getCollectionItems,
     getCollectionAudience,
