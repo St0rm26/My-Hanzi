@@ -60,9 +60,18 @@ const emit = defineEmits<{
   togglePublic: [isPublic: boolean];
 }>();
 
+type RatingFilterValue = PersonalRating | "None";
+
 const query = ref("");
 const sortOrder = ref<SortOrder>("newest");
 const entries = ref(new Map<string, CharacterEntry>());
+const allRatingValues: RatingFilterValue[] = [
+  ...ratingOptions.map(({ value }) => value),
+  "None",
+];
+const ratingFilterOpen = ref(false);
+const selectedRatingDraft = ref<RatingFilterValue[]>([...allRatingValues]);
+const selectedRatings = ref<RatingFilterValue[]>([...allRatingValues]);
 const sharePanelOpen = ref(false);
 const searchTerm = ref("");
 const searchSubmitted = ref(false);
@@ -82,6 +91,9 @@ watch(
     sharePanelOpen.value = false;
     searchTerm.value = "";
     searchSubmitted.value = false;
+    ratingFilterOpen.value = false;
+    selectedRatingDraft.value = [...allRatingValues];
+    selectedRatings.value = [...allRatingValues];
   },
 );
 
@@ -135,6 +147,10 @@ function ratingIconFor(item: string) {
   return ratingOptions.find((option) => option.value === rating)?.icon;
 }
 
+function ratingIconForFilter(rating: RatingFilterValue) {
+  return ratingOptions.find((option) => option.value === rating)?.icon;
+}
+
 const visibleItems = computed(() => {
   const term = query.value.trim();
   let result = props.items;
@@ -147,6 +163,12 @@ const visibleItems = computed(() => {
           pinyinFor(item)
             .split(", ")
             .some((pinyin) => normalizePinyin(pinyin).includes(normalized))),
+    );
+  }
+  if (!props.ratingsLoading && !props.ratingError) {
+    const allowedRatings = new Set(selectedRatings.value);
+    result = result.filter(({ item }) =>
+      allowedRatings.has(props.ratings.get(item) ?? "None"),
     );
   }
   const sorted = [...result];
@@ -164,6 +186,11 @@ const visibleItems = computed(() => {
   }
   return sorted;
 });
+
+function confirmRatingFilter() {
+  selectedRatings.value = [...selectedRatingDraft.value];
+  ratingFilterOpen.value = false;
+}
 
 const availableUsers = computed(() => {
   const selectedIds = new Set([
@@ -343,6 +370,83 @@ function formatAddedDate(value: string) {
             <option value="alphabetical">Alphabetical</option>
           </select>
         </label>
+        <div class="rating-filter">
+          <button
+            type="button"
+            :aria-expanded="ratingFilterOpen"
+            aria-controls="rating-filter-options"
+            @click="ratingFilterOpen = !ratingFilterOpen"
+          >
+            Filter by Rating
+          </button>
+          <div
+            v-if="ratingFilterOpen"
+            id="rating-filter-options"
+            class="rating-filter-options"
+            role="group"
+            aria-label="Show ratings"
+          >
+            <span class="rating-filter-heading">Show ratings</span>
+            <label
+              v-for="rating in allRatingValues"
+              :key="rating"
+              class="rating-filter-option"
+            >
+              <input
+                v-model="selectedRatingDraft"
+                type="checkbox"
+                :value="rating"
+              />
+              <span class="rating-filter-icon-slot" aria-hidden="true">
+                <svg
+                  v-if="rating !== 'None'"
+                  class="rating-filter-icon"
+                  viewBox="0 0 48 48"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="24" cy="24" r="21" />
+                  <path
+                    v-if="ratingIconForFilter(rating) === 'star'"
+                    d="m24 12 3.7 7.5 8.3 1.2-6 5.9 1.4 8.3-7.4-3.9-7.4 3.9 1.4-8.3-6-5.9 8.3-1.2z"
+                  />
+                  <g
+                    v-else-if="
+                      ratingIconForFilter(rating) === 'thumbs-up' ||
+                      ratingIconForFilter(rating) === 'thumbs-down'
+                    "
+                    transform="translate(12 12)"
+                  >
+                    <path
+                      :transform="
+                        ratingIconForFilter(rating) === 'thumbs-down'
+                          ? 'rotate(180 12 12)'
+                          : undefined
+                      "
+                      d="M7 10v12m0-12h2.5c1 0 1.8-.6 2.2-1.5l2-5.2c.4-1.1 2-1.1 2.4 0 .5 1.2.6 2.6.2 3.9L15.5 10H20a2 2 0 0 1 1.9 2.6l-2.2 7A2 2 0 0 1 17.8 21H7m-3-11h3v12H4z"
+                    />
+                  </g>
+                  <path
+                    v-else-if="ratingIconForFilter(rating) === 'horizontal-line'"
+                    d="M17 24h14"
+                  />
+                  <path v-else d="m18 18 12 12m0-12L18 30" />
+                </svg>
+              </span>
+              <span>({{ rating }})</span>
+            </label>
+            <button
+              type="button"
+              :disabled="ratingsLoading"
+              @click="confirmRatingFilter"
+            >
+              Confirm
+            </button>
+          </div>
+        </div>
       </div>
       <p v-if="visibleItems.length === 0">No matching characters.</p>
     </template>
@@ -547,6 +651,61 @@ h1 {
 
 .controls label {
   margin-left: auto;
+}
+
+.rating-filter {
+  position: relative;
+}
+
+.rating-filter-options {
+  position: absolute;
+  z-index: 1;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  display: grid;
+  min-width: 12rem;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
+}
+
+.rating-filter-heading {
+  font-weight: 600;
+  text-align: left;
+}
+
+.rating-filter-option {
+  display: grid;
+  grid-template-columns: auto 1.25rem 1fr;
+  width: 100%;
+  align-items: center;
+  gap: 0.4rem;
+  text-align: left;
+}
+
+.rating-filter-option input {
+  margin: 0;
+}
+
+.rating-filter-icon-slot {
+  display: flex;
+  width: 1.25rem;
+  height: 1.25rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.rating-filter-icon {
+  width: 100%;
+  height: 100%;
+}
+
+.rating-filter-options > button {
+  width: 100%;
 }
 
 .character-grid {
