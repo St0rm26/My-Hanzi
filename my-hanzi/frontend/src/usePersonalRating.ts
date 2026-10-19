@@ -101,6 +101,69 @@ async function loadRating(item: string): Promise<PersonalRating | null> {
   }
 }
 
+async function loadRatings(items: string[]): Promise<{
+  ratings: Map<string, PersonalRating | null>;
+  error: string | null;
+}> {
+  const ratings = new Map<string, PersonalRating | null>();
+  const uniqueItems = [...new Set(items)];
+  if (uniqueItems.length === 0) return { ratings, error: null };
+
+  const definitionsFailure = await ensureDefinedRatings();
+  if (definitionsFailure !== null) {
+    const failure =
+      "category" in definitionsFailure
+        ? messageFor("/rating/add-defined-ratings", definitionsFailure.category)
+        : definitionsFailure.message;
+    if (
+      "category" in definitionsFailure &&
+      definitionsFailure.category === "UNAUTHORIZED"
+    ) {
+      sessionEnded();
+    }
+    return { ratings, error: failure };
+  }
+
+  const results = await Promise.all(
+    uniqueItems.map(async (item) => {
+      try {
+        const result = await api["/rating/view"]({ item });
+        if ("error" in result) {
+          if (result.error === "UNAUTHORIZED") sessionEnded();
+          return {
+            item,
+            rating: null,
+            error: messageFor("/rating/view", result.error),
+          };
+        }
+        const rating: Rating = result.rating;
+        return {
+          item,
+          rating:
+            rating && isPersonalRating(rating.rating) ? rating.rating : null,
+          error: null,
+        };
+      } catch (cause) {
+        return {
+          item,
+          rating: null,
+          error:
+            cause instanceof Error
+              ? cause.message
+              : "Could not load collection ratings.",
+        };
+      }
+    }),
+  );
+
+  let firstError: string | null = null;
+  for (const result of results) {
+    ratings.set(result.item, result.rating);
+    firstError ??= result.error;
+  }
+  return { ratings, error: firstError };
+}
+
 async function saveRating(item: string, rating: PersonalRating) {
   if (saving.value) return false;
   const sequence = requestSequence;
@@ -153,6 +216,7 @@ export function usePersonalRating() {
     saving,
     error,
     loadRating,
+    loadRatings,
     saveRating,
   };
 }

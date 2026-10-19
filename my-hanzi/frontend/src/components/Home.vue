@@ -87,6 +87,7 @@ const {
   saving: ratingSaving,
   error: ratingError,
   loadRating,
+  loadRatings,
   saveRating,
 } = usePersonalRating();
 const page = ref<
@@ -113,6 +114,10 @@ const benchmarkStudiedItems = ref<string[]>([]);
 const benchmarkLoading = ref(false);
 const benchmarkSequence = ref(0);
 const collectionItems = ref<CollectionItem[]>([]);
+const collectionRatings = ref(new Map<string, PersonalRating | null>());
+const collectionRatingsLoading = ref(false);
+const collectionRatingsError = ref<string | null>(null);
+const removingCharacter = ref<string | null>(null);
 const sharedUsers = ref<SharedUser[]>([]);
 const collectionIsPublic = ref(false);
 const collectionLoading = ref(false);
@@ -297,6 +302,10 @@ async function openCollection(collection: Collection) {
   const sequence = ++collectionSequence;
   activeCollection.value = collection;
   collectionItems.value = [];
+  collectionRatings.value = new Map();
+  collectionRatingsLoading.value = false;
+  collectionRatingsError.value = null;
+  removingCharacter.value = null;
   sharedUsers.value = [];
   collectionIsPublic.value = false;
   shareStatus.value = null;
@@ -310,6 +319,10 @@ async function openCollection(collection: Collection) {
     ]);
     if (sequence === collectionSequence && items !== null) {
       collectionItems.value = items;
+      await loadCollectionRatings(
+        items.map(({ item }) => item),
+        sequence,
+      );
     }
     if (sequence === collectionSequence && audience !== null) {
       sharedUsers.value = audience.users;
@@ -317,6 +330,60 @@ async function openCollection(collection: Collection) {
     }
   } finally {
     if (sequence === collectionSequence) collectionLoading.value = false;
+  }
+}
+
+async function loadCollectionRatings(items: string[], sequence: number) {
+  collectionRatingsLoading.value = true;
+  collectionRatingsError.value = null;
+  try {
+    const result = await loadRatings(items);
+    if (sequence === collectionSequence) {
+      collectionRatings.value = result.ratings;
+      collectionRatingsError.value = result.error;
+    }
+  } catch (cause) {
+    if (sequence === collectionSequence) {
+      collectionRatingsError.value =
+        cause instanceof Error ? cause.message : "Could not load ratings.";
+    }
+  } finally {
+    if (sequence === collectionSequence) {
+      collectionRatingsLoading.value = false;
+    }
+  }
+}
+
+async function removeCollectionCharacter(character: string) {
+  const collection = activeCollection.value;
+  if (!collection || removingCharacter.value !== null) return;
+  const sequence = collectionSequence;
+  removingCharacter.value = character;
+  try {
+    const removed = await saveCharacterCollections(
+      character,
+      [collection.tag],
+      [],
+    );
+    if (removed && sequence === collectionSequence) {
+      collectionItems.value = collectionItems.value.filter(
+        ({ item }) => item !== character,
+      );
+      const ratings = new Map(collectionRatings.value);
+      ratings.delete(character);
+      collectionRatings.value = ratings;
+      if (collectionItems.value.length === 0) {
+        sharedUsers.value = [];
+        collectionIsPublic.value = false;
+      }
+    }
+  } catch (cause) {
+    error.value =
+      cause instanceof Error
+        ? cause.message
+        : "Could not remove this character from the collection.";
+  } finally {
+    removingCharacter.value = null;
   }
 }
 
@@ -365,22 +432,42 @@ async function openPublicCollections() {
 
 async function openPublicCollection(collection: SharedCollection) {
   if (collection.tag === null || collection.name === null) return;
+  const sequence = ++collectionSequence;
+  collectionRatings.value = new Map();
+  collectionRatingsError.value = null;
+  collectionRatingsLoading.value = false;
   activePublicCollection.value = {
     tag: collection.tag,
     name: collection.name,
   };
   page.value = "public-collection";
   await loadPublicCollectionItems(collection.tag);
+  if (sequence === collectionSequence && !publicCollectionItemsError.value) {
+    await loadCollectionRatings(
+      publicCollectionItems.value.map(({ item }) => item),
+      sequence,
+    );
+  }
 }
 
 async function openSharedCollection(collection: SharedCollection) {
   if (collection.tag === null || collection.name === null) return;
+  const sequence = ++collectionSequence;
+  collectionRatings.value = new Map();
+  collectionRatingsError.value = null;
+  collectionRatingsLoading.value = false;
   activeSharedCollection.value = {
     tag: collection.tag,
     name: collection.name,
   };
   page.value = "shared-collection";
   await loadSharedCollectionItems(collection.tag);
+  if (sequence === collectionSequence && !sharedCollectionItemsError.value) {
+    await loadCollectionRatings(
+      sharedCollectionItems.value.map(({ item }) => item),
+      sequence,
+    );
+  }
 }
 
 function openSharedCollectionCharacter(character: string) {
@@ -515,6 +602,10 @@ onMounted(() => {
       v-else-if="page === 'collection' && activeCollection"
       :collection="activeCollection"
       :items="collectionItems"
+      :ratings="collectionRatings"
+      :ratings-loading="collectionRatingsLoading"
+      :rating-error="collectionRatingsError"
+      :removing-item="removingCharacter"
       :loading="collectionLoading"
       :error="error"
       :shared-users="sharedUsers"
@@ -527,6 +618,7 @@ onMounted(() => {
       :is-public="collectionIsPublic"
       @back="page = 'home'"
       @select="openCollectionCharacter"
+      @remove-character="removeCollectionCharacter"
       @search-users="searchForShareUsers"
       @save-audience="saveCollectionAudience"
       @toggle-public="toggleCollectionPublic"
@@ -556,6 +648,9 @@ onMounted(() => {
       v-else-if="page === 'shared-collection' && activeSharedCollection"
       :collection="activeSharedCollection"
       :items="sharedCollectionItems"
+      :ratings="collectionRatings"
+      :ratings-loading="collectionRatingsLoading"
+      :rating-error="collectionRatingsError"
       :loading="sharedCollectionItemsLoading"
       :error="sharedCollectionItemsError"
       shared
@@ -567,6 +662,9 @@ onMounted(() => {
       v-else-if="page === 'public-collection' && activePublicCollection"
       :collection="activePublicCollection"
       :items="publicCollectionItems"
+      :ratings="collectionRatings"
+      :ratings-loading="collectionRatingsLoading"
+      :rating-error="collectionRatingsError"
       :loading="publicCollectionItemsLoading"
       :error="publicCollectionItemsError"
       shared

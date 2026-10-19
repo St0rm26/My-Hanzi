@@ -5,6 +5,7 @@ import {
   normalizePinyin,
 } from "../api/characters.ts";
 import type { CharacterEntry } from "../api/characters.ts";
+import { ratingOptions, type PersonalRating } from "../api/ratings.ts";
 import type {
   Collection,
   CollectionItem,
@@ -17,6 +18,9 @@ type SortOrder = "newest" | "oldest" | "alphabetical";
 const props = withDefaults(defineProps<{
   collection: Collection;
   items: CollectionItem[];
+  ratings?: ReadonlyMap<string, PersonalRating | null>;
+  ratingsLoading?: boolean;
+  ratingError?: string | null;
   loading: boolean;
   error: string | null;
   shared?: boolean;
@@ -29,6 +33,7 @@ const props = withDefaults(defineProps<{
   shareStatus?: string | null;
   isPublic?: boolean;
   backLabel?: string;
+  removingItem?: string | null;
 }>(), {
   shared: false,
   sharedUsers: () => [],
@@ -40,11 +45,16 @@ const props = withDefaults(defineProps<{
   shareStatus: null,
   isPublic: false,
   backLabel: undefined,
+  ratings: () => new Map(),
+  ratingsLoading: false,
+  ratingError: null,
+  removingItem: null,
 });
 
 const emit = defineEmits<{
   back: [];
   select: [character: string];
+  removeCharacter: [character: string];
   searchUsers: [term: string];
   saveAudience: [users: SharedUser[]];
   togglePublic: [isPublic: boolean];
@@ -118,6 +128,11 @@ watch(
 
 function pinyinFor(item: string) {
   return entries.value.get(item)?.pinyin ?? "";
+}
+
+function ratingIconFor(item: string) {
+  const rating = props.ratings.get(item);
+  return ratingOptions.find((option) => option.value === rating)?.icon;
 }
 
 const visibleItems = computed(() => {
@@ -312,6 +327,7 @@ function formatAddedDate(value: string) {
     <p v-else-if="items.length === 0">This collection is empty.</p>
 
     <template v-else>
+      <p v-if="ratingError" role="alert">{{ ratingError }}</p>
       <div class="controls">
         <input
           v-model="query"
@@ -342,11 +358,68 @@ function formatAddedDate(value: string) {
           class="character-card"
           @click="emit('select', item.item)"
         >
+          <svg
+            v-if="ratingIconFor(item.item)"
+            class="cell-rating-icon"
+            viewBox="0 0 48 48"
+            role="img"
+            :aria-label="`${props.ratings.get(item.item)} rating`"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="24" cy="24" r="21" />
+            <path
+              v-if="ratingIconFor(item.item) === 'star'"
+              d="m24 12 3.7 7.5 8.3 1.2-6 5.9 1.4 8.3-7.4-3.9-7.4 3.9 1.4-8.3-6-5.9 8.3-1.2z"
+            />
+            <g
+              v-else-if="
+                ratingIconFor(item.item) === 'thumbs-up' ||
+                ratingIconFor(item.item) === 'thumbs-down'
+              "
+              transform="translate(12 12)"
+            >
+              <path
+                :transform="
+                  ratingIconFor(item.item) === 'thumbs-down'
+                    ? 'rotate(180 12 12)'
+                    : undefined
+                "
+                d="M7 10v12m0-12h2.5c1 0 1.8-.6 2.2-1.5l2-5.2c.4-1.1 2-1.1 2.4 0 .5 1.2.6 2.6.2 3.9L15.5 10H20a2 2 0 0 1 1.9 2.6l-2.2 7A2 2 0 0 1 17.8 21H7m-3-11h3v12H4z"
+              />
+            </g>
+            <path
+              v-else-if="ratingIconFor(item.item) === 'horizontal-line'"
+              d="M17 24h14"
+            />
+            <path v-else d="m18 18 12 12m0-12L18 30" />
+          </svg>
           <span class="character">{{ item.item }}</span>
           <span class="pinyin">{{ pinyinFor(item.item) }}</span>
+          <span class="item-rating">
+            Rating:
+            {{
+              ratingsLoading
+                ? "Loading..."
+                : (props.ratings.get(item.item) ?? "None")
+            }}
+          </span>
           <time v-if="!shared" class="added-date" :datetime="item.addedDate">
             Added {{ formatAddedDate(item.addedDate) }}
           </time>
+        </button>
+        <button
+          v-if="!shared"
+          type="button"
+          class="remove-character"
+          :aria-label="`Remove ${item.item} from ${collection.name}`"
+          :disabled="removingItem !== null"
+          @click="emit('removeCharacter', item.item)"
+        >
+          ×
         </button>
       </li>
     </ul>
@@ -485,25 +558,53 @@ h1 {
   list-style: none;
 }
 
+.character-grid > li {
+  position: relative;
+}
+
 .character-card {
+  box-sizing: border-box;
+  position: relative;
   display: flex;
   width: 100%;
-  height: 100%;
-  min-height: 7rem;
+  aspect-ratio: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.2rem;
   border: 1px solid #ccc;
   cursor: pointer;
+  padding: 2.1rem 0.4rem 0.4rem;
 }
 
 .character {
-  font-size: 2.5rem;
+  font-size: 2rem;
 }
 
 .added-date {
-  font-size: 0.875rem;
+  font-size: 0.7rem;
   color: #666;
+}
+
+.item-rating {
+  font-size: 0.7rem;
+  text-align: center;
+}
+
+.cell-rating-icon {
+  position: absolute;
+  top: 0.4rem;
+  left: 0.4rem;
+  width: 1.6rem;
+  height: 1.6rem;
+}
+
+.remove-character {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  width: 1.8rem;
+  height: 1.8rem;
+  padding: 0;
 }
 </style>
