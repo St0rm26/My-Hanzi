@@ -33,6 +33,21 @@ const endpointMessages: Record<string, Record<string, string>> = {
   "/tags/add-item": {
     CONFLICT: "That character is already in the selected collection.",
   },
+  "/rating/rate": {
+    INVALID_REQUEST: "That personal rating is not available.",
+  },
+  "/rating/view": {
+    INVALID_REQUEST: "Could not load this character's personal rating.",
+  },
+  "/rating/add-defined-ratings": {
+    INVALID_REQUEST: "Could not initialize the personal rating options.",
+  },
+  "/users/search": {
+    INVALID_REQUEST: "Check the username search and try again.",
+  },
+  "/tags/audience": {
+    NOT_FOUND: "That collection no longer exists.",
+  },
 };
 
 export function messageFor(path: string, error: string): string {

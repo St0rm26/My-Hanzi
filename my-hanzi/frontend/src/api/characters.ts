@@ -18,10 +18,14 @@ interface DictionaryRecord {
 }
 
 const toSimplified = OpenCC.Converter({ from: "tw", to: "cn" });
+const simplifiedCharacterExceptions = new Set(["么", "著"]);
 let dictionaryPromise: Promise<CharacterEntry[]> | undefined;
 
 function isSimplified(character: string) {
-  return toSimplified(character) === character;
+  return (
+    simplifiedCharacterExceptions.has(character) ||
+    toSimplified(character) === character
+  );
 }
 
 export function normalizePinyin(value: string) {

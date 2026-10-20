@@ -17,6 +17,10 @@ concrete InformationText
 
 concrete TagName
   A generated identifier for a tag.
+
+concrete CompletionState
+  A binary state for benchmark completion and collection visibility.
+
 ```
 
 ```instances
@@ -43,9 +47,17 @@ instantiate Sessioning with
 instantiate Sharing with
   User is Name
   Item is ItemName
+  Tag is TagName
+  Boolean is CompletionState
 
 instantiate Tagging with
   User is Name
   Item is ItemName
   ID is TagName
+  Audience is Name
+
+instantiate Benchmarking with
+  User is Name
+  Item is ItemName
+  Boolean is CompletionState
 ```

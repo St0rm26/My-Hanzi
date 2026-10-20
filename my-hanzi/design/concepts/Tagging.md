@@ -20,6 +20,9 @@ external Item
 external ID
     A unique identifier for a tagged item.
 
+external Audience
+    A set of users with whom a tag is shared.
+
 opaque IDs
     A set of tagged-item identifiers.
 ```
@@ -30,6 +33,7 @@ opaque IDs
 a set of Tags with
     an author User
     a name String
+    an audience Audience
 
 a set of TaggedItems with
     a tag Tag
@@ -74,6 +78,30 @@ deleteTag (user: User, tag: Tag) : returns ()
     then
         refuses TAG_NOT_FOUND "There is no such tag."
 
+captureTagForDeletion (user: User, tag: Tag) : returns (audience: Audience, ids: IDs)
+    where the tag exists with the given user and its name is not "Studied"
+    then
+        give the tag's audience and the identifiers of its tagged items
+        returns audience, ids
+    where the tag's name is "Studied"
+    then
+        refuses DEFAULT_TAG_CANNOT_BE_DELETED "The default \"Studied\" tag cannot be deleted."
+
+captureTagSharing (user: User, tag: Tag) : returns (audience: Audience, ids: IDs)
+    where the tag exists with the given user and has at least one tagged item
+    then
+        give the tag's audience and the identifiers of its tagged items
+        returns audience, ids
+    where the tag exists with the given user and has no tagged items
+    then
+        refuses COLLECTION_EMPTY "Add at least one item before sharing this collection."
+
+captureItemSharing (user: User, tag: Tag, item: Item) : returns (audience: Audience, ids: IDs)
+    where the tag and tagged item exist with the given user
+    then
+        give the tagged item's identifier if one exists and the tag's audience
+        returns audience, ids
+
 addItemTag (user: User, tag: Tag, item: Item, date: Date) : returns ()
     where the tag exists with the given user, the item exists, and the tagged items set does not have an item with the given tag
     then
@@ -87,6 +115,7 @@ removeItemTag (user: User, tag: Tag, item: Item) : returns ()
     where the tag exists with the given user, the item exists, and the tagged items set does have an item with the given tag
     then
         removes the given item from the tagged item set with the given tag
+        if the tag has no remaining items, clear its audience
         returns
 
 generateTaggedItemID (user: User, tag: Tag, item: Item) : returns (id: ID)
@@ -106,6 +135,12 @@ findTaggedItemsID (user: User, tag: Tag) : returns (ids: IDs)
     then
         give a set of all IDs of items in the tagged items set
         returns ids
+
+updateAudience (user: User, tag: Tag, audience: Audience) : returns ()
+    where the tag exists with the given user
+    then
+        update the audience for the given tag, replacing the old one
+        returns
 ```
 
 ## Queries
@@ -119,4 +154,19 @@ _tagsContainingItem (user: User, item: Item) : many (tag: Tag)
 
 _taggedItems (user: User, tag: Tag) : many (item: Item, addedDate: Date)
   Returns every item under the user's tag, newest added first.
+
+_tagOfItem (id: ID) : optional (tag: Tag)
+  Returns the tag of the item with the given ID if it exists.
+
+_tagDetails (tag: Tag) : optional (author: User, name: String)
+  Returns the owner and name of the tag if it exists.
+
+_tagDetailsOfItem (id: ID) : optional (tag: Tag, author: User, name: String, item: Item, addedDate: Date)
+  Returns the tag, owner, name, and tagged item with its added date of the given ID, or no row if the item does not exist.
+
+_audience (user: User, tag: Tag) : many (audience: User)
+  Returns each user in the audience with which the user's tag is shared.
+
+_audienceList (user: User, tag: Tag) : optional (audience: Audience)
+  Returns the complete audience set for the user's tag, or no row if the user does not own the tag.
 ```

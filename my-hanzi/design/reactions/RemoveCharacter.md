@@ -3,9 +3,8 @@
 ```
 reaction removeCharacter
 
-when Tagging.findTaggedItemID (user, collection: Tag, character: Item) : (ID)
+when Tagging.removeItemTag (user, collection: Tag, character: Item)
 
-then
-    Tagging.removeItemTag (user, collection: Tag, character: Item)
-    Sharing.deleteItem (user, ID)
+where tag is the default "Studied" tag and there exists a benchmark with the item (repeat for every benchmark with the item)
+    then Benchmarking.uncheckBenchmarkItem (benchmark, character: Item)
 ```

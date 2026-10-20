@@ -13,3 +13,9 @@ The [sign-out endpoint](reaction:accounts.leaving.SignOut) ends the session with
 ```endpoints
 accounts.leaving.SignOut at /auth/logout
 ```
+
+The user can search for other registered users by a case-insensitive username substring using [the search endpoint](reaction:accounts.SearchUsers). The search excludes the signed-in user and returns at most 25 matches.
+
+```endpoints
+accounts.SearchUsers at /users/search
+```

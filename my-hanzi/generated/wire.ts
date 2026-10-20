@@ -24,7 +24,7 @@ export type MyHanziWire = {
       "session": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sessioning"]["start"]>>, ["session"]>>;
       "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["start"]>[0], ["subject"]>>;
     };
-    error: { error: AppWideError | "ALREADY_LINKED" | "INVALID_INPUT" | "INVALID_USERNAME" | "NOT_CONFIRMED" | "SIGN_IN_EXPIRED" | "TAG_ALREADY_EXISTS" | "USERNAME_TAKEN" };
+    error: { error: AppWideError | "ALREADY_LINKED" | "BENCHMARK_ALREADY_EXISTS" | "BENCHMARK_REQUIRES_DISTINCT_ITEMS" | "BENCHMARK_REQUIRES_ITEMS" | "INVALID_INPUT" | "INVALID_USERNAME" | "NOT_CONFIRMED" | "SIGN_IN_EXPIRED" | "TAG_ALREADY_EXISTS" | "USERNAME_TAKEN" };
   };
   "/auth/commons/finish": {
     input: {
@@ -41,7 +41,7 @@ export type MyHanziWire = {
       "session": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sessioning"]["start"]>>, ["session"]>>;
       "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["start"]>[0], ["subject"]>>;
     };
-    error: { error: AppWideError | "ALREADY_LINKED" | "INVALID_INPUT" | "INVALID_USERNAME" | "NOT_CONFIRMED" | "SIGN_IN_EXPIRED" | "SIGN_IN_REFUSED" | "TAG_ALREADY_EXISTS" | "USERNAME_TAKEN" };
+    error: { error: AppWideError | "ALREADY_LINKED" | "BENCHMARK_ALREADY_EXISTS" | "BENCHMARK_REQUIRES_DISTINCT_ITEMS" | "BENCHMARK_REQUIRES_ITEMS" | "INVALID_INPUT" | "INVALID_USERNAME" | "NOT_CONFIRMED" | "SIGN_IN_EXPIRED" | "SIGN_IN_REFUSED" | "TAG_ALREADY_EXISTS" | "USERNAME_TAKEN" };
   };
   "/auth/commons/start": {
     input: Record<string, never>;
@@ -90,7 +90,55 @@ export type MyHanziWire = {
       "session": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sessioning"]["start"]>>, ["session"]>>;
       "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["start"]>[0], ["subject"]>>;
     };
-    error: { error: AppWideError | "INVALID_INPUT" | "INVALID_PASSWORD" | "INVALID_USERNAME" | "PASSWORD_SET" | "TAG_ALREADY_EXISTS" | "USERNAME_TAKEN" };
+    error: { error: AppWideError | "BENCHMARK_ALREADY_EXISTS" | "BENCHMARK_REQUIRES_DISTINCT_ITEMS" | "BENCHMARK_REQUIRES_ITEMS" | "INVALID_INPUT" | "INVALID_PASSWORD" | "INVALID_USERNAME" | "PASSWORD_SET" | "TAG_ALREADY_EXISTS" | "USERNAME_TAKEN" };
+  };
+  "/benchmarks/completed": {
+    input: {
+      "benchmark": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_benchmarks"]>>>, ["benchmark"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: {
+      "items": {
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_finishedItems"]>>>, ["item"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "BENCHMARK_NOT_FOUND" | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+  };
+  "/benchmarks/items": {
+    input: {
+      "benchmark": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_benchmarks"]>>>, ["benchmark"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: {
+      "items": {
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_items"]>>>, ["item"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "BENCHMARK_NOT_FOUND" | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+  };
+  "/benchmarks/list": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: {
+      "benchmarks": {
+        "benchmark": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_benchmarks"]>>>, ["benchmark"]>>;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_benchmarks"]>>>, ["name"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+  };
+  "/benchmarks/not-completed": {
+    input: {
+      "benchmark": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_benchmarks"]>>>, ["benchmark"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: {
+      "items": {
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_unfinishedItems"]>>>, ["item"]>>;
+      }[];
+    };
+    error: { error: AppWideError | "BENCHMARK_NOT_FOUND" | "INVALID_INPUT" | "NOT_SIGNED_IN" };
   };
   "/information/add-field": {
     input: {
@@ -127,6 +175,97 @@ export type MyHanziWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
   };
+  "/rating/add-defined-ratings": {
+    input: {
+      "ratings": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["addDefinedRatings"]>[0], ["ratings"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: Record<string, never>;
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+  };
+  "/rating/rate": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["changeRating"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["addRating"]>[0], ["item"]>]>>;
+      "rating": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["changeRating"]>[0], ["rating"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["addRating"]>[0], ["rating"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: Record<string, never>;
+    error: { error: AppWideError | "ALREADY_RATED" | "INVALID_INPUT" | "NOT_SIGNED_IN" | "PERSONAL_RATING_NOT_FOUND" | "RATING_NOT_DEFINED" };
+  };
+  "/rating/remove": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["deleteRating"]>[0], ["item"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: Record<string, never>;
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" | "PERSONAL_RATING_NOT_FOUND" };
+  };
+  "/rating/view": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["_rating"]>[0], ["item"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: {
+      "rating": {
+        "rating": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["_rating"]>>>, ["rating"]>>;
+      } | null;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+  };
+  "/shares/collection-items": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+      "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["tag"]>>;
+    };
+    output: {
+      "items": ({
+        "addedDate": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["addedDate"]>> | null;
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["item"]>> | null;
+      })[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+  };
+  "/shares/collections": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: {
+      "collections": ({
+        "author": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["author"]>]>> | null;
+        "authorUsername": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>>>, ["username"]>> | null;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["name"]>> | null;
+        "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["tag"]>> | null;
+      })[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+  };
+  "/shares/public-collection-items": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+      "tag": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicItems"]>[0], ["tag"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["tag"]>]>>;
+    };
+    output: {
+      "items": ({
+        "addedDate": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["addedDate"]>> | null;
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["item"]>> | null;
+      })[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+  };
+  "/shares/public-collections": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: {
+      "collections": ({
+        "author": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicCollections"]>>>, ["author"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetails"]>>>, ["author"]>]>>;
+        "authorUsername": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>>>, ["username"]>> | null;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetails"]>>>, ["name"]>> | null;
+        "tag": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetails"]>[0], ["tag"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicCollections"]>>>, ["tag"]>]>>;
+      })[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+  };
   "/tags/add-item": {
     input: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["addItemTag"]>[0], ["item"]>>;
@@ -134,7 +273,23 @@ export type MyHanziWire = {
       "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["addItemTag"]>[0], ["tag"]>>;
     };
     output: Record<string, never>;
-    error: { error: AppWideError | "INVALID_INPUT" | "ITEM_ALREADY_TAGGED" | "NOT_SIGNED_IN" };
+    error: { error: AppWideError | "BENCHMARK_ITEM_ALREADY_FINISHED" | "BENCHMARK_ITEM_NOT_FOUND" | "BENCHMARK_NOT_FOUND" | "INVALID_INPUT" | "ITEM_ALREADY_TAGGED" | "NOT_SIGNED_IN" | "TAG_NOT_PUBLIC" };
+  };
+  "/tags/audience": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+      "tag": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicStatus"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_audience"]>[0], ["tag"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tags"]>>>, ["tag"]>]>>;
+    };
+    output: {
+      "isPublic": ({
+        "isPublic": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicStatus"]>>>, ["isPublic"]>> | null;
+      })[];
+      "users": ({
+        "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_audience"]>>>, ["audience"]>]>>;
+        "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>>>, ["username"]>> | null;
+      })[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
   };
   "/tags/create-tag": {
     input: {
@@ -149,10 +304,10 @@ export type MyHanziWire = {
   "/tags/delete-tag": {
     input: {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
-      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["deleteTag"]>[0], ["tag"]>>;
+      "tag": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["captureTagForDeletion"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["deleteTag"]>[0], ["tag"]>]>>;
     };
     output: Record<string, never>;
-    error: { error: AppWideError | "DEFAULT_TAG_CANNOT_BE_DELETED" | "INVALID_INPUT" | "NOT_SIGNED_IN" | "TAG_NOT_FOUND" };
+    error: { error: AppWideError | "DEFAULT_TAG_CANNOT_BE_DELETED" | "INVALID_INPUT" | "NOT_SIGNED_IN" | "SHARED_ITEMS_NOT_DISTINCT" | "TAG_NOT_FOUND" };
   };
   "/tags/edit-tag": {
     input: {
@@ -202,13 +357,51 @@ export type MyHanziWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
   };
-  "/tags/remove-item": {
+  "/tags/make-private": {
     input: {
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["removeItemTag"]>[0], ["item"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
-      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["removeItemTag"]>[0], ["tag"]>>;
+      "tag": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["updateAudience"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["setPrivate"]>[0], ["tag"]>]>>;
     };
     output: Record<string, never>;
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+  };
+  "/tags/make-public": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+      "tag": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["captureTagSharing"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["setPublic"]>[0], ["tag"]>]>>;
+    };
+    output: Record<string, never>;
+    error: { error: AppWideError | "COLLECTION_EMPTY" | "INVALID_INPUT" | "NOT_SIGNED_IN" | "PUBLIC_ITEMS_EMPTY" | "SHARED_ITEMS_NOT_DISTINCT" };
+  };
+  "/tags/remove-item": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["captureItemSharing"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["removeItemTag"]>[0], ["item"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+      "tag": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["captureItemSharing"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["removeItemTag"]>[0], ["tag"]>]>>;
+    };
+    output: Record<string, never>;
+    error: { error: AppWideError | "BENCHMARK_ITEM_NOT_FINISHED" | "BENCHMARK_ITEM_NOT_FOUND" | "BENCHMARK_NOT_FOUND" | "INVALID_INPUT" | "NOT_SIGNED_IN" | "SHARED_ITEMS_NOT_DISTINCT" };
+  };
+  "/tags/share": {
+    input: {
+      "audience": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["updateAudience"]>[0], ["audience"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+      "tag": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["captureTagSharing"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicStatus"]>[0], ["tag"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["updateAudience"]>[0], ["tag"]>]>>;
+    };
+    output: Record<string, never>;
+    error: { error: AppWideError | "COLLECTION_EMPTY" | "INVALID_INPUT" | "NOT_SIGNED_IN" | "SHARED_ITEMS_NOT_DISTINCT" };
+  };
+  "/users/search": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+      "term": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Registering"]["_searchUsers"]>[0], ["term"]>>;
+    };
+    output: {
+      "users": {
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_searchUsers"]>>>, ["user"]>>;
+        "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_searchUsers"]>>>, ["username"]>>;
+      }[];
+    };
     error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
   };
 };
@@ -223,7 +416,7 @@ export type MyHanziWireHttp = {
     output: {
       "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["start"]>[0], ["subject"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" };
   };
   "/auth/commons/finish": {
     input: {
@@ -235,7 +428,7 @@ export type MyHanziWireHttp = {
     } | {
       "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["start"]>[0], ["subject"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INTERNAL_ERROR" | "INVALID_REQUEST" };
   };
   "/auth/commons/start": {
     input: Record<string, never>;
@@ -274,7 +467,50 @@ export type MyHanziWireHttp = {
     output: {
       "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["start"]>[0], ["subject"]>>;
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" };
+    error: { error: HttpAppWideError | "CONFLICT" | "INTERNAL_ERROR" | "INVALID_REQUEST" };
+  };
+  "/benchmarks/completed": {
+    input: {
+      "benchmark": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_benchmarks"]>>>, ["benchmark"]>>;
+    };
+    output: {
+      "items": {
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_finishedItems"]>>>, ["item"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/benchmarks/items": {
+    input: {
+      "benchmark": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_benchmarks"]>>>, ["benchmark"]>>;
+    };
+    output: {
+      "items": {
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_items"]>>>, ["item"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/benchmarks/list": {
+    input: Record<string, never>;
+    output: {
+      "benchmarks": {
+        "benchmark": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_benchmarks"]>>>, ["benchmark"]>>;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_benchmarks"]>>>, ["name"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/benchmarks/not-completed": {
+    input: {
+      "benchmark": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_benchmarks"]>>>, ["benchmark"]>>;
+    };
+    output: {
+      "items": {
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_unfinishedItems"]>>>, ["item"]>>;
+      }[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
   "/information/add-field": {
     input: {
@@ -308,13 +544,109 @@ export type MyHanziWireHttp = {
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
   };
+  "/rating/add-defined-ratings": {
+    input: {
+      "ratings": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["addDefinedRatings"]>[0], ["ratings"]>>;
+    };
+    output: Record<string, never>;
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/rating/rate": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["changeRating"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["addRating"]>[0], ["item"]>]>>;
+      "rating": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["changeRating"]>[0], ["rating"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["addRating"]>[0], ["rating"]>]>>;
+    };
+    output: Record<string, never>;
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/rating/remove": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["deleteRating"]>[0], ["item"]>>;
+    };
+    output: Record<string, never>;
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/rating/view": {
+    input: {
+      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["_rating"]>[0], ["item"]>>;
+    };
+    output: {
+      "rating": {
+        "rating": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["PersonalRating"]["_rating"]>>>, ["rating"]>>;
+      } | null;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/shares/collection-items": {
+    input: {
+      "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["tag"]>>;
+    };
+    output: {
+      "items": ({
+        "addedDate": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["addedDate"]>> | null;
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["item"]>> | null;
+      })[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/shares/collections": {
+    input: Record<string, never>;
+    output: {
+      "collections": ({
+        "author": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["author"]>]>> | null;
+        "authorUsername": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>>>, ["username"]>> | null;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["name"]>> | null;
+        "tag": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["tag"]>> | null;
+      })[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/shares/public-collection-items": {
+    input: {
+      "tag": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicItems"]>[0], ["tag"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["tag"]>]>>;
+    };
+    output: {
+      "items": ({
+        "addedDate": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["addedDate"]>> | null;
+        "item": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetailsOfItem"]>>>, ["item"]>> | null;
+      })[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/shares/public-collections": {
+    input: Record<string, never>;
+    output: {
+      "collections": ({
+        "author": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicCollections"]>>>, ["author"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetails"]>>>, ["author"]>]>>;
+        "authorUsername": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>>>, ["username"]>> | null;
+        "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetails"]>>>, ["name"]>> | null;
+        "tag": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tagDetails"]>[0], ["tag"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicCollections"]>>>, ["tag"]>]>>;
+      })[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
   "/tags/add-item": {
     input: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["addItemTag"]>[0], ["item"]>>;
       "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["addItemTag"]>[0], ["tag"]>>;
     };
     output: Record<string, never>;
-    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "UNAUTHORIZED" };
+    error: { error: HttpAppWideError | "CONFLICT" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/tags/audience": {
+    input: {
+      "tag": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicStatus"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["_audience"]>[0], ["tag"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_tags"]>>>, ["tag"]>]>>;
+    };
+    output: {
+      "isPublic": ({
+        "isPublic": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicStatus"]>>>, ["isPublic"]>> | null;
+      })[];
+      "users": ({
+        "user": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Tagging"]["_audience"]>>>, ["audience"]>]>>;
+        "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>>>, ["username"]>> | null;
+      })[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
   };
   "/tags/create-tag": {
     input: {
@@ -327,10 +659,10 @@ export type MyHanziWireHttp = {
   };
   "/tags/delete-tag": {
     input: {
-      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["deleteTag"]>[0], ["tag"]>>;
+      "tag": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["captureTagForDeletion"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["deleteTag"]>[0], ["tag"]>]>>;
     };
     output: Record<string, never>;
-    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+    error: { error: HttpAppWideError | "CONFLICT" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
   "/tags/edit-tag": {
     input: {
@@ -375,12 +707,46 @@ export type MyHanziWireHttp = {
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
   };
-  "/tags/remove-item": {
+  "/tags/make-private": {
     input: {
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["removeItemTag"]>[0], ["item"]>>;
-      "tag": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["removeItemTag"]>[0], ["tag"]>>;
+      "tag": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["updateAudience"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["setPrivate"]>[0], ["tag"]>]>>;
     };
     output: Record<string, never>;
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/tags/make-public": {
+    input: {
+      "tag": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["captureTagSharing"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["setPublic"]>[0], ["tag"]>]>>;
+    };
+    output: Record<string, never>;
+    error: { error: HttpAppWideError | "CONFLICT" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/tags/remove-item": {
+    input: {
+      "item": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["captureItemSharing"]>[0], ["item"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["removeItemTag"]>[0], ["item"]>]>>;
+      "tag": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["captureItemSharing"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["removeItemTag"]>[0], ["tag"]>]>>;
+    };
+    output: Record<string, never>;
+    error: { error: HttpAppWideError | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/tags/share": {
+    input: {
+      "audience": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["updateAudience"]>[0], ["audience"]>>;
+      "tag": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["captureTagSharing"]>[0], ["tag"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sharing"]["_publicStatus"]>[0], ["tag"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Tagging"]["updateAudience"]>[0], ["tag"]>]>>;
+    };
+    output: Record<string, never>;
+    error: { error: HttpAppWideError | "CONFLICT" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/users/search": {
+    input: {
+      "term": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Registering"]["_searchUsers"]>[0], ["term"]>>;
+    };
+    output: {
+      "users": {
+        "user": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_searchUsers"]>>>, ["user"]>>;
+        "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_searchUsers"]>>>, ["username"]>>;
+      }[];
+    };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
   };
 };

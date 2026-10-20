@@ -1,6 +1,7 @@
 import { ref } from "vue";
 import type { MyHanziWireHttp } from "../../generated/wire.ts";
 import { api } from "./api/client.ts";
+import { preferDictionaryInformation } from "./api/characterInformation.ts";
 import type { CharacterEntry } from "./api/characters.ts";
 import { messageFor } from "./api/errors.ts";
 import { useSession } from "./session.ts";
@@ -63,7 +64,30 @@ function toCharacterEntry(
   character: CharacterEntry,
   fields: Record<string, string>,
 ): CharacterEntry | null {
-  const strokeCountText = fields.strokeCount;
+  const dictionaryFields = fieldsFor(character);
+  const currentFields = {
+    pinyin: preferDictionaryInformation(
+      fields.pinyin,
+      dictionaryFields.pinyin,
+      "",
+    ),
+    meaning: preferDictionaryInformation(
+      fields.meaning,
+      dictionaryFields.meaning,
+      "No definition available.",
+    ),
+    radical: preferDictionaryInformation(
+      fields.radical,
+      dictionaryFields.radical,
+      "Not listed",
+    ),
+    strokeCount: preferDictionaryInformation(
+      fields.strokeCount,
+      dictionaryFields.strokeCount,
+      "",
+    ),
+  };
+  const strokeCountText = currentFields.strokeCount;
   let strokeCount = character.strokeCount;
   if (strokeCountText !== undefined) {
     if (strokeCountText === "") {
@@ -80,9 +104,9 @@ function toCharacterEntry(
 
   return {
     ...character,
-    pinyin: fields.pinyin ?? character.pinyin,
-    meaning: fields.meaning ?? character.meaning,
-    radical: fields.radical ?? character.radical,
+    pinyin: currentFields.pinyin,
+    meaning: currentFields.meaning,
+    radical: currentFields.radical,
     strokeCount,
   };
 }

@@ -50,6 +50,48 @@ describe("Registering", () => {
     expect(other).not.toBe(maya);
   });
 
+  test("_searchUsers matches username substrings without regard to case and excludes the signed-in user", async () => {
+    const { registering } = await setup();
+    const { user: maya } = await registering.register({ username: "maya" });
+    const { user: amaya } = await registering.register({ username: "Amaya" });
+    const { user: sam } = await registering.register({ username: "sam" });
+
+    expect(
+      await registering._searchUsers({ term: "MAY", except: maya }),
+    ).toEqual([{ user: amaya, username: "Amaya" }]);
+    expect(await registering._searchUsers({ term: "s", except: maya })).toEqual(
+      [{ user: sam, username: "sam" }],
+    );
+    expect(await registering._searchUsers({ term: " ", except: maya })).toEqual(
+      [],
+    );
+    expect(
+      await registering._searchUsers({
+        term: "a".repeat(33),
+        except: maya,
+      }),
+    ).toEqual([]);
+  });
+
+  test("_searchUsers matches username characters and returns at most 25 results", async () => {
+    const { registering } = await setup();
+    const { user: currentUser } = await registering.register({
+      username: "current",
+    });
+    await registering.register({ username: "a-b" });
+    await registering.register({ username: "axb" });
+    for (let index = 0; index < 26; index++) {
+      await registering.register({ username: `match${index}` });
+    }
+
+    expect(
+      await registering._searchUsers({ term: "-", except: currentUser }),
+    ).toEqual([{ user: expect.any(String), username: "a-b" }]);
+    expect(
+      await registering._searchUsers({ term: "match", except: currentUser }),
+    ).toHaveLength(25);
+  });
+
   test("of two registrations of one username at once, one succeeds and the other is refused with USERNAME_TAKEN", async () => {
     const { registering } = await setup();
     await expectOneWinner(

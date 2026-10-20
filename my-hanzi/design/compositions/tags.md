@@ -1,8 +1,8 @@
 # Tags
 
-Every endpoint below requires a signed-in session, as described in [accounts](accounts.md). Each one passes the session to `Sessioning.use`, which returns the user, and is refused with `NOT_SIGNED_IN` otherwise. The user is never read from the request's inputs, so people can only see and change their own collections.
+Every endpoint below requires a signed-in session, as described in [accounts](accounts.md). Each one passes the session to `Sessioning.use`, which returns the user, and is refused with `NOT_SIGNED_IN` otherwise. The user is never read from the request's inputs, so people can only see, change, and share their own collections.
 
-When a user registers, [a reaction creates a tag called "Studied"](reaction:tags.Initialize) for them (see also [Initialize](../reactions/Initialize.md)). The [collections list](reaction:tags.List) returns all tags the signed-in user has.
+When a user registers, [a reaction creates a tag called "Studied"](reaction:tags.Initialize) for them. The [collections list](reaction:tags.List) returns all tags the signed-in user has.
 
 ```endpoints
 tags.List at /tags/list
@@ -20,19 +20,36 @@ The user can [create a tag](reaction:tags.CreateTag) for themselves as long as t
 tags.CreateTag at /tags/create-tag
 ```
 
+The user can share their tag with a specific audience using [the share endpoint](reaction:tags.Share). The endpoint captures the current audience and tagged item IDs with `Tagging.captureTagSharing`, revokes the previous shares, and replaces the tag's audience; [a reaction shares the tagged items with each new audience member](reaction:tags.ShareCollection). Empty collections cannot be shared.
+
+```endpoints
+tags.Share at /tags/share
+```
+
+The audience endpoint also reports whether the collection is public. The user can [make a non-empty collection public](reaction:tags.MakePublic), which removes any individually shared audience and creates public access for each current collection item, or [make it private](reaction:tags.MakePrivate), which revokes public access without restoring the former audience. New items added to a public collection are made public, and removing an item revokes its public access. Removing the final item also clears the audience and makes the collection private. Deleting the collection removes its public item access.
+
+```endpoints
+tags.MakePublic at /tags/make-public
+tags.MakePrivate at /tags/make-private
+```
+
+The user can view the usernames and identities in a tag's current sharing audience before editing it with [the audience endpoint](reaction:tags.Audience).
+
+```endpoints
+tags.Audience at /tags/audience
+```
+
 The user can [edit their own tag](reaction:tags.EditTag) as long as the tag exists.
 
 ```endpoints
 tags.EditTag at /tags/edit-tag
 ```
 
-The user can [delete a tag](reaction:tags.DeleteTag) other than the default "Studied" collection.
+The user can [delete a tag other than the default "Studied" collection](reaction:tags.DeleteTag) with [the delete endpoint](reaction:tags.DeleteTag). The endpoint captures the tag's audience and tagged item IDs with `Tagging.captureTagForDeletion`, revokes sharing, and then deletes the tag.
 
 ```endpoints
 tags.DeleteTag at /tags/delete-tag
 ```
-
-After deleting a tag, there is a reaction that finds the unique IDs of all items with that tag, then executes another reaction that [removes the tag from each item and revokes access from its shared audience](../reactions/DeleteCollection.md).
 
 From a character detail page, the user can [add the character to a collection](reaction:tags.AddItem). The server records when it was added.
 
@@ -46,12 +63,10 @@ The character detail page can also [load the collections that already contain th
 tags.ItemMembership at /tags/item-membership
 ```
 
-After adding a tag to an item, a reaction [generates a unique ID](../reactions/GenerateCharacterId.md) for the tagged item and then [shares the tagged item](../reactions/AddCharacter.md) with no one.
+After adding a tag to an item, reactions [check whether to update benchmarks](reaction:tags.AddCharacter) and [share the item with the collection's audience](reaction:tags.ShareCharacter).
 
-From a character detail page, the user can also [remove the character from a collection](reaction:tags.RemoveItem).
+When the user [removes a character from a collection with the remove endpoint](reaction:tags.RemoveItem), the endpoint captures its ID and audience with `Tagging.captureItemSharing`, revokes sharing, and then deletes the membership. A reaction [checks whether to update benchmarks](reaction:tags.RemoveCharacter).
 
 ```endpoints
 tags.RemoveItem at /tags/remove-item
 ```
-
-After removing a tag from an item, a reaction first [finds the item's unique ID](../reactions/FindCharacterId.md), then [removes the tagged item and revokes access from its shared audience](../reactions/RemoveCharacter.md).

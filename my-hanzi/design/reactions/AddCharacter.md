@@ -3,9 +3,8 @@
 ```
 reaction addCharacter
 
-when Tagging.generateTaggedItemID (user, collection: Tag, character: Item) : (ID)
+when Tagging.addItemTag (user, collection: Tag, character: Item)
 
-then
-    Tagging.addItemTag (user, collection: Tag, character: Item)
-    Sharing.shareItem (user, ID, {})
+where tag is the default "Studied" tag and there exists a benchmark with the item (repeat for every benchmark with the item)
+    then Benchmarking.checkBenchmarkItem (benchmark, character: Item)
 ```

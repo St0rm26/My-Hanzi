@@ -3,6 +3,7 @@ import spec from "@design/concepts/Tagging.md" with { type: "text" };
 import type { Db } from "mongodb";
 import {
   DefaultTagCannotBeDeleted,
+  CollectionEmpty,
   ItemAlreadyTagged,
   TagAlreadyExists,
   TaggedItemIDNotFound,
@@ -18,6 +19,7 @@ export const tagging = registerConcept({
   spec,
   refusals: {
     DEFAULT_TAG_CANNOT_BE_DELETED: DefaultTagCannotBeDeleted,
+    COLLECTION_EMPTY: CollectionEmpty,
     ITEM_ALREADY_TAGGED: ItemAlreadyTagged,
     TAG_ALREADY_EXISTS: TagAlreadyExists,
     TAG_NOT_FOUND: TagNotFound,
