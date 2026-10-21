@@ -22,7 +22,7 @@ ratings.View at /rating/view
 
 The app can [add defined ratings for users to use](reaction:ratings.AddDefinedRatings). The endpoint accepts a list and adds its values to the existing definitions.
 
-The defined personal ratings are, in order, "Mastered", "Confident", "Medium", "Hard", and "Difficult". On a character detail page, the user can open the personal rating picker, which presents those choices. Selecting a choice adds or replaces the user's rating for that character.
+The defined personal ratings are, in order, "Mastered", "Confident", "Medium", "Hard", and "Difficult". On a character detail page, the user can open the personal rating picker, which presents those choices. Selecting a choice adds or replaces the user's rating for that character. In benchmarks and collections, characters display their personal rating or "None", and users can filter the characters by rating.
 
 ```endpoints
 ratings.AddDefinedRatings at /rating/add-defined-ratings
