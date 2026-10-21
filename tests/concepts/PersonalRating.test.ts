@@ -31,9 +31,7 @@ describe("PersonalRating", () => {
     ).toEqual({
       ratings: ["hard", "medium"],
     });
-    expect(
-      await personalRating.addDefinedRatings({ ratings: [] }),
-    ).toEqual({
+    expect(await personalRating.addDefinedRatings({ ratings: [] })).toEqual({
       ratings: [],
     });
 

@@ -71,7 +71,7 @@ describe("Authenticating", () => {
   });
 
   test("a password must have 8 to 128 characters, and _acceptable returns the same answer as set", async () => {
-    const { authenticating } = await setup();
+    const { authenticating, database } = await setup();
     for (const password of ["short12", "p".repeat(129)]) {
       expect(await authenticating._acceptable({ password })).toEqual({
         acceptable: false,
@@ -80,6 +80,9 @@ describe("Authenticating", () => {
         authenticating.set({ user: "ben", password }),
       ).rejects.toThrow(InvalidPassword);
     }
+    expect(
+      await database.collection("authenticating.users").countDocuments(),
+    ).toBe(0);
     for (const password of ["p".repeat(8), "p".repeat(128)]) {
       expect(await authenticating._acceptable({ password })).toEqual({
         acceptable: true,

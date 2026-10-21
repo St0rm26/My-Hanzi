@@ -297,10 +297,12 @@ describe("Sharing", () => {
       tag: "collection",
       items: ["item-1", "item-2", "item-1"],
     });
-    expect(await sharing._publicStatus({
-      author: "alice",
-      tag: "collection",
-    })).toEqual([{ isPublic: true }]);
+    expect(
+      await sharing._publicStatus({
+        author: "alice",
+        tag: "collection",
+      }),
+    ).toEqual([{ isPublic: true }]);
     expect(await sharing._publicCollections({ user: "bob" })).toEqual([
       { author: "alice", tag: "collection" },
     ]);
@@ -335,20 +337,24 @@ describe("Sharing", () => {
       { author: "alice", item: "item-3" },
       { author: "alice", item: "item-4" },
     ]);
-    expect(await sharing._publicStatus({
-      author: "alice",
-      tag: "collection",
-    })).toEqual([{ isPublic: true }]);
+    expect(
+      await sharing._publicStatus({
+        author: "alice",
+        tag: "collection",
+      }),
+    ).toEqual([{ isPublic: true }]);
 
     await sharing.removePublicItems({
       author: "alice",
       tag: "collection",
       items: ["item-2", "item-3", "item-4"],
     });
-    expect(await sharing._publicStatus({
-      author: "alice",
-      tag: "collection",
-    })).toEqual([{ isPublic: false }]);
+    expect(
+      await sharing._publicStatus({
+        author: "alice",
+        tag: "collection",
+      }),
+    ).toEqual([{ isPublic: false }]);
     expect(await sharing._publicCollections({ user: "bob" })).toEqual([]);
     expect(await sharing._publicItems({ tag: "collection" })).toEqual([]);
 

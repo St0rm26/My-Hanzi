@@ -67,13 +67,19 @@ describe("InformationCollecting", () => {
       fieldName: "meaning",
       description: "you",
     });
-    expect(
+    await expect(
       informationCollecting.addInfoField({
         item: "你",
         fieldName: "meaning",
         description: "aecond person pronoun",
       }),
     ).rejects.toBeInstanceOf(AlreadyCollectedInformation);
+    expect(
+      await informationCollecting._information({
+        item: "你",
+        fieldName: "meaning",
+      }),
+    ).toEqual({ information: "you" });
     await informationCollecting.addInfoField({
       item: "我",
       fieldName: "meaning",
@@ -120,13 +126,19 @@ describe("InformationCollecting", () => {
         fieldName: "meaning",
       }),
     ).toEqual({ information: "you" });
-    expect(
+    await expect(
       informationCollecting.editInfoField({
         item: "我",
         infoField,
         description: "I",
       }),
     ).rejects.toBeInstanceOf(InfoFieldNotFound);
+    expect(
+      await informationCollecting._information({
+        item: "你",
+        fieldName: "meaning",
+      }),
+    ).toEqual({ information: "you" });
   });
 
   test("deletes a field, permits its name to be reused, and refuses missing fields", async () => {
@@ -145,13 +157,13 @@ describe("InformationCollecting", () => {
     expect(
       await informationCollecting.deleteInfoField({ item: "你", infoField }),
     ).toEqual({});
-    expect(
+    await expect(
       informationCollecting._information({ item: "你", fieldName: "meaning" }),
     ).rejects.toBeInstanceOf(InfoFieldNotFound);
     expect(await informationCollecting._allInformation({ item: "你" })).toEqual(
       [{ information: { pinyin: "nǐ" } }],
     );
-    expect(
+    await expect(
       informationCollecting.deleteInfoField({ item: "你", infoField }),
     ).rejects.toBeInstanceOf(InfoFieldNotFound);
     await informationCollecting.addInfoField({
@@ -164,10 +176,10 @@ describe("InformationCollecting", () => {
   test("queries and edits reject unknown fields", async () => {
     const { informationCollecting } = await setup();
 
-    expect(
+    await expect(
       informationCollecting._information({ item: "你", fieldName: "missing" }),
     ).rejects.toBeInstanceOf(InfoFieldNotFound);
-    expect(
+    await expect(
       informationCollecting.editInfoField({
         item: "你",
         infoField: "missing" as InfoField,

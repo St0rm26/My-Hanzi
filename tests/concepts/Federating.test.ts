@@ -19,8 +19,9 @@ async function setup() {
   let now = new Date("2026-10-07T12:00:00Z");
   const provider = new MemoryProvider();
   const redeem = spyOn(provider, "redeem");
+  const database = await testDatabase();
   const federating = new FederatingConcept<string>(
-    await testDatabase(),
+    database,
     provider,
     "Federating",
     () => now,
@@ -35,6 +36,7 @@ async function setup() {
 
   return {
     federating,
+    database,
     provider,
     approved,
     redeem,
@@ -98,7 +100,7 @@ describe("Federating", () => {
   });
 
   test("finish refuses an unknown, expired, or confirmed attempt, or another nonce, with SIGN_IN_EXPIRED before contacting the other site", async () => {
-    const { federating, approved, redeem, advance } = await setup();
+    const { federating, database, approved, redeem, advance } = await setup();
 
     const sams = await approved();
     for (const attempt of [null, "unknown"]) {
@@ -112,7 +114,15 @@ describe("Federating", () => {
 
     const late = await approved();
     advance(10 * MINUTE);
+    const attemptBefore = await database
+      .collection("federating.attempts")
+      .findOne({ _id: late.attempt });
     await expect(federating.finish(late)).rejects.toThrow(SignInExpired);
+    expect(
+      await database
+        .collection("federating.attempts")
+        .findOne({ _id: late.attempt }),
+    ).toEqual(attemptBefore);
     expect(redeem).not.toHaveBeenCalled();
 
     const replayed = await approved();
@@ -122,8 +132,11 @@ describe("Federating", () => {
   });
 
   test("finish refuses a code the other site doesn't confirm with SIGN_IN_REFUSED, and the attempt stays unconfirmed", async () => {
-    const { federating, approved } = await setup();
+    const { federating, database, approved } = await setup();
     const sams = await approved();
+    const attemptBefore = await database
+      .collection("federating.attempts")
+      .findOne({ _id: sams.attempt });
     const refused = federating.finish({
       ...sams,
       code: "a-code-nobody-issued",
@@ -132,6 +145,11 @@ describe("Federating", () => {
     await expect(refused).rejects.toThrow(
       "The other site didn't confirm this sign-in. Start again.",
     );
+    expect(
+      await database
+        .collection("federating.attempts")
+        .findOne({ _id: sams.attempt }),
+    ).toEqual(attemptBefore);
     expect(await federating._linkable(sams)).toEqual({ linkable: false });
     await expect(
       federating.link({ attempt: sams.attempt, user: "sam-user" }),

@@ -9,7 +9,8 @@ import { testDatabase } from "../support/mongo.ts";
 import { expectOneWinner } from "../support/race.ts";
 
 async function setup() {
-  return { registering: new RegisteringConcept(await testDatabase()) };
+  const database = await testDatabase();
+  return { registering: new RegisteringConcept(database), database };
 }
 
 describe("Registering", () => {
@@ -27,17 +28,23 @@ describe("Registering", () => {
     const taken = registering.register({ username: "maya" });
     await expect(taken).rejects.toThrow(UsernameTaken);
     await expect(taken).rejects.toThrow("That username is taken.");
+    expect(await registering._byUsername({ username: "maya" })).toEqual([
+      { user: maya },
+    ]);
     const { user: ben } = await registering.register({ username: "ben" });
     expect(ben).not.toBe(maya);
   });
 
   test("a username must have 3 to 32 ASCII letters, digits, underscores, or hyphens", async () => {
-    const { registering } = await setup();
+    const { registering, database } = await setup();
     for (const username of ["ma", "x".repeat(33), "maya lee", "maya!", ""]) {
       await expect(registering.register({ username })).rejects.toThrow(
         InvalidUsername,
       );
     }
+    expect(
+      await database.collection("registering.users").countDocuments(),
+    ).toBe(0);
     for (const username of ["abc", "x".repeat(32), "maya_lee-2"]) {
       await registering.register({ username });
     }
