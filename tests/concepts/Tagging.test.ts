@@ -31,9 +31,10 @@ describe("Tagging", () => {
     const studied = await createTag();
     const favorites = await createTag("alice", "favorites");
     expect(studied).not.toBe(favorites);
-    expect(
+    await expect(
       tagging.createTag({ user: "alice", name: "studied" }),
     ).rejects.toBeInstanceOf(TagAlreadyExists);
+    expect(await tagging._tags({ user: "alice" })).toHaveLength(2);
     const bobTag = await createTag("bob", "studied");
     expect(bobTag).not.toBe(studied);
   });
@@ -71,16 +72,19 @@ describe("Tagging", () => {
     expect(await tagging._audienceList({ user: "alice", tag })).toEqual([
       { audience: ["dave"] },
     ]);
-    expect(
+    await expect(
       tagging.updateAudience({
         user: "bob",
         tag,
         audience: ["mallory"],
       }),
     ).rejects.toBeInstanceOf(TagNotFound);
-    expect(tagging._audience({ user: "bob", tag })).rejects.toBeInstanceOf(
-      TagNotFound,
-    );
+    expect(await tagging._audienceList({ user: "alice", tag })).toEqual([
+      { audience: ["dave"] },
+    ]);
+    await expect(
+      tagging._audience({ user: "bob", tag }),
+    ).rejects.toBeInstanceOf(TagNotFound);
   });
 
   test("_audience returns distinct users only for the tag owner", async () => {
@@ -95,12 +99,12 @@ describe("Tagging", () => {
       { audience: "bob" },
       { audience: "carol" },
     ]);
-    expect(tagging._audience({ user: "bob", tag })).rejects.toBeInstanceOf(
-      TagNotFound,
-    );
-    expect(tagging._audienceList({ user: "bob", tag })).rejects.toBeInstanceOf(
-      TagNotFound,
-    );
+    await expect(
+      tagging._audience({ user: "bob", tag }),
+    ).rejects.toBeInstanceOf(TagNotFound);
+    await expect(
+      tagging._audienceList({ user: "bob", tag }),
+    ).rejects.toBeInstanceOf(TagNotFound);
   });
 
   test("_tags returns only the user's tags sorted by name", async () => {
@@ -159,9 +163,9 @@ describe("Tagging", () => {
       { item: "我", addedDate: newer },
       { item: "你", addedDate: older },
     ]);
-    expect(tagging._taggedItems({ user: "bob", tag })).rejects.toBeInstanceOf(
-      TagNotFound,
-    );
+    await expect(
+      tagging._taggedItems({ user: "bob", tag }),
+    ).rejects.toBeInstanceOf(TagNotFound);
   });
 
   test("renameTag preserves identity, permits its current name, and rejects another tag's name", async () => {
@@ -175,9 +179,12 @@ describe("Tagging", () => {
     expect(
       await database.collection("tagging.tags").findOne({ _id: tag }),
     ).toMatchObject({ author: "alice", name: "review" });
-    expect(
+    await expect(
       tagging.renameTag({ user: "alice", tag, newName: "favorites" }),
     ).rejects.toBeInstanceOf(TagAlreadyExists);
+    expect(
+      await database.collection("tagging.tags").findOne({ _id: tag }),
+    ).toMatchObject({ author: "alice", name: "review" });
     expect(
       await tagging.renameTag({ user: "alice", tag, newName: "review" }),
     ).toEqual({ tag });
@@ -188,15 +195,18 @@ describe("Tagging", () => {
 
   test("can only rename or delete a tag if the tag exists under the user", async () => {
     const tag = await createTag();
-    expect(
+    await expect(
       tagging.renameTag({ user: "bob", tag, newName: "stolen" }),
     ).rejects.toBeInstanceOf(TagNotFound);
-    expect(tagging.deleteTag({ user: "bob", tag })).rejects.toBeInstanceOf(
-      TagNotFound,
-    );
-    expect(
+    await expect(
+      tagging.deleteTag({ user: "bob", tag }),
+    ).rejects.toBeInstanceOf(TagNotFound);
+    await expect(
       tagging.deleteTag({ user: "alice", tag: "missing" as Tag }),
     ).rejects.toBeInstanceOf(TagNotFound);
+    expect(
+      await database.collection("tagging.tags").findOne({ _id: tag }),
+    ).toMatchObject({ author: "alice", name: "studied", audience: [] });
   });
 
   test("deleteTag refuses the default Studied tag and preserves its tagged items", async () => {
@@ -208,7 +218,7 @@ describe("Tagging", () => {
       date,
     });
 
-    expect(
+    await expect(
       tagging.deleteTag({ user: "alice", tag: studied }),
     ).rejects.toBeInstanceOf(DefaultTagCannotBeDeleted);
     expect(
@@ -236,7 +246,7 @@ describe("Tagging", () => {
     });
 
     await tagging.deleteTag({ user: "alice", tag: removed });
-    expect(
+    await expect(
       tagging._taggedItems({ user: "alice", tag: removed }),
     ).rejects.toBeInstanceOf(TagNotFound);
     expect(
@@ -247,7 +257,7 @@ describe("Tagging", () => {
     expect(
       await tagging._taggedItems({ user: "alice", tag: retained }),
     ).toEqual([{ item: "book", addedDate: date }]);
-    expect(
+    await expect(
       tagging.addItemTag({ user: "alice", tag: removed, item: "other", date }),
     ).rejects.toBeInstanceOf(TagNotFound);
   });
@@ -261,9 +271,12 @@ describe("Tagging", () => {
         .collection("tagging.taggedItems")
         .findOne({ tag, item: "book" }),
     ).toMatchObject({ addedDate: date });
-    expect(
+    await expect(
       tagging.addItemTag({ user: "alice", tag, item: "book", date }),
     ).rejects.toBeInstanceOf(ItemAlreadyTagged);
+    expect(await tagging._taggedItems({ user: "alice", tag })).toEqual([
+      { item: "book", addedDate: date },
+    ]);
     await tagging.addItemTag({ user: "alice", tag: other, item: "book", date });
     expect(await tagging._taggedItems({ user: "alice", tag })).toEqual([
       { item: "book", addedDate: date },
@@ -275,9 +288,13 @@ describe("Tagging", () => {
     await tagging.updateAudience({ user: "alice", tag, audience: ["bob"] });
     await tagging.addItemTag({ user: "alice", tag, item: "book", date });
     await tagging.addItemTag({ user: "alice", tag, item: "article", date });
-    expect(
+    await expect(
       tagging.removeItemTag({ user: "bob", tag, item: "book" }),
     ).rejects.toBeInstanceOf(TagNotFound);
+    expect(await tagging._taggedItems({ user: "alice", tag })).toEqual([
+      { item: "article", addedDate: date },
+      { item: "book", addedDate: date },
+    ]);
     await tagging.removeItemTag({ user: "alice", tag, item: "book" });
     expect(await tagging._taggedItems({ user: "alice", tag })).toEqual([
       { item: "article", addedDate: date },
@@ -289,7 +306,7 @@ describe("Tagging", () => {
     expect(await tagging._audienceList({ user: "alice", tag })).toEqual([
       { audience: [] },
     ]);
-    expect(
+    await expect(
       tagging.removeItemTag({ user: "alice", tag, item: "book" }),
     ).rejects.toBeInstanceOf(TaggedItemNotFound);
   });
@@ -297,7 +314,7 @@ describe("Tagging", () => {
   test("sharing snapshots capture audience and IDs before endpoint mutations", async () => {
     const tag = await createTag("alice", "Favorites");
     const studied = await createTag("alice", "Studied");
-    expect(
+    await expect(
       tagging.captureTagSharing({ user: "alice", tag }),
     ).rejects.toBeInstanceOf(CollectionEmpty);
     await tagging.updateAudience({
@@ -338,13 +355,13 @@ describe("Tagging", () => {
       item: "book-without-id",
       date,
     });
-    expect(
+    await expect(
       tagging.captureTagForDeletion({ user: "alice", tag: studied }),
     ).rejects.toBeInstanceOf(DefaultTagCannotBeDeleted);
-    expect(
+    await expect(
       tagging.captureItemSharing({ user: "bob", tag, item: "book" }),
     ).rejects.toBeInstanceOf(TagNotFound);
-    expect(
+    await expect(
       tagging.captureItemSharing({ user: "alice", tag, item: "missing" }),
     ).rejects.toBeInstanceOf(TaggedItemNotFound);
     expect(
@@ -361,7 +378,7 @@ describe("Tagging", () => {
     for (const item of ["book", "article", "card"]) {
       await tagging.addItemTag({ user: "alice", tag, item, date });
     }
-    expect(
+    await expect(
       tagging.findTaggedItemID({ user: "alice", tag, item: "card" }),
     ).rejects.toBeInstanceOf(TaggedItemIDNotFound);
     const first = await tagging.generateTaggedItemID({
@@ -381,10 +398,15 @@ describe("Tagging", () => {
     expect(
       (await tagging.findTaggedItemsID({ user: "alice", tag })).ids.sort(),
     ).toEqual([first.id, second.id].sort());
-    expect(
+    await expect(
       tagging.generateTaggedItemID({ user: "alice", tag, item: "missing" }),
     ).rejects.toBeInstanceOf(TaggedItemNotFound);
     expect(
+      await database
+        .collection("tagging.taggedItems")
+        .findOne({ tag, item: "book" }),
+    ).toMatchObject({ item: "book", identifier: first.id });
+    await expect(
       tagging.findTaggedItemsID({ user: "bob", tag }),
     ).rejects.toBeInstanceOf(TagNotFound);
   });

@@ -1,0 +1,104 @@
+$ bun test --timeout 60000 tests
+bun test v1.4.2 (744846f84)
+
+tests\concepts\Authenticating.test.ts:
+(pass) Authenticating > its principle: Ben authenticates with his password, and Leo can neither guess it nor set a new one [1536.17ms]
+(pass) Authenticating > a user with no password, such as one who signed in with Commons, is refused like a wrong password [1.98ms]
+(pass) Authenticating > Authenticating stores an argon2id hash, never the password [142.26ms]
+(pass) Authenticating > a password must have 8 to 128 characters, and _acceptable returns the same answer as set [4.57ms]
+(pass) Authenticating > of two passwords set for one user at once, one is set and the other is refused with PASSWORD_SET [161.55ms]
+
+tests\concepts\Benchmarking.test.ts:
+(pass) Benchmarking > creates uniquely named benchmarks and starts all items unfinished [59.13ms]
+(pass) Benchmarking > _benchmarks returns only the user's benchmarks unordered [83.22ms]
+(pass) Benchmarking > does not create a benchmark without items [46.67ms]
+(pass) Benchmarking > does not create a benchmark when items are not distinct [50.94ms]
+(pass) Benchmarking > checks and unchecks items and exposes the changed state in queries [51.43ms]
+(pass) Benchmarking > refuses checking an already finished item and unchecking an unfinished item [48.59ms]
+(pass) Benchmarking > refuses changes to missing benchmarks and items [52.66ms]
+(pass) Benchmarking > deletes a benchmark and all its items [43.51ms]
+
+tests\concepts\Federating.test.ts:
+(pass) Federating > its principle: Sam comes back to the same user after his Commons username changes, and neither Leo's link nor Sam's code read by Leo finishes a sign-in [92.28ms]
+(pass) Federating > start returns an address carrying a fresh nonce and challenge in the forms Commons accepts, and an attempt that expires in 10 minutes [41.83ms]
+(pass) Federating > finish refuses an unknown, expired, or confirmed attempt, or another nonce, with SIGN_IN_EXPIRED before contacting the other site [52.19ms]
+(pass) Federating > finish refuses a code the other site doesn't confirm with SIGN_IN_REFUSED, and the attempt stays unconfirmed [45.42ms]
+(pass) Federating > of two finishes of one attempt at once, one confirms it and the other is refused [36.43ms]
+(pass) Federating > link refuses an unconfirmed attempt with NOT_CONFIRMED and a subject already linked with ALREADY_LINKED [52.16ms]
+(pass) Federating > _linkable is true only for a confirmed, unexpired attempt whose subject is unlinked, and link still links after expiry [57.87ms]
+
+tests\concepts\InformationCollecting.test.ts:
+(pass) InformationCollecting > adds distinct fields and returns a field-name dictionary [24.93ms]
+(pass) InformationCollecting > field names are unique per item, regardless of description [19.40ms]
+(pass) InformationCollecting > concurrent additions of the same field produce one winner [16.55ms]
+(pass) InformationCollecting > edits only the selected item's field while preserving its identity [30.47ms]
+(pass) InformationCollecting > deletes a field, permits its name to be reused, and refuses missing fields [45.17ms]
+(pass) InformationCollecting > queries and edits reject unknown fields [22.18ms]
+
+tests\concepts\PersonalRating.test.ts:
+(pass) PersonalRating > addDefinedRatings unions new definitions, tolerates repeats, and returns distinct ratings [29.92ms]
+(pass) PersonalRating > addRating refuses an undefined rating without creating a personal rating [63.63ms]
+(pass) PersonalRating > addRating stores one defined rating per user and item and _rating returns it [121.77ms]
+(pass) PersonalRating > the user-item index rejects a second rating even if its value differs [113.14ms]
+(pass) PersonalRating > changeRating refuses an undefined new rating and leaves the old one intact [74.83ms]
+(pass) PersonalRating > changeRating refuses a missing pair [75.75ms]
+(pass) PersonalRating > changeRating changes only the requested user's item [97.77ms]
+(pass) PersonalRating > deleteRating removes exactly one pair and refuses a missing pair [80.22ms]
+(pass) PersonalRating > removeDefinedRating removes the definition and every use of it [99.57ms]
+
+tests\concepts\Registering.test.ts:
+(pass) Registering > its principle: Sam finds Maya by her username, and Ben registers another when hers is taken [36.69ms]
+(pass) Registering > a username must have 3 to 32 ASCII letters, digits, underscores, or hyphens [43.74ms]
+(pass) Registering > usernames are case-sensitive, so `Maya` is a different username from `maya` [32.90ms]
+(pass) Registering > _searchUsers matches username substrings without regard to case and excludes the signed-in user [24.03ms]
+(pass) Registering > _searchUsers matches username characters and returns at most 25 results [55.09ms]
+(pass) Registering > of two registrations of one username at once, one succeeds and the other is refused with USERNAME_TAKEN [23.12ms]
+(pass) Registering > _username and _byUsername return no row for an unknown user or username [1.77ms]
+
+tests\concepts\Sessioning.test.ts:
+(pass) Sessioning > its principle: Maya stays signed in until she signs out, leaves a session unused for a week, or reaches 90 days [176.83ms]
+(pass) Sessioning > a session's identity is 32 random bytes in base64url [22.60ms]
+(pass) Sessioning > every use sets lastUsed to now, so the week of idleness counts from the latest use [22.14ms]
+(pass) Sessioning > a refused use or end changes no session [22.17ms]
+(pass) Sessioning > Sessioning refuses to use or end an unknown or ended session [28.64ms]
+(pass) Sessioning > of two ends of one session at once, Sessioning accepts one and refuses the other with NOT_SIGNED_IN [20.47ms]
+
+tests\concepts\Sharing.test.ts:
+(pass) Sharing > shares with the audience and lists each visible item once [73.33ms]
+(pass) Sharing > shareItems shares every distinct item with every audience member idempotently [83.47ms]
+(pass) Sharing > revokeItem removes only requested shares and rejects a partly missing audience [83.02ms]
+(pass) Sharing > deleteItem removes all of one author's shares but leaves other items and authors [89.49ms]
+(pass) Sharing > revokeItems rejects repeated items and validates all shares before revoking [94.49ms]
+(pass) Sharing > deleteItems rejects repeated inputs and validates every item before deleting [86.41ms]
+(pass) Sharing > concurrent shares of the same author, item, and user remain unique [79.82ms]
+(pass) Sharing > public collections are derived from public items and clear when made private [131.16ms]
+
+tests\concepts\Tagging.test.ts:
+(pass) Tagging > tag names are unique per user and tags have distinct identities [81.22ms]
+(pass) Tagging > tags start with an empty audience and updateAudience replaces it [84.08ms]
+(pass) Tagging > _audience returns distinct users only for the tag owner [108.12ms]
+(pass) Tagging > _tags returns only the user's tags sorted by name [54.87ms]
+(pass) Tagging > _tagsContainingItem returns only the user's collections containing the item [121.34ms]
+(pass) Tagging > _taggedItems returns a user's collection items newest first [106.46ms]
+(pass) Tagging > renameTag preserves identity, permits its current name, and rejects another tag's name [82.54ms]
+(pass) Tagging > can only rename or delete a tag if the tag exists under the user [70.99ms]
+(pass) Tagging > deleteTag refuses the default Studied tag and preserves its tagged items [76.93ms]
+(pass) Tagging > deleteTag removes its tagged items but leaves other tags intact [90.33ms]
+(pass) Tagging > addItemTag stores the date and refuses a repeated tag and item pair [92.55ms]
+(pass) Tagging > removeItemTag removes one item and checks ownership and existence [89.61ms]
+(pass) Tagging > sharing snapshots capture audience and IDs before endpoint mutations [135.23ms]
+(pass) Tagging > generated IDs can be found individually and as a set [112.52ms]
+(pass) Tagging > _tagOfItem returns the tag for any existing item identifier [107.47ms]
+(pass) Tagging > _tagDetails returns the owner and name for existing collection tags [60.98ms]
+(pass) Tagging > _tagDetailsOfItem resolves a shared item to its collection owner and name [98.57ms]
+(pass) Tagging > generated ID collisions are retried across tags [89.67ms]
+
+tests\frontend\characterInformation.test.ts:
+(pass) preferDictionaryInformation > replaces stored placeholders when dictionary data is available [0.15ms]
+(pass) preferDictionaryInformation > uses dictionary data for missing fields [0.02ms]
+(pass) preferDictionaryInformation > preserves saved values and placeholders without better dictionary data [0.03ms]
+
+ 77 pass
+ 0 fail
+ 406 expect() calls
+Ran 77 tests across 10 files. [6.87s]

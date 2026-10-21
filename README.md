@@ -9,3 +9,17 @@ The [detailed design](docs/p1-design.md) document outlines the initial project's
 The current built-in benchmarks include:
 
 - HSK 1-6 character lists, referenced from [hanziDB](http://hanzidb.org/character-list/hsk)
+
+## Tests
+
+There are plentiful tests available in the `tests` directory. To run all tests in the directory, run:
+
+```bash
+bun test
+```
+
+To just run the concept tests in `tests/concepts`, run:
+
+```bash
+bun run test:concepts
+```

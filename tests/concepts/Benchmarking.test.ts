@@ -47,7 +47,10 @@ describe("Benchmarking", () => {
     expect(
       await benchmarking._unfinishedItems({ benchmark: first }),
     ).toHaveLength(3);
-    expect(createBenchmark()).rejects.toBeInstanceOf(BenchmarkAlreadyExists);
+    await expect(createBenchmark()).rejects.toBeInstanceOf(
+      BenchmarkAlreadyExists,
+    );
+    expect(await benchmarking._benchmarks({ user: "alice" })).toHaveLength(2);
   });
 
   test("_benchmarks returns only the user's benchmarks unordered", async () => {
@@ -58,8 +61,9 @@ describe("Benchmarking", () => {
     const aliceBenchmarks = await benchmarking._benchmarks({ user: "alice" });
     expect(aliceBenchmarks).toHaveLength(2);
     expect(
-      aliceBenchmarks
-        .sort((left, right) => left.name.localeCompare(right.name)),
+      aliceBenchmarks.sort((left, right) =>
+        left.name.localeCompare(right.name),
+      ),
     ).toEqual([
       { benchmark: basics, name: "Basics" },
       { benchmark: travel, name: "Travel" },
@@ -68,16 +72,16 @@ describe("Benchmarking", () => {
   });
 
   test("does not create a benchmark without items", async () => {
-    expect(createBenchmark("alice", "Empty", new Set())).rejects.toBeInstanceOf(
-      BenchmarkRequiresItems,
-    );
+    await expect(
+      createBenchmark("alice", "Empty", new Set()),
+    ).rejects.toBeInstanceOf(BenchmarkRequiresItems);
     expect(
       await database.collection("benchmarking.benchmarks").countDocuments(),
     ).toBe(0);
   });
 
   test("does not create a benchmark when items are not distinct", async () => {
-    expect(
+    await expect(
       createBenchmark("alice", "Duplicates", ["你", "好", "你"]),
     ).rejects.toBeInstanceOf(BenchmarkRequiresDistinctItems);
     expect(
@@ -116,26 +120,35 @@ describe("Benchmarking", () => {
     const benchmark = await createBenchmark();
     await benchmarking.checkBenchmarkItem({ benchmark, item: "你" });
 
-    expect(
+    await expect(
       benchmarking.checkBenchmarkItem({ benchmark, item: "你" }),
     ).rejects.toBeInstanceOf(BenchmarkItemAlreadyFinished);
-    expect(
+    await expect(
       benchmarking.uncheckBenchmarkItem({ benchmark, item: "好" }),
     ).rejects.toBeInstanceOf(BenchmarkItemNotFinished);
+    expect(await benchmarking._finishedItems({ benchmark })).toEqual([
+      { item: "你" },
+    ]);
+    expect(await benchmarking._unfinishedItems({ benchmark })).toEqual([
+      { item: "好" },
+      { item: "我" },
+    ]);
   });
 
   test("refuses changes to missing benchmarks and items", async () => {
     const benchmark = await createBenchmark();
 
-    expect(
+    await expect(
       benchmarking.checkBenchmarkItem({
         benchmark: "missing" as Benchmark,
         item: "你",
       }),
     ).rejects.toBeInstanceOf(BenchmarkNotFound);
-    expect(
+    await expect(
       benchmarking.uncheckBenchmarkItem({ benchmark, item: "missing" }),
     ).rejects.toBeInstanceOf(BenchmarkItemNotFound);
+    expect(await benchmarking._finishedItems({ benchmark })).toEqual([]);
+    expect(await benchmarking._unfinishedItems({ benchmark })).toHaveLength(3);
   });
 
   test("deletes a benchmark and all its items", async () => {
@@ -148,8 +161,8 @@ describe("Benchmarking", () => {
         .collection("benchmarking.benchmarkedItems")
         .countDocuments({ benchmark }),
     ).toBe(0);
-    expect(benchmarking.deleteBenchmark({ benchmark })).rejects.toBeInstanceOf(
-      BenchmarkNotFound,
-    );
+    await expect(
+      benchmarking.deleteBenchmark({ benchmark }),
+    ).rejects.toBeInstanceOf(BenchmarkNotFound);
   });
 });
