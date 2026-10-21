@@ -26,7 +26,6 @@
     "check": "sync-engine check && sync-engine artifacts check && tsc --noEmit",
     "build": "bun run --cwd frontend build",
     "build:frontend": "vite build",
-    "test": "bun test --timeout 60000 tests",
     "test:concepts": "bun test --timeout 60000 tests/concepts",
     "start": "bun src/main.ts",
     "start:frontend": "bun run build:frontend && BACKEND_URL=http://127.0.0.1:3000 vite preview --host 0.0.0.0 --port 8080",
