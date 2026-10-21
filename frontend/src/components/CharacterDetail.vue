@@ -158,7 +158,18 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
         </dl>
 
         <section class="rating-picker" aria-labelledby="rating-heading">
-          <h2 id="rating-heading">Personal rating</h2>
+          <h2 id="rating-heading">
+            Personal rating:
+            <span
+              :style="
+                personalRating
+                  ? { color: personalRatingColor(personalRating) }
+                  : undefined
+              "
+            >
+              {{ personalRating ?? "None" }}
+            </span>
+          </h2>
           <button
             type="button"
             class="rounded-action"
@@ -169,7 +180,7 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
               ratingSaving
                 ? "Saving rating..."
                 : personalRating
-                  ? `Change rating: ${personalRating}`
+                  ? "Change rating"
                   : "Add a personal rating"
             }}
           </button>

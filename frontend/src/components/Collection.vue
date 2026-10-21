@@ -493,12 +493,13 @@ function formatAddedDate(value: string) {
         <button
           type="button"
           class="character-card"
+          :style="{ backgroundColor: ratingColorFor(item.item) ?? '#ffffff' }"
           @click="emit('select', item.item)"
         >
           <svg
             v-if="ratingIconFor(item.item)"
             class="cell-rating-icon"
-            :style="{ color: ratingColorFor(item.item) }"
+            style="color: #ffffff"
             viewBox="0 0 48 48"
             role="img"
             :aria-label="`${props.ratings.get(item.item)} rating`"
@@ -537,10 +538,7 @@ function formatAddedDate(value: string) {
           </svg>
           <span class="character">{{ item.item }}</span>
           <span class="pinyin">{{ pinyinFor(item.item) }}</span>
-          <span
-            class="item-rating"
-            :style="{ color: ratingColorFor(item.item) }"
-          >
+          <span class="item-rating">
             Rating:
             {{
               ratingsLoading
@@ -771,6 +769,7 @@ h1 {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: #ffffff;
+  color: #000000;
   cursor: pointer;
   padding: 2.1rem 0.4rem 0.4rem;
 }
@@ -781,12 +780,13 @@ h1 {
 
 .added-date {
   font-size: 0.7rem;
-  color: #666;
+  color: #000000;
 }
 
 .item-rating {
   font-size: 0.7rem;
   text-align: center;
+  color: #000000;
 }
 
 .cell-rating-icon {
