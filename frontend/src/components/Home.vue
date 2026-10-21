@@ -773,7 +773,7 @@ onMounted(() => {
 :global(body) {
   background: #fff;
   color: #222;
-  font-family: system-ui, sans-serif;
+  font-family: var(--font-sans);
 }
 
 .navbar {

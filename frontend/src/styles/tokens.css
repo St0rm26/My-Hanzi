@@ -1,3 +1,11 @@
+@font-face {
+  font-family: "Resource Han Rounded CN";
+  src: url("/fonts/ResourceHanRoundedCN-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
   /* Palette */
   --color-page: #f3f4f9;
@@ -14,9 +22,7 @@
   --color-tip: #1e1f2b;
 
   /* Typography */
-  --font-sans:
-    "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
-    sans-serif;
+  --font-sans: "Resource Han Rounded CN", sans-serif;
   --text-xs: 0.8125rem;
   --text-sm: 0.875rem;
   --text-base: 0.9375rem;
