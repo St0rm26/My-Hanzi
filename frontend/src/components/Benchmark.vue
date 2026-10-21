@@ -245,9 +245,9 @@ function confirmRatingFilter() {
             type="button"
             class="character-card"
             :style="{
-              backgroundColor:
-                ratingColorFor(item) ??
-                (studiedItems.includes(item) ? '#ffffff' : '#c7c7c7'),
+              backgroundColor: !studiedItems.includes(item)
+                ? '#c7c7c7'
+                : (ratingColorFor(item) ?? '#ffffff'),
             }"
             @click="emit('select', item)"
           >
