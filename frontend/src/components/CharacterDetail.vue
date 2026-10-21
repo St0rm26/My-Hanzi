@@ -2,7 +2,11 @@
 import HanziWriter from "hanzi-writer";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import type { CharacterEntry } from "../api/characters.ts";
-import { ratingOptions, type PersonalRating } from "../api/ratings.ts";
+import {
+  personalRatingColor,
+  ratingOptions,
+  type PersonalRating,
+} from "../api/ratings.ts";
 import type { Collection, CollectionId } from "../useCollections.ts";
 
 const props = defineProps<{
@@ -211,6 +215,7 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
             :key="option.value"
             type="button"
             class="rating-option"
+            :style="{ color: personalRatingColor(option.value) }"
             :aria-pressed="personalRating === option.value"
             @click="chooseRating(option.value)"
           >

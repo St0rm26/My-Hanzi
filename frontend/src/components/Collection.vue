@@ -5,7 +5,11 @@ import {
   normalizePinyin,
 } from "../api/characters.ts";
 import type { CharacterEntry } from "../api/characters.ts";
-import { ratingOptions, type PersonalRating } from "../api/ratings.ts";
+import {
+  personalRatingColor,
+  ratingOptions,
+  type PersonalRating,
+} from "../api/ratings.ts";
 import type {
   Collection,
   CollectionItem,
@@ -145,6 +149,11 @@ function pinyinFor(item: string) {
 function ratingIconFor(item: string) {
   const rating = props.ratings.get(item);
   return ratingOptions.find((option) => option.value === rating)?.icon;
+}
+
+function ratingColorFor(item: string) {
+  const rating = props.ratings.get(item);
+  return rating ? personalRatingColor(rating) : undefined;
 }
 
 function ratingIconForFilter(rating: RatingFilterValue) {
@@ -391,6 +400,11 @@ function formatAddedDate(value: string) {
               v-for="rating in allRatingValues"
               :key="rating"
               class="rating-filter-option"
+              :style="
+                rating === 'None'
+                  ? undefined
+                  : { color: personalRatingColor(rating) }
+              "
             >
               <input
                 v-model="selectedRatingDraft"
@@ -465,6 +479,7 @@ function formatAddedDate(value: string) {
           <svg
             v-if="ratingIconFor(item.item)"
             class="cell-rating-icon"
+            :style="{ color: ratingColorFor(item.item) }"
             viewBox="0 0 48 48"
             role="img"
             :aria-label="`${props.ratings.get(item.item)} rating`"
@@ -503,7 +518,10 @@ function formatAddedDate(value: string) {
           </svg>
           <span class="character">{{ item.item }}</span>
           <span class="pinyin">{{ pinyinFor(item.item) }}</span>
-          <span class="item-rating">
+          <span
+            class="item-rating"
+            :style="{ color: ratingColorFor(item.item) }"
+          >
             Rating:
             {{
               ratingsLoading
@@ -765,5 +783,8 @@ h1 {
   width: 1.8rem;
   height: 1.8rem;
   padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--palette-red);
 }
 </style>
