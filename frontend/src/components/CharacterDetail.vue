@@ -2,7 +2,11 @@
 import HanziWriter from "hanzi-writer";
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import type { CharacterEntry } from "../api/characters.ts";
-import { ratingOptions, type PersonalRating } from "../api/ratings.ts";
+import {
+  personalRatingColor,
+  ratingOptions,
+  type PersonalRating,
+} from "../api/ratings.ts";
 import type { Collection, CollectionId } from "../useCollections.ts";
 
 const props = defineProps<{
@@ -11,6 +15,7 @@ const props = defineProps<{
   informationError: string | null;
   collections: Collection[];
   selectedTags: CollectionId[];
+  savedTags: CollectionId[];
   membershipLoading: boolean;
   working: boolean;
   error: string | null;
@@ -31,6 +36,7 @@ const emit = defineEmits<{
 
 const writerTarget = ref<HTMLDivElement | null>(null);
 const ratingDialog = ref<HTMLDialogElement | null>(null);
+const collectionPickerOpen = ref(false);
 const strokeError = ref(false);
 let writer: HanziWriter | undefined;
 const ratings = ratingOptions;
@@ -83,11 +89,29 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
   else selected.delete(tag);
   emit("selection", [...selected]);
 }
+
+function cancelCollectionChanges() {
+  emit("selection", [...props.savedTags]);
+  collectionPickerOpen.value = false;
+}
 </script>
 
 <template>
   <main>
-    <button type="button" @click="emit('back')">{{ backLabel ?? "Back to results" }}</button>
+    <button
+      type="button"
+      :class="{
+        'rounded-action':
+          backLabel === 'Back to collection' ||
+          backLabel === 'Back to shared collection' ||
+          backLabel === 'Back to public collection' ||
+          backLabel === 'Back to benchmark' ||
+          backLabel === 'Back to results',
+      }"
+      @click="emit('back')"
+    >
+      {{ backLabel ?? "Back to results" }}
+    </button>
     <header class="character-heading">
       <h1>{{ character.character }}</h1>
       <p>{{ character.pinyin || "Pinyin unavailable" }}</p>
@@ -101,8 +125,58 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
           class="writer-target"
           aria-label="Animated stroke order"
         ></div>
-        <button type="button" @click="replayStrokeOrder">Replay strokes</button>
+        <button type="button" class="rounded-action" @click="replayStrokeOrder">
+          Replay strokes
+        </button>
         <p v-if="strokeError" role="status">Stroke animation is unavailable.</p>
+        <section class="collection-picker">
+          <button
+            type="button"
+            class="rounded-action"
+            :aria-expanded="collectionPickerOpen"
+            aria-controls="collection-picker-options"
+            @click="collectionPickerOpen = !collectionPickerOpen"
+          >
+            Add to collections
+          </button>
+          <div
+            v-if="collectionPickerOpen"
+            id="collection-picker-options"
+            class="collection-picker-options"
+          >
+            <p v-if="membershipLoading" role="status">
+              Loading collection membership...
+            </p>
+            <label v-for="collection in collections" :key="collection.tag">
+              <input
+                type="checkbox"
+                :checked="selectedTags.includes(collection.tag)"
+                :disabled="working || membershipLoading"
+                @change="updateSelectedCollection(collection.tag, $event)"
+              />
+              {{ collection.name }}
+            </label>
+            <div class="collection-picker-actions">
+              <button
+                type="button"
+                class="rounded-action"
+                :disabled="working || membershipLoading"
+                @click="emit('save')"
+              >
+                {{ working ? "Saving..." : "Save" }}
+              </button>
+              <button
+                type="button"
+                class="rounded-action"
+                @click="cancelCollectionChanges"
+              >
+                Cancel
+              </button>
+            </div>
+            <p v-if="saveStatus" role="status">{{ saveStatus }}</p>
+            <p v-if="error" role="alert">{{ error }}</p>
+          </div>
+        </section>
       </section>
 
       <section
@@ -138,9 +212,21 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
         </dl>
 
         <section class="rating-picker" aria-labelledby="rating-heading">
-          <h2 id="rating-heading">Personal rating</h2>
+          <h2 id="rating-heading">
+            Personal rating:
+            <span
+              :style="
+                personalRating
+                  ? { color: personalRatingColor(personalRating) }
+                  : undefined
+              "
+            >
+              {{ personalRating ?? "None" }}
+            </span>
+          </h2>
           <button
             type="button"
+            class="rounded-action"
             :disabled="ratingLoading || ratingSaving"
             @click="openRatingPicker"
           >
@@ -148,41 +234,12 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
               ratingSaving
                 ? "Saving rating..."
                 : personalRating
-                  ? `Change rating: ${personalRating}`
+                  ? "Change rating"
                   : "Add a personal rating"
             }}
           </button>
           <p v-if="ratingLoading" role="status">Loading rating...</p>
           <p v-if="ratingError" role="alert">{{ ratingError }}</p>
-        </section>
-
-        <section
-          class="collection-picker"
-          aria-labelledby="collection-picker-heading"
-        >
-          <h2 id="collection-picker-heading">Add to collections</h2>
-          <p v-if="collections.length === 0">No collections available.</p>
-          <p v-if="membershipLoading" role="status">
-            Loading collection membership...
-          </p>
-          <label v-for="collection in collections" :key="collection.tag">
-            <input
-              type="checkbox"
-              :checked="selectedTags.includes(collection.tag)"
-              :disabled="working || membershipLoading"
-              @change="updateSelectedCollection(collection.tag, $event)"
-            />
-            {{ collection.name }}
-          </label>
-          <button
-            type="button"
-            :disabled="working || membershipLoading"
-            @click="emit('save')"
-          >
-            {{ working ? "Saving..." : "Save" }}
-          </button>
-          <p v-if="saveStatus" role="status">{{ saveStatus }}</p>
-          <p v-if="error" role="alert">{{ error }}</p>
         </section>
       </section>
     </div>
@@ -211,6 +268,7 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
             :key="option.value"
             type="button"
             class="rating-option"
+            :style="{ color: personalRatingColor(option.value) }"
             :aria-pressed="personalRating === option.value"
             @click="chooseRating(option.value)"
           >
@@ -314,9 +372,28 @@ dd {
 }
 
 .collection-picker {
+  position: relative;
+  margin-top: 0.75rem;
+}
+
+.collection-picker-options {
+  position: absolute;
+  z-index: 1;
+  top: calc(100% + 0.35rem);
+  left: 0;
   display: grid;
+  min-width: min(100%, 18rem);
   gap: 0.55rem;
-  margin-top: 1.5rem;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
+}
+
+.collection-picker-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .rating-picker {
@@ -387,13 +464,13 @@ dd {
   height: clamp(2.5rem, 12vw, 3.5rem);
 }
 
-.collection-picker label {
+.collection-picker-options label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.collection-picker button {
+.collection-picker-options button {
   justify-self: start;
   margin-top: 0.35rem;
 }

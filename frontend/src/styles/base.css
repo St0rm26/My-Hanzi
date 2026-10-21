@@ -37,8 +37,22 @@ input {
   color: inherit;
 }
 
+input:not([type="checkbox"]):not([type="radio"]):not(.password-form input):not(
+    .form-card input
+  ) {
+  border-radius: 8px;
+}
+
 button {
   cursor: pointer;
+}
+
+.rounded-action {
+  border: 2px outset buttonborder;
+  border-radius: 6px;
+  background: #bdbdbd;
+  color: #ffffff;
+  font-weight: 600;
 }
 
 button:hover:not(:disabled) {

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import {
-  lookupCharacters,
-  normalizePinyin,
-} from "../api/characters.ts";
+import { lookupCharacters, normalizePinyin } from "../api/characters.ts";
 import type { CharacterEntry } from "../api/characters.ts";
-import { ratingOptions, type PersonalRating } from "../api/ratings.ts";
+import {
+  personalRatingColor,
+  ratingOptions,
+  type PersonalRating,
+} from "../api/ratings.ts";
 import type {
   Collection,
   CollectionItem,
@@ -15,41 +16,44 @@ import type { ShareCandidate } from "../useSharing.ts";
 
 type SortOrder = "newest" | "oldest" | "alphabetical";
 
-const props = withDefaults(defineProps<{
-  collection: Collection;
-  items: CollectionItem[];
-  ratings?: ReadonlyMap<string, PersonalRating | null>;
-  ratingsLoading?: boolean;
-  ratingError?: string | null;
-  loading: boolean;
-  error: string | null;
-  shared?: boolean;
-  sharedUsers?: SharedUser[];
-  searchResults?: ShareCandidate[];
-  searchingUsers?: boolean;
-  searchError?: string | null;
-  shareError?: string | null;
-  sharing?: boolean;
-  shareStatus?: string | null;
-  isPublic?: boolean;
-  backLabel?: string;
-  removingItem?: string | null;
-}>(), {
-  shared: false,
-  sharedUsers: () => [],
-  searchResults: () => [],
-  searchingUsers: false,
-  searchError: null,
-  shareError: null,
-  sharing: false,
-  shareStatus: null,
-  isPublic: false,
-  backLabel: undefined,
-  ratings: () => new Map(),
-  ratingsLoading: false,
-  ratingError: null,
-  removingItem: null,
-});
+const props = withDefaults(
+  defineProps<{
+    collection: Collection;
+    items: CollectionItem[];
+    ratings?: ReadonlyMap<string, PersonalRating | null>;
+    ratingsLoading?: boolean;
+    ratingError?: string | null;
+    loading: boolean;
+    error: string | null;
+    shared?: boolean;
+    sharedUsers?: SharedUser[];
+    searchResults?: ShareCandidate[];
+    searchingUsers?: boolean;
+    searchError?: string | null;
+    shareError?: string | null;
+    sharing?: boolean;
+    shareStatus?: string | null;
+    isPublic?: boolean;
+    backLabel?: string;
+    removingItem?: string | null;
+  }>(),
+  {
+    shared: false,
+    sharedUsers: () => [],
+    searchResults: () => [],
+    searchingUsers: false,
+    searchError: null,
+    shareError: null,
+    sharing: false,
+    shareStatus: null,
+    isPublic: false,
+    backLabel: undefined,
+    ratings: () => new Map(),
+    ratingsLoading: false,
+    ratingError: null,
+    removingItem: null,
+  },
+);
 
 const emit = defineEmits<{
   back: [];
@@ -145,6 +149,11 @@ function pinyinFor(item: string) {
 function ratingIconFor(item: string) {
   const rating = props.ratings.get(item);
   return ratingOptions.find((option) => option.value === rating)?.icon;
+}
+
+function ratingColorFor(item: string) {
+  const rating = props.ratings.get(item);
+  return rating ? personalRatingColor(rating) : undefined;
 }
 
 function ratingIconForFilter(rating: RatingFilterValue) {
@@ -252,7 +261,13 @@ function formatAddedDate(value: string) {
 
 <template>
   <main>
-    <button type="button" @click="emit('back')">
+    <button
+      type="button"
+      :class="{
+        'rounded-action': !shared || backLabel === 'Back to public collections',
+      }"
+      @click="emit('back')"
+    >
       {{
         backLabel ??
         (shared ? "Back to shared collections" : "Back to collections")
@@ -263,6 +278,7 @@ function formatAddedDate(value: string) {
       <div class="sharing-buttons">
         <button
           type="button"
+          class="rounded-action"
           :aria-expanded="sharePanelOpen"
           :disabled="loading || isPublic || items.length === 0"
           @click="sharePanelOpen = !sharePanelOpen"
@@ -271,6 +287,7 @@ function formatAddedDate(value: string) {
         </button>
         <button
           type="button"
+          class="rounded-action"
           :disabled="loading || sharing || items.length === 0"
           @click="togglePublic"
         >
@@ -295,7 +312,7 @@ function formatAddedDate(value: string) {
               autocomplete="off"
               placeholder="Search usernames"
             />
-            <button type="submit">Search</button>
+            <button type="submit" class="rounded-action">Search</button>
           </div>
         </form>
         <p v-if="searchingUsers" role="status">Searching users...</p>
@@ -326,6 +343,7 @@ function formatAddedDate(value: string) {
               <span>{{ user.username ?? "Unknown user" }}</span>
               <button
                 type="button"
+                class="rounded-action"
                 :aria-label="`Remove ${user.username ?? 'user'}`"
                 :disabled="sharing"
                 @click="removeFromAudience(user)"
@@ -338,12 +356,18 @@ function formatAddedDate(value: string) {
         <div class="sharing-actions">
           <button
             type="button"
+            class="rounded-action"
             :disabled="sharing || !audienceChanged"
             @click="emit('saveAudience', selectedAudience)"
           >
             {{ sharing ? "Saving..." : "Save sharing" }}
           </button>
-          <button type="button" :disabled="sharing" @click="cancelSharing">
+          <button
+            type="button"
+            class="rounded-action"
+            :disabled="sharing"
+            @click="cancelSharing"
+          >
             Cancel
           </button>
         </div>
@@ -359,12 +383,12 @@ function formatAddedDate(value: string) {
         <input
           v-model="query"
           type="search"
-          placeholder="Search by hanzi or pinyin"
+          placeholder="Search by pinyin or character"
           aria-label="Search this collection"
         />
         <label>
           Sort by
-          <select v-model="sortOrder">
+          <select v-model="sortOrder" class="sort-select">
             <option value="newest">Newest first</option>
             <option value="oldest">Oldest first</option>
             <option value="alphabetical">Alphabetical</option>
@@ -373,6 +397,7 @@ function formatAddedDate(value: string) {
         <div class="rating-filter">
           <button
             type="button"
+            class="rounded-action"
             :aria-expanded="ratingFilterOpen"
             aria-controls="rating-filter-options"
             @click="ratingFilterOpen = !ratingFilterOpen"
@@ -391,6 +416,11 @@ function formatAddedDate(value: string) {
               v-for="rating in allRatingValues"
               :key="rating"
               class="rating-filter-option"
+              :style="
+                rating === 'None'
+                  ? undefined
+                  : { color: personalRatingColor(rating) }
+              "
             >
               <input
                 v-model="selectedRatingDraft"
@@ -430,7 +460,9 @@ function formatAddedDate(value: string) {
                     />
                   </g>
                   <path
-                    v-else-if="ratingIconForFilter(rating) === 'horizontal-line'"
+                    v-else-if="
+                      ratingIconForFilter(rating) === 'horizontal-line'
+                    "
                     d="M17 24h14"
                   />
                   <path v-else d="m18 18 12 12m0-12L18 30" />
@@ -440,6 +472,7 @@ function formatAddedDate(value: string) {
             </label>
             <button
               type="button"
+              class="rounded-action"
               :disabled="ratingsLoading"
               @click="confirmRatingFilter"
             >
@@ -460,11 +493,13 @@ function formatAddedDate(value: string) {
         <button
           type="button"
           class="character-card"
+          :style="{ backgroundColor: ratingColorFor(item.item) ?? '#ffffff' }"
           @click="emit('select', item.item)"
         >
           <svg
             v-if="ratingIconFor(item.item)"
             class="cell-rating-icon"
+            style="color: #ffffff"
             viewBox="0 0 48 48"
             role="img"
             :aria-label="`${props.ratings.get(item.item)} rating`"
@@ -518,7 +553,7 @@ function formatAddedDate(value: string) {
         <button
           v-if="!shared"
           type="button"
-          class="remove-character"
+          class="remove-character rounded-action"
           :aria-label="`Remove ${item.item} from ${collection.name}`"
           :disabled="removingItem !== null"
           @click="emit('removeCharacter', item.item)"
@@ -649,8 +684,20 @@ h1 {
   max-width: 20rem;
 }
 
-.controls label {
+.controls > label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   margin-left: auto;
+}
+
+.sort-select {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--color-text);
+  font-family: var(--font-sans);
 }
 
 .rating-filter {
@@ -731,7 +778,10 @@ h1 {
   align-items: center;
   justify-content: center;
   gap: 0.2rem;
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #ffffff;
+  color: #000000;
   cursor: pointer;
   padding: 2.1rem 0.4rem 0.4rem;
 }
@@ -742,12 +792,13 @@ h1 {
 
 .added-date {
   font-size: 0.7rem;
-  color: #666;
+  color: #000000;
 }
 
 .item-rating {
   font-size: 0.7rem;
   text-align: center;
+  color: #000000;
 }
 
 .cell-rating-icon {
@@ -765,5 +816,8 @@ h1 {
   width: 1.8rem;
   height: 1.8rem;
   padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--palette-red);
 }
 </style>

@@ -17,10 +17,7 @@ import {
   type SharedUser,
   useCollections,
 } from "../useCollections.ts";
-import {
-  type SharedCollection,
-  useSharing,
-} from "../useSharing.ts";
+import { type SharedCollection, useSharing } from "../useSharing.ts";
 import { useInformation } from "../useInformation.ts";
 import { usePersonalRating } from "../usePersonalRating.ts";
 import type { PersonalRating } from "../api/ratings.ts";
@@ -111,6 +108,9 @@ const activePublicCollection = ref<Collection | null>(null);
 const activeBenchmark = ref<Benchmark | null>(null);
 const benchmarkItems = ref<string[]>([]);
 const benchmarkStudiedItems = ref<string[]>([]);
+const benchmarkRatings = ref(new Map<string, PersonalRating | null>());
+const benchmarkRatingsLoading = ref(false);
+const benchmarkRatingsError = ref<string | null>(null);
 const benchmarkLoading = ref(false);
 const benchmarkSequence = ref(0);
 const collectionItems = ref<CollectionItem[]>([]);
@@ -257,6 +257,10 @@ async function openBenchmark(benchmark: Benchmark) {
   const sequence = ++benchmarkSequence.value;
   activeBenchmark.value = benchmark;
   benchmarkItems.value = [];
+  benchmarkStudiedItems.value = [];
+  benchmarkRatings.value = new Map();
+  benchmarkRatingsLoading.value = false;
+  benchmarkRatingsError.value = null;
   benchmarkLoading.value = true;
   page.value = "benchmark";
   try {
@@ -264,6 +268,26 @@ async function openBenchmark(benchmark: Benchmark) {
     if (sequence === benchmarkSequence.value && result !== null) {
       benchmarkItems.value = result.items;
       benchmarkStudiedItems.value = result.studiedItems;
+      benchmarkLoading.value = false;
+      benchmarkRatingsLoading.value = true;
+      try {
+        const ratingsResult = await loadRatings(result.items);
+        if (sequence === benchmarkSequence.value) {
+          benchmarkRatings.value = ratingsResult.ratings;
+          benchmarkRatingsError.value = ratingsResult.error;
+        }
+      } catch (cause) {
+        if (sequence === benchmarkSequence.value) {
+          benchmarkRatingsError.value =
+            cause instanceof Error
+              ? cause.message
+              : "Could not load benchmark ratings.";
+        }
+      } finally {
+        if (sequence === benchmarkSequence.value) {
+          benchmarkRatingsLoading.value = false;
+        }
+      }
     }
   } finally {
     if (sequence === benchmarkSequence.value) benchmarkLoading.value = false;
@@ -272,6 +296,11 @@ async function openBenchmark(benchmark: Benchmark) {
 
 function benchmarkNumber(benchmark: Benchmark) {
   return benchmark.name.match(/\d+/u)?.[0] ?? "";
+}
+
+function benchmarkColor(benchmark: Benchmark) {
+  const level = Number(benchmarkNumber(benchmark));
+  return level >= 1 && level <= 6 ? `var(--color-hsk-${level})` : "#fff";
 }
 
 function updateSelectedCollections(tagIds: CollectionId[]) {
@@ -560,6 +589,9 @@ onMounted(() => {
       :benchmark="activeBenchmark"
       :items="benchmarkItems"
       :studied-items="benchmarkStudiedItems"
+      :ratings="benchmarkRatings"
+      :ratings-loading="benchmarkRatingsLoading"
+      :rating-error="benchmarkRatingsError"
       :loading="benchmarkLoading"
       :error="benchmarksError"
       @back="page = 'home'"
@@ -573,6 +605,7 @@ onMounted(() => {
       :information-error="informationError"
       :collections="collections"
       :selected-tags="selectedCollectionIds"
+      :saved-tags="initialCollectionIds"
       :membership-loading="membershipLoading"
       :working="working"
       :error="error"
@@ -701,10 +734,15 @@ onMounted(() => {
               maxlength="50"
               :disabled="working"
             />
-            <button type="submit" :disabled="working">
+            <button type="submit" class="rounded-action" :disabled="working">
               {{ activeCollection ? "Save" : "Create" }}
             </button>
-            <button type="button" :disabled="working" @click="cancelForm">
+            <button
+              type="button"
+              class="rounded-action"
+              :disabled="working"
+              @click="cancelForm"
+            >
               Cancel
             </button>
           </div>
@@ -726,6 +764,7 @@ onMounted(() => {
             <template v-if="collection.name !== 'Studied'">
               <button
                 type="button"
+                class="rounded-action"
                 :disabled="working"
                 @click="openEditForm(collection)"
               >
@@ -733,6 +772,7 @@ onMounted(() => {
               </button>
               <button
                 type="button"
+                class="rounded-action"
                 :disabled="working"
                 @click="removeCollection(collection)"
               >
@@ -757,7 +797,11 @@ onMounted(() => {
               class="benchmark-card"
               @click="openBenchmark(benchmark)"
             >
-              <span class="benchmark-icon" aria-hidden="true">
+              <span
+                class="benchmark-icon"
+                :style="{ backgroundColor: benchmarkColor(benchmark) }"
+                aria-hidden="true"
+              >
                 {{ benchmarkNumber(benchmark) }}
               </span>
               <span class="benchmark-name">{{ benchmark.name }}</span>
@@ -773,7 +817,7 @@ onMounted(() => {
 :global(body) {
   background: #fff;
   color: #222;
-  font-family: system-ui, sans-serif;
+  font-family: var(--font-sans);
 }
 
 .navbar {
@@ -783,7 +827,7 @@ onMounted(() => {
   gap: 1rem;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid #ccc;
-  background: #bdbdbd;
+  background: var(--palette-red);
 }
 
 .brand {
@@ -901,6 +945,7 @@ main form {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  padding-right: 0.5rem;
   border-bottom: 1px solid #ddd;
 }
 
@@ -911,7 +956,7 @@ main form {
 .new-collection {
   background: #bdbdbd;
   color: rgb(255, 255, 255);
-  font-weight: 500;
+  font-weight: 600;
   border-radius: 6px;
 }
 

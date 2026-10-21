@@ -1,3 +1,11 @@
+@font-face {
+  font-family: "Resource Han Rounded CN";
+  src: url("/fonts/ResourceHanRoundedCN-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
   /* Palette */
   --color-page: #f3f4f9;
@@ -12,11 +20,27 @@
   --color-danger: #b42318;
   --color-danger-soft: #fdf1ef;
   --color-tip: #1e1f2b;
+  --palette-red: #ff4775;
+  --palette-orange: #f39c47;
+  --palette-yellow: #ffdb55;
+  --palette-green: #53ffa8;
+  --palette-blue: #7dbfff;
+  --palette-indigo: #692df3;
+  --palette-violet: #dd63e5;
+  --color-hsk-1: var(--palette-red);
+  --color-hsk-2: var(--palette-yellow);
+  --color-hsk-3: var(--palette-green);
+  --color-hsk-4: var(--palette-blue);
+  --color-hsk-5: var(--palette-indigo);
+  --color-hsk-6: var(--palette-violet);
+  --color-rating-mastered: var(--palette-blue);
+  --color-rating-confident: var(--palette-green);
+  --color-rating-medium: var(--palette-yellow);
+  --color-rating-hard: var(--palette-orange);
+  --color-rating-difficult: var(--palette-red);
 
   /* Typography */
-  --font-sans:
-    "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
-    sans-serif;
+  --font-sans: "Resource Han Rounded CN", sans-serif;
   --text-xs: 0.8125rem;
   --text-sm: 0.875rem;
   --text-base: 0.9375rem;
