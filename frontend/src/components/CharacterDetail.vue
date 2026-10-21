@@ -15,6 +15,7 @@ const props = defineProps<{
   informationError: string | null;
   collections: Collection[];
   selectedTags: CollectionId[];
+  savedTags: CollectionId[];
   membershipLoading: boolean;
   working: boolean;
   error: string | null;
@@ -88,6 +89,11 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
   else selected.delete(tag);
   emit("selection", [...selected]);
 }
+
+function cancelCollectionChanges() {
+  emit("selection", [...props.savedTags]);
+  collectionPickerOpen.value = false;
+}
 </script>
 
 <template>
@@ -150,14 +156,23 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
               />
               {{ collection.name }}
             </label>
-            <button
-              type="button"
-              class="rounded-action"
-              :disabled="working || membershipLoading"
-              @click="emit('save')"
-            >
-              {{ working ? "Saving..." : "Save" }}
-            </button>
+            <div class="collection-picker-actions">
+              <button
+                type="button"
+                class="rounded-action"
+                :disabled="working || membershipLoading"
+                @click="emit('save')"
+              >
+                {{ working ? "Saving..." : "Save" }}
+              </button>
+              <button
+                type="button"
+                class="rounded-action"
+                @click="cancelCollectionChanges"
+              >
+                Cancel
+              </button>
+            </div>
             <p v-if="saveStatus" role="status">{{ saveStatus }}</p>
             <p v-if="error" role="alert">{{ error }}</p>
           </div>
@@ -374,6 +389,11 @@ dd {
   border-radius: 6px;
   background: #fff;
   box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
+}
+
+.collection-picker-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .rating-picker {

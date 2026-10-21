@@ -605,6 +605,7 @@ onMounted(() => {
       :information-error="informationError"
       :collections="collections"
       :selected-tags="selectedCollectionIds"
+      :saved-tags="initialCollectionIds"
       :membership-loading="membershipLoading"
       :working="working"
       :error="error"
