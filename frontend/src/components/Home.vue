@@ -17,10 +17,7 @@ import {
   type SharedUser,
   useCollections,
 } from "../useCollections.ts";
-import {
-  type SharedCollection,
-  useSharing,
-} from "../useSharing.ts";
+import { type SharedCollection, useSharing } from "../useSharing.ts";
 import { useInformation } from "../useInformation.ts";
 import { usePersonalRating } from "../usePersonalRating.ts";
 import type { PersonalRating } from "../api/ratings.ts";
@@ -792,7 +789,7 @@ onMounted(() => {
   gap: 1rem;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid #ccc;
-  background: #bdbdbd;
+  background: var(--palette-red);
 }
 
 .brand {
