@@ -35,6 +35,7 @@ const emit = defineEmits<{
 
 const writerTarget = ref<HTMLDivElement | null>(null);
 const ratingDialog = ref<HTMLDialogElement | null>(null);
+const collectionPickerOpen = ref(false);
 const strokeError = ref(false);
 let writer: HanziWriter | undefined;
 const ratings = ratingOptions;
@@ -115,14 +116,49 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
           class="writer-target"
           aria-label="Animated stroke order"
         ></div>
-        <button
-          type="button"
-          class="rounded-action"
-          @click="replayStrokeOrder"
-        >
+        <button type="button" class="rounded-action" @click="replayStrokeOrder">
           Replay strokes
         </button>
         <p v-if="strokeError" role="status">Stroke animation is unavailable.</p>
+        <section class="collection-picker">
+          <button
+            type="button"
+            class="rounded-action"
+            :aria-expanded="collectionPickerOpen"
+            aria-controls="collection-picker-options"
+            @click="collectionPickerOpen = !collectionPickerOpen"
+          >
+            Add to collections
+          </button>
+          <div
+            v-if="collectionPickerOpen"
+            id="collection-picker-options"
+            class="collection-picker-options"
+          >
+            <p v-if="membershipLoading" role="status">
+              Loading collection membership...
+            </p>
+            <label v-for="collection in collections" :key="collection.tag">
+              <input
+                type="checkbox"
+                :checked="selectedTags.includes(collection.tag)"
+                :disabled="working || membershipLoading"
+                @change="updateSelectedCollection(collection.tag, $event)"
+              />
+              {{ collection.name }}
+            </label>
+            <button
+              type="button"
+              class="rounded-action"
+              :disabled="working || membershipLoading"
+              @click="emit('save')"
+            >
+              {{ working ? "Saving..." : "Save" }}
+            </button>
+            <p v-if="saveStatus" role="status">{{ saveStatus }}</p>
+            <p v-if="error" role="alert">{{ error }}</p>
+          </div>
+        </section>
       </section>
 
       <section
@@ -186,36 +222,6 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
           </button>
           <p v-if="ratingLoading" role="status">Loading rating...</p>
           <p v-if="ratingError" role="alert">{{ ratingError }}</p>
-        </section>
-
-        <section
-          class="collection-picker"
-          aria-labelledby="collection-picker-heading"
-        >
-          <h2 id="collection-picker-heading">Add to collections</h2>
-          <p v-if="collections.length === 0">No collections available.</p>
-          <p v-if="membershipLoading" role="status">
-            Loading collection membership...
-          </p>
-          <label v-for="collection in collections" :key="collection.tag">
-            <input
-              type="checkbox"
-              :checked="selectedTags.includes(collection.tag)"
-              :disabled="working || membershipLoading"
-              @change="updateSelectedCollection(collection.tag, $event)"
-            />
-            {{ collection.name }}
-          </label>
-          <button
-            type="button"
-            class="rounded-action"
-            :disabled="working || membershipLoading"
-            @click="emit('save')"
-          >
-            {{ working ? "Saving..." : "Save" }}
-          </button>
-          <p v-if="saveStatus" role="status">{{ saveStatus }}</p>
-          <p v-if="error" role="alert">{{ error }}</p>
         </section>
       </section>
     </div>
@@ -348,9 +354,23 @@ dd {
 }
 
 .collection-picker {
+  position: relative;
+  margin-top: 0.75rem;
+}
+
+.collection-picker-options {
+  position: absolute;
+  z-index: 1;
+  top: calc(100% + 0.35rem);
+  left: 0;
   display: grid;
+  min-width: min(100%, 18rem);
   gap: 0.55rem;
-  margin-top: 1.5rem;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
 }
 
 .rating-picker {
@@ -421,13 +441,13 @@ dd {
   height: clamp(2.5rem, 12vw, 3.5rem);
 }
 
-.collection-picker label {
+.collection-picker-options label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.collection-picker button {
+.collection-picker-options button {
   justify-self: start;
   margin-top: 0.35rem;
 }
