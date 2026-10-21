@@ -768,7 +768,9 @@ h1 {
   align-items: center;
   justify-content: center;
   gap: 0.2rem;
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #ffffff;
   cursor: pointer;
   padding: 2.1rem 0.4rem 0.4rem;
 }
