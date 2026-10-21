@@ -945,6 +945,7 @@ main form {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  padding-right: 0.5rem;
   border-bottom: 1px solid #ddd;
 }
 
