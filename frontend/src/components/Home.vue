@@ -108,6 +108,9 @@ const activePublicCollection = ref<Collection | null>(null);
 const activeBenchmark = ref<Benchmark | null>(null);
 const benchmarkItems = ref<string[]>([]);
 const benchmarkStudiedItems = ref<string[]>([]);
+const benchmarkRatings = ref(new Map<string, PersonalRating | null>());
+const benchmarkRatingsLoading = ref(false);
+const benchmarkRatingsError = ref<string | null>(null);
 const benchmarkLoading = ref(false);
 const benchmarkSequence = ref(0);
 const collectionItems = ref<CollectionItem[]>([]);
@@ -254,6 +257,10 @@ async function openBenchmark(benchmark: Benchmark) {
   const sequence = ++benchmarkSequence.value;
   activeBenchmark.value = benchmark;
   benchmarkItems.value = [];
+  benchmarkStudiedItems.value = [];
+  benchmarkRatings.value = new Map();
+  benchmarkRatingsLoading.value = false;
+  benchmarkRatingsError.value = null;
   benchmarkLoading.value = true;
   page.value = "benchmark";
   try {
@@ -261,6 +268,26 @@ async function openBenchmark(benchmark: Benchmark) {
     if (sequence === benchmarkSequence.value && result !== null) {
       benchmarkItems.value = result.items;
       benchmarkStudiedItems.value = result.studiedItems;
+      benchmarkLoading.value = false;
+      benchmarkRatingsLoading.value = true;
+      try {
+        const ratingsResult = await loadRatings(result.items);
+        if (sequence === benchmarkSequence.value) {
+          benchmarkRatings.value = ratingsResult.ratings;
+          benchmarkRatingsError.value = ratingsResult.error;
+        }
+      } catch (cause) {
+        if (sequence === benchmarkSequence.value) {
+          benchmarkRatingsError.value =
+            cause instanceof Error
+              ? cause.message
+              : "Could not load benchmark ratings.";
+        }
+      } finally {
+        if (sequence === benchmarkSequence.value) {
+          benchmarkRatingsLoading.value = false;
+        }
+      }
     }
   } finally {
     if (sequence === benchmarkSequence.value) benchmarkLoading.value = false;
@@ -562,6 +589,9 @@ onMounted(() => {
       :benchmark="activeBenchmark"
       :items="benchmarkItems"
       :studied-items="benchmarkStudiedItems"
+      :ratings="benchmarkRatings"
+      :ratings-loading="benchmarkRatingsLoading"
+      :rating-error="benchmarkRatingsError"
       :loading="benchmarkLoading"
       :error="benchmarksError"
       @back="page = 'home'"
