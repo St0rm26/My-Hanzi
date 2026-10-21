@@ -274,6 +274,11 @@ function benchmarkNumber(benchmark: Benchmark) {
   return benchmark.name.match(/\d+/u)?.[0] ?? "";
 }
 
+function benchmarkColor(benchmark: Benchmark) {
+  const level = Number(benchmarkNumber(benchmark));
+  return level >= 1 && level <= 6 ? `var(--color-hsk-${level})` : "#fff";
+}
+
 function updateSelectedCollections(tagIds: CollectionId[]) {
   selectedCollectionIds.value = tagIds;
   saveStatus.value = null;
@@ -757,7 +762,11 @@ onMounted(() => {
               class="benchmark-card"
               @click="openBenchmark(benchmark)"
             >
-              <span class="benchmark-icon" aria-hidden="true">
+              <span
+                class="benchmark-icon"
+                :style="{ backgroundColor: benchmarkColor(benchmark) }"
+                aria-hidden="true"
+              >
                 {{ benchmarkNumber(benchmark) }}
               </span>
               <span class="benchmark-name">{{ benchmark.name }}</span>
