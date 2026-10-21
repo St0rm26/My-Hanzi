@@ -96,8 +96,11 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
       type="button"
       :class="{
         'rounded-action':
+          backLabel === 'Back to collection' ||
+          backLabel === 'Back to shared collection' ||
+          backLabel === 'Back to public collection' ||
           backLabel === 'Back to benchmark' ||
-          backLabel === 'Back to shared collection',
+          backLabel === 'Back to results',
       }"
       @click="emit('back')"
     >
