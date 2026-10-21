@@ -144,7 +144,7 @@ function confirmRatingFilter() {
         <input
           v-model="query"
           type="search"
-          placeholder="Search by hanzi or pinyin"
+          placeholder="Search by pinyin or character"
           aria-label="Search this benchmark"
         />
         <div class="rating-filter">

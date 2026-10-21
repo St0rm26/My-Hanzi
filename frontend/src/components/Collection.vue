@@ -383,12 +383,12 @@ function formatAddedDate(value: string) {
         <input
           v-model="query"
           type="search"
-          placeholder="Search by hanzi or pinyin"
+          placeholder="Search by pinyin or character"
           aria-label="Search this collection"
         />
         <label>
           Sort by
-          <select v-model="sortOrder">
+          <select v-model="sortOrder" class="sort-select">
             <option value="newest">Newest first</option>
             <option value="oldest">Oldest first</option>
             <option value="alphabetical">Alphabetical</option>
@@ -684,8 +684,20 @@ h1 {
   max-width: 20rem;
 }
 
-.controls label {
+.controls > label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   margin-left: auto;
+}
+
+.sort-select {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--color-text);
+  font-family: var(--font-sans);
 }
 
 .rating-filter {
