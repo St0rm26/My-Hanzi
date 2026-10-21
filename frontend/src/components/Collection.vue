@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import {
-  lookupCharacters,
-  normalizePinyin,
-} from "../api/characters.ts";
+import { lookupCharacters, normalizePinyin } from "../api/characters.ts";
 import type { CharacterEntry } from "../api/characters.ts";
 import {
   personalRatingColor,
@@ -19,41 +16,44 @@ import type { ShareCandidate } from "../useSharing.ts";
 
 type SortOrder = "newest" | "oldest" | "alphabetical";
 
-const props = withDefaults(defineProps<{
-  collection: Collection;
-  items: CollectionItem[];
-  ratings?: ReadonlyMap<string, PersonalRating | null>;
-  ratingsLoading?: boolean;
-  ratingError?: string | null;
-  loading: boolean;
-  error: string | null;
-  shared?: boolean;
-  sharedUsers?: SharedUser[];
-  searchResults?: ShareCandidate[];
-  searchingUsers?: boolean;
-  searchError?: string | null;
-  shareError?: string | null;
-  sharing?: boolean;
-  shareStatus?: string | null;
-  isPublic?: boolean;
-  backLabel?: string;
-  removingItem?: string | null;
-}>(), {
-  shared: false,
-  sharedUsers: () => [],
-  searchResults: () => [],
-  searchingUsers: false,
-  searchError: null,
-  shareError: null,
-  sharing: false,
-  shareStatus: null,
-  isPublic: false,
-  backLabel: undefined,
-  ratings: () => new Map(),
-  ratingsLoading: false,
-  ratingError: null,
-  removingItem: null,
-});
+const props = withDefaults(
+  defineProps<{
+    collection: Collection;
+    items: CollectionItem[];
+    ratings?: ReadonlyMap<string, PersonalRating | null>;
+    ratingsLoading?: boolean;
+    ratingError?: string | null;
+    loading: boolean;
+    error: string | null;
+    shared?: boolean;
+    sharedUsers?: SharedUser[];
+    searchResults?: ShareCandidate[];
+    searchingUsers?: boolean;
+    searchError?: string | null;
+    shareError?: string | null;
+    sharing?: boolean;
+    shareStatus?: string | null;
+    isPublic?: boolean;
+    backLabel?: string;
+    removingItem?: string | null;
+  }>(),
+  {
+    shared: false,
+    sharedUsers: () => [],
+    searchResults: () => [],
+    searchingUsers: false,
+    searchError: null,
+    shareError: null,
+    sharing: false,
+    shareStatus: null,
+    isPublic: false,
+    backLabel: undefined,
+    ratings: () => new Map(),
+    ratingsLoading: false,
+    ratingError: null,
+    removingItem: null,
+  },
+);
 
 const emit = defineEmits<{
   back: [];
@@ -261,7 +261,13 @@ function formatAddedDate(value: string) {
 
 <template>
   <main>
-    <button type="button" @click="emit('back')">
+    <button
+      type="button"
+      :class="{
+        'rounded-action': !shared || backLabel === 'Back to public collections',
+      }"
+      @click="emit('back')"
+    >
       {{
         backLabel ??
         (shared ? "Back to shared collections" : "Back to collections")
@@ -272,6 +278,7 @@ function formatAddedDate(value: string) {
       <div class="sharing-buttons">
         <button
           type="button"
+          class="rounded-action"
           :aria-expanded="sharePanelOpen"
           :disabled="loading || isPublic || items.length === 0"
           @click="sharePanelOpen = !sharePanelOpen"
@@ -280,6 +287,7 @@ function formatAddedDate(value: string) {
         </button>
         <button
           type="button"
+          class="rounded-action"
           :disabled="loading || sharing || items.length === 0"
           @click="togglePublic"
         >
@@ -304,7 +312,7 @@ function formatAddedDate(value: string) {
               autocomplete="off"
               placeholder="Search usernames"
             />
-            <button type="submit">Search</button>
+            <button type="submit" class="rounded-action">Search</button>
           </div>
         </form>
         <p v-if="searchingUsers" role="status">Searching users...</p>
@@ -335,6 +343,7 @@ function formatAddedDate(value: string) {
               <span>{{ user.username ?? "Unknown user" }}</span>
               <button
                 type="button"
+                class="rounded-action"
                 :aria-label="`Remove ${user.username ?? 'user'}`"
                 :disabled="sharing"
                 @click="removeFromAudience(user)"
@@ -347,12 +356,18 @@ function formatAddedDate(value: string) {
         <div class="sharing-actions">
           <button
             type="button"
+            class="rounded-action"
             :disabled="sharing || !audienceChanged"
             @click="emit('saveAudience', selectedAudience)"
           >
             {{ sharing ? "Saving..." : "Save sharing" }}
           </button>
-          <button type="button" :disabled="sharing" @click="cancelSharing">
+          <button
+            type="button"
+            class="rounded-action"
+            :disabled="sharing"
+            @click="cancelSharing"
+          >
             Cancel
           </button>
         </div>
@@ -382,6 +397,7 @@ function formatAddedDate(value: string) {
         <div class="rating-filter">
           <button
             type="button"
+            class="rounded-action"
             :aria-expanded="ratingFilterOpen"
             aria-controls="rating-filter-options"
             @click="ratingFilterOpen = !ratingFilterOpen"
@@ -444,7 +460,9 @@ function formatAddedDate(value: string) {
                     />
                   </g>
                   <path
-                    v-else-if="ratingIconForFilter(rating) === 'horizontal-line'"
+                    v-else-if="
+                      ratingIconForFilter(rating) === 'horizontal-line'
+                    "
                     d="M17 24h14"
                   />
                   <path v-else d="m18 18 12 12m0-12L18 30" />
@@ -454,6 +472,7 @@ function formatAddedDate(value: string) {
             </label>
             <button
               type="button"
+              class="rounded-action"
               :disabled="ratingsLoading"
               @click="confirmRatingFilter"
             >
@@ -536,7 +555,7 @@ function formatAddedDate(value: string) {
         <button
           v-if="!shared"
           type="button"
-          class="remove-character"
+          class="remove-character rounded-action"
           :aria-label="`Remove ${item.item} from ${collection.name}`"
           :disabled="removingItem !== null"
           @click="emit('removeCharacter', item.item)"

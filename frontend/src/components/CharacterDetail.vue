@@ -91,7 +91,17 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
 
 <template>
   <main>
-    <button type="button" @click="emit('back')">{{ backLabel ?? "Back to results" }}</button>
+    <button
+      type="button"
+      :class="{
+        'rounded-action':
+          backLabel === 'Back to benchmark' ||
+          backLabel === 'Back to shared collection',
+      }"
+      @click="emit('back')"
+    >
+      {{ backLabel ?? "Back to results" }}
+    </button>
     <header class="character-heading">
       <h1>{{ character.character }}</h1>
       <p>{{ character.pinyin || "Pinyin unavailable" }}</p>
@@ -105,7 +115,13 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
           class="writer-target"
           aria-label="Animated stroke order"
         ></div>
-        <button type="button" @click="replayStrokeOrder">Replay strokes</button>
+        <button
+          type="button"
+          class="rounded-action"
+          @click="replayStrokeOrder"
+        >
+          Replay strokes
+        </button>
         <p v-if="strokeError" role="status">Stroke animation is unavailable.</p>
       </section>
 
@@ -145,6 +161,7 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
           <h2 id="rating-heading">Personal rating</h2>
           <button
             type="button"
+            class="rounded-action"
             :disabled="ratingLoading || ratingSaving"
             @click="openRatingPicker"
           >
@@ -180,6 +197,7 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
           </label>
           <button
             type="button"
+            class="rounded-action"
             :disabled="working || membershipLoading"
             @click="emit('save')"
           >

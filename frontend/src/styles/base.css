@@ -41,6 +41,14 @@ button {
   cursor: pointer;
 }
 
+.rounded-action {
+  border: 2px outset buttonborder;
+  border-radius: 6px;
+  background: #bdbdbd;
+  color: #ffffff;
+  font-weight: 600;
+}
+
 button:hover:not(:disabled) {
   filter: brightness(0.92);
 }

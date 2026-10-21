@@ -47,7 +47,9 @@ const sortedCollections = computed(() => {
 
 <template>
   <main>
-    <button type="button" @click="emit('back')">Back</button>
+    <button type="button" class="rounded-action" @click="emit('back')">
+      Back
+    </button>
     <h1>{{ title ?? "Shared with me" }}</h1>
     <p v-if="loading" role="status">Loading shared collections...</p>
     <p v-else-if="error" role="alert">{{ error }}</p>

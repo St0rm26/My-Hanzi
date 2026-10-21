@@ -61,7 +61,11 @@ const orderedItems = computed(() =>
 
 <template>
   <main class="benchmark-page">
-    <button type="button" class="back-button" @click="emit('back')">
+    <button
+      type="button"
+      class="back-button rounded-action"
+      @click="emit('back')"
+    >
       Back to benchmarks
     </button>
     <h1>{{ benchmark.name }}</h1>

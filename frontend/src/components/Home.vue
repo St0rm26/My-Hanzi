@@ -703,10 +703,15 @@ onMounted(() => {
               maxlength="50"
               :disabled="working"
             />
-            <button type="submit" :disabled="working">
+            <button type="submit" class="rounded-action" :disabled="working">
               {{ activeCollection ? "Save" : "Create" }}
             </button>
-            <button type="button" :disabled="working" @click="cancelForm">
+            <button
+              type="button"
+              class="rounded-action"
+              :disabled="working"
+              @click="cancelForm"
+            >
               Cancel
             </button>
           </div>
@@ -728,6 +733,7 @@ onMounted(() => {
             <template v-if="collection.name !== 'Studied'">
               <button
                 type="button"
+                class="rounded-action"
                 :disabled="working"
                 @click="openEditForm(collection)"
               >
@@ -735,6 +741,7 @@ onMounted(() => {
               </button>
               <button
                 type="button"
+                class="rounded-action"
                 :disabled="working"
                 @click="removeCollection(collection)"
               >
@@ -917,7 +924,7 @@ main form {
 .new-collection {
   background: #bdbdbd;
   color: rgb(255, 255, 255);
-  font-weight: 500;
+  font-weight: 600;
   border-radius: 6px;
 }
 
