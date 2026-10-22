@@ -1479,21 +1479,6 @@ then
   RequestBoundary.respond (collections: former "the public collections" with (user), requestId)
 ```
 
-### tags.AddCharacter
-
-Authored path: `tags.AddCharacter`.
-- Covered by [Tags](../design/compositions/tags.md), line 66.
-
-```reaction
-when Tagging.addItemTag (item, tag, user)
-where
-  Tagging._tags (user) has (name: "Studied", tag)
-  Benchmarking._benchmarks (user) has (benchmark)
-  Benchmarking._items (benchmark) has (item)
-then
-  Benchmarking.checkBenchmarkItem (benchmark, item)
-```
-
 ### tags.AddItem
 
 Authored path: `tags.AddItem`.
@@ -1946,21 +1931,6 @@ where
   earlier, RequestBoundary.request (path: "/tags/make-public", requestId, session, tag)
 then
   RequestBoundary.respond (requestId)
-```
-
-### tags.RemoveCharacter
-
-Authored path: `tags.RemoveCharacter`.
-- Covered by [Tags](../design/compositions/tags.md), line 68.
-
-```reaction
-when Tagging.removeItemTag (item, tag, user)
-where
-  Tagging._tags (user) has (name: "Studied", tag)
-  Benchmarking._benchmarks (user) has (benchmark)
-  Benchmarking._items (benchmark) has (item)
-then
-  Benchmarking.uncheckBenchmarkItem (benchmark, item)
 ```
 
 ### tags.RemoveItem

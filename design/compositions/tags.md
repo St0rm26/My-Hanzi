@@ -63,10 +63,12 @@ The character detail page can also [load the collections that already contain th
 tags.ItemMembership at /tags/item-membership
 ```
 
-After adding a tag to an item, reactions [check whether to update benchmarks](reaction:tags.AddCharacter) and [share the item with the collection's audience](reaction:tags.ShareCharacter).
+After adding a tag to an item, a reaction [shares the item with the collection's audience](reaction:tags.ShareCharacter).
 
-When the user [removes a character from a collection with the remove endpoint](reaction:tags.RemoveItem), the endpoint captures its ID and audience with `Tagging.captureItemSharing`, revokes sharing, and then deletes the membership. A reaction [checks whether to update benchmarks](reaction:tags.RemoveCharacter).
+When the user [removes a character from a collection with the remove endpoint](reaction:tags.RemoveItem), the endpoint captures its ID and audience with `Tagging.captureItemSharing`, revokes sharing, and then deletes the membership.
 
 ```endpoints
 tags.RemoveItem at /tags/remove-item
 ```
+
+Benchmark progress regarding the "Studied" tag is handled by the [benchmarks composition](./benchmarks.md).

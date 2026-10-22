@@ -1,4 +1,4 @@
-import { assemble } from "@mit-sdg/sync-engine/assembly";
+import { assemble, type RawFaultReport } from "@mit-sdg/sync-engine/assembly";
 import { composition as accountsComposition } from "./compositions/accounts.ts";
 import { composition as benchmarksComposition } from "./compositions/benchmarks.ts";
 import { composition as commonsComposition } from "./compositions/commons.ts";
@@ -36,6 +36,6 @@ export function assembleApplication() {
       tags: tagsComposition,
     },
     // Print what went wrong. Otherwise a failure only shows up as INTERNAL_ERROR.
-    rawFaultReporter: ({ error }) => console.error(error),
+    rawFaultReporter: ({ error }: RawFaultReport) => console.error(error),
   });
 }

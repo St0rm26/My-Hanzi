@@ -1,7 +1,7 @@
 import { ref } from "vue";
 import type { MyHanziWireHttp } from "../../generated/wire.ts";
 import { api } from "./api/client.ts";
-import { messageFor } from "./api/errors.ts";
+import { isApiError, messageFor } from "./api/errors.ts";
 import { useSession } from "./session.ts";
 
 type Wire = MyHanziWireHttp;
@@ -15,7 +15,9 @@ export type CollectionSharingState = {
   users: SharedUser[];
   isPublic: boolean;
 };
-type ErrorResult = { error: string; detail?: string };
+type CallResult<T> =
+  | { ok: true; value: T }
+  | { ok: false; error: string };
 
 const { sessionEnded } = useSession();
 const collections = ref<Collection[]>([]);
@@ -24,23 +26,26 @@ const sharingError = ref<string | null>(null);
 const loading = ref(false);
 const working = ref(false);
 
-async function call<T extends object>(
-  path: Path,
-  request: Promise<T | ErrorResult>,
-): Promise<T | ErrorResult> {
+async function call<P extends Path>(
+  path: P,
+  request: Promise<unknown>,
+): Promise<CallResult<Wire[P]["output"]>> {
   const result = await request;
-  if ("error" in result && result.error === "UNAUTHORIZED") sessionEnded();
-  return "error" in result ? { error: messageFor(path, result.error) } : result;
+  if (isApiError(result)) {
+    if (result.error === "UNAUTHORIZED") sessionEnded();
+    return { ok: false, error: messageFor(path, result.error) };
+  }
+  return { ok: true, value: result as Wire[P]["output"] };
 }
 
 async function loadTags(): Promise<Collection[] | null> {
   const result = await call("/tags/list", api["/tags/list"]());
-  if ("error" in result) {
+  if (!result.ok) {
     error.value = result.error;
     return null;
   }
-  collections.value = result.tags;
-  return result.tags;
+  collections.value = result.value.tags;
+  return result.value.tags;
 }
 
 async function refresh(): Promise<boolean> {
@@ -53,16 +58,16 @@ async function refresh(): Promise<boolean> {
   }
 }
 
-async function change<T extends object>(
-  path: Path,
-  request: Promise<T | ErrorResult>,
+async function change<P extends Path>(
+  path: P,
+  request: Promise<unknown>,
 ): Promise<boolean> {
   if (working.value) return false;
   working.value = true;
   error.value = null;
   try {
     const result = await call(path, request);
-    if ("error" in result) {
+    if (!result.ok) {
       error.value = result.error;
       return false;
     }
@@ -100,7 +105,7 @@ function shareCollection(collection: Collection, audience: string[]) {
         "/tags/share",
         api["/tags/share"]({ tag: collection.tag, audience }),
       );
-      if ("error" in result) {
+      if (!result.ok) {
         sharingError.value = result.error;
         return false;
       }
@@ -128,7 +133,7 @@ async function setCollectionPublic(
       isPublic
         ? await call(path, api["/tags/make-public"]({ tag: collection.tag }))
         : await call(path, api["/tags/make-private"]({ tag: collection.tag }));
-    if ("error" in result) {
+    if (!result.ok) {
       sharingError.value = result.error;
       return false;
     }
@@ -149,11 +154,11 @@ async function getCharacterCollections(
     "/tags/item-membership",
     api["/tags/item-membership"]({ item: character }),
   );
-  if ("error" in result) {
+  if (!result.ok) {
     error.value = result.error;
     return null;
   }
-  return result.tags.map(({ tag }) => tag);
+  return result.value.tags.map(({ tag }) => tag);
 }
 
 async function getCollectionItems(
@@ -164,11 +169,11 @@ async function getCollectionItems(
     "/tags/items",
     api["/tags/items"]({ tag: collection.tag }),
   );
-  if ("error" in result) {
+  if (!result.ok) {
     error.value = result.error;
     return null;
   }
-  return result.items;
+  return result.value.items;
 }
 
 async function getCollectionAudience(
@@ -179,13 +184,13 @@ async function getCollectionAudience(
     "/tags/audience",
     api["/tags/audience"]({ tag: collection.tag }),
   );
-  if ("error" in result) {
+  if (!result.ok) {
     error.value = result.error;
     return null;
   }
-  const publicState: CollectionPrivacy | undefined = result.isPublic[0];
+  const publicState: CollectionPrivacy | undefined = result.value.isPublic[0];
   return {
-    users: result.users,
+    users: result.value.users,
     isPublic: publicState?.isPublic === true,
   };
 }
@@ -210,14 +215,14 @@ async function saveCharacterCollections(
         "/tags/add-item",
         api["/tags/add-item"]({ tag, item: character }),
       );
-      if ("error" in result) failure ??= result.error;
+      if (!result.ok) failure ??= result.error;
     }
     for (const tag of removals) {
       const result = await call(
         "/tags/remove-item",
         api["/tags/remove-item"]({ tag, item: character }),
       );
-      if ("error" in result) failure ??= result.error;
+      if (!result.ok) failure ??= result.error;
     }
 
     const refreshed = await refresh();

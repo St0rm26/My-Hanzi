@@ -1,7 +1,7 @@
 import { ref } from "vue";
 import type { MyHanziWireHttp } from "../../generated/wire.ts";
 import { api } from "./api/client.ts";
-import { messageFor } from "./api/errors.ts";
+import { isApiError, messageFor } from "./api/errors.ts";
 import { useSession } from "./session.ts";
 
 type Wire = MyHanziWireHttp;
@@ -17,7 +17,7 @@ async function loadBenchmarks(): Promise<boolean> {
   error.value = null;
   try {
     const result = await api["/benchmarks/list"]();
-    if ("error" in result) {
+    if (isApiError(result)) {
       if (result.error === "UNAUTHORIZED") sessionEnded();
       error.value = messageFor("/benchmarks/list", result.error);
       return false;
@@ -47,19 +47,25 @@ async function getBenchmarkItems(
       api["/benchmarks/items"]({ benchmark: benchmark.benchmark }),
       api["/benchmarks/completed"]({ benchmark: benchmark.benchmark }),
     ]);
-    if ("error" in itemsResult) {
+    if (isApiError(itemsResult)) {
       if (itemsResult.error === "UNAUTHORIZED") sessionEnded();
       error.value = messageFor("/benchmarks/items", itemsResult.error);
       return null;
     }
-    if ("error" in completedResult) {
+    if (isApiError(completedResult)) {
       if (completedResult.error === "UNAUTHORIZED") sessionEnded();
       error.value = messageFor("/benchmarks/completed", completedResult.error);
       return null;
     }
     return {
-      items: itemsResult.items.map(({ item }) => item),
-      studiedItems: completedResult.items.map(({ item }) => item),
+      items: itemsResult.items.map(
+        (row: Wire["/benchmarks/items"]["output"]["items"][number]) =>
+          row.item,
+      ),
+      studiedItems: completedResult.items.map(
+        (row: Wire["/benchmarks/completed"]["output"]["items"][number]) =>
+          row.item,
+      ),
     };
   } catch (cause) {
     error.value =

@@ -11,7 +11,8 @@ import {
 import { concepts } from "../concepts.ts";
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 
-const { Tagging, Registering, Sessioning, Sharing, Benchmarking } = concepts;
+const { Tagging, Registering, Sessioning, Sharing } = concepts;
+type ReactionVars = Record<string, symbol>;
 
 const UserTags = former("the tags owned by a user", ({ user }, { tag, name }) =>
   each(Tagging._tags({ user }).is({ tag, name })).form({ tag, name }),
@@ -97,7 +98,7 @@ const ItemMembership = endpoint(
   { input: { required: ["session", "item"] } },
 );
 
-const Initialize = reaction(({ user }) =>
+const Initialize = reaction(({ user }: ReactionVars) =>
   when(Registering.register({}).responds({ user })).then(
     Tagging.createTag({ user, name: "Studied" }),
   ),
@@ -213,17 +214,7 @@ const AddItemEndpoint = endpoint(
   { input: { required: ["session", "tag", "item"] } },
 );
 
-const AddCharacter = reaction(({ user, tag, item, benchmark }) =>
-  when(Tagging.addItemTag({ user, tag, item }).responds({}))
-    .where(
-      Tagging._tags({ user }).is({ tag, name: "Studied" }),
-      Benchmarking._benchmarks({ user }).is({ benchmark }),
-      Benchmarking._items({ benchmark }).is({ item }),
-    )
-    .then(Benchmarking.checkBenchmarkItem({ benchmark, item })),
-);
-
-const ShareCharacter = reaction(({ user, tag, item, id, audience }) =>
+const ShareCharacter = reaction(({ user, tag, item, id, audience }: ReactionVars) =>
   when(Tagging.addItemTag({ user, tag, item }).responds({}))
     .then(Tagging.generateTaggedItemID({ user, tag, item }).responds({ id }))
     .then(
@@ -246,7 +237,7 @@ const ShareCharacter = reaction(({ user, tag, item, id, audience }) =>
     ),
 );
 
-const ShareCollection = reaction(({ user, tag, audience, ids }) =>
+const ShareCollection = reaction(({ user, tag, audience, ids }: ReactionVars) =>
   when(Tagging.updateAudience({ user, tag, audience }).responds({}))
     .then(Tagging.findTaggedItemsID({ user, tag }).responds({ ids }))
     .then(
@@ -256,16 +247,6 @@ const ShareCollection = reaction(({ user, tag, audience, ids }) =>
         audience,
       }),
     ),
-);
-
-const RemoveCharacter = reaction(({ user, tag, item, benchmark }) =>
-  when(Tagging.removeItemTag({ user, tag, item }).responds({}))
-    .where(
-      Tagging._tags({ user }).is({ tag, name: "Studied" }),
-      Benchmarking._benchmarks({ user }).is({ benchmark }),
-      Benchmarking._items({ benchmark }).is({ item }),
-    )
-    .then(Benchmarking.uncheckBenchmarkItem({ benchmark, item })),
 );
 
 const RemoveItemEndpoint = endpoint(
@@ -307,9 +288,7 @@ export const tagsHttp = {
 export const composition = {
   Initialize,
   ShareCollection,
-  AddCharacter,
   ShareCharacter,
-  RemoveCharacter,
   List,
   Items,
   Audience: GetAudience,

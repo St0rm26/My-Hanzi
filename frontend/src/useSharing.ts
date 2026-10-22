@@ -125,7 +125,7 @@ async function loadSharedCollectionItems(tag: SharedTag) {
       return;
     }
     sharedCollectionItems.value = result.items.filter(
-      (item): item is LoadedSharedCollectionItem =>
+      (item: SharedCollectionItem): item is LoadedSharedCollectionItem =>
         item.item !== null && item.addedDate !== null,
     );
   } catch (cause) {
@@ -151,7 +151,6 @@ async function loadPublicCollections() {
     const result = await api["/shares/public-collections"]();
     if (sequence !== publicCollectionsRequestSequence) return;
     if ("error" in result) {
-      if (result.error === "UNAUTHORIZED") sessionEnded();
       publicCollectionsError.value = messageFor(
         "/shares/public-collections",
         result.error,
@@ -182,7 +181,6 @@ async function loadPublicCollectionItems(tag: PublicTag) {
     const result = await api["/shares/public-collection-items"]({ tag });
     if (sequence !== publicCollectionItemsRequestSequence) return;
     if ("error" in result) {
-      if (result.error === "UNAUTHORIZED") sessionEnded();
       publicCollectionItemsError.value = messageFor(
         "/shares/public-collection-items",
         result.error,
@@ -190,7 +188,9 @@ async function loadPublicCollectionItems(tag: PublicTag) {
       return;
     }
     publicCollectionItems.value = result.items.filter(
-      (item): item is PublicCollectionItem & LoadedSharedCollectionItem =>
+      (
+        item: PublicCollectionItem,
+      ): item is PublicCollectionItem & LoadedSharedCollectionItem =>
         item.item !== null && item.addedDate !== null,
     );
   } catch (cause) {
