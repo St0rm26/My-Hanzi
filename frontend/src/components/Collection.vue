@@ -261,13 +261,7 @@ function formatAddedDate(value: string) {
 
 <template>
   <main>
-    <button
-      type="button"
-      :class="{
-        'rounded-action': !shared || backLabel === 'Back to public collections',
-      }"
-      @click="emit('back')"
-    >
+    <button type="button" class="rounded-action" @click="emit('back')">
       {{
         backLabel ??
         (shared ? "Back to shared collections" : "Back to collections")
