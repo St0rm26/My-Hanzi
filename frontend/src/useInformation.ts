@@ -3,30 +3,38 @@ import type { MyHanziWireHttp } from "../../generated/wire.ts";
 import { api } from "./api/client.ts";
 import { preferDictionaryInformation } from "./api/characterInformation.ts";
 import type { CharacterEntry } from "./api/characters.ts";
-import { messageFor } from "./api/errors.ts";
+import { isApiError, messageFor } from "./api/errors.ts";
 import { useSession } from "./session.ts";
 
 type Wire = MyHanziWireHttp;
 type Path = keyof Wire;
-type ErrorResult = { error: string; detail?: string; code?: string };
+type CallResult<T> =
+  | { ok: true; value: T }
+  | { ok: false; error: string; code?: string };
 
 const { sessionEnded } = useSession();
 const loading = ref(false);
 const error = ref<string | null>(null);
 let requestSequence = 0;
 
-async function call<T extends object>(
-  path: Path,
-  request: Promise<T | ErrorResult>,
-): Promise<T | ErrorResult> {
+async function call<P extends Path>(
+  path: P,
+  request: Promise<unknown>,
+): Promise<CallResult<Wire[P]["output"]>> {
   try {
     const result = await request;
-    if ("error" in result && result.error === "UNAUTHORIZED") sessionEnded();
-    return "error" in result
-      ? { error: messageFor(path, result.error), code: result.error }
-      : result;
+    if (isApiError(result)) {
+      if (result.error === "UNAUTHORIZED") sessionEnded();
+      return {
+        ok: false,
+        error: messageFor(path, result.error),
+        code: result.error,
+      };
+    }
+    return { ok: true, value: result as Wire[P]["output"] };
   } catch (cause) {
     return {
+      ok: false,
       error:
         cause instanceof Error
           ? cause.message
@@ -53,11 +61,11 @@ async function readFields(
     "/information/view",
     api["/information/view"]({ item: character.character }),
   );
-  if ("error" in result) {
+  if (!result.ok) {
     if (sequence === requestSequence) error.value = result.error;
     return null;
   }
-  return result.information.information ?? {};
+  return result.value.information.information ?? {};
 }
 
 function toCharacterEntry(
@@ -137,10 +145,7 @@ async function getCharacterInformation(
         }),
       );
       if (sequence !== requestSequence) return null;
-      if (
-        "error" in result &&
-        (!("code" in result) || result.code !== "CONFLICT")
-      ) {
+      if (!result.ok && result.code !== "CONFLICT") {
         error.value = result.error;
         return null;
       }

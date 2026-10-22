@@ -16,8 +16,9 @@ import HSK5 from "./benchmarks/HSK5.ts";
 import HSK6 from "./benchmarks/HSK6.ts";
 
 const { Registering, Benchmarking, Sessioning, Tagging } = concepts;
+type ReactionVars = Record<string, symbol>;
 
-const Initialize = reaction(({ user }) =>
+const Initialize = reaction(({ user }: ReactionVars) =>
   when(Registering.register({}).responds({ user }))
     .then(
       Benchmarking.createBenchmark({
@@ -63,7 +64,7 @@ const Initialize = reaction(({ user }) =>
     ),
 );
 
-const AddCharacter = reaction(({ user, tag, item, date, benchmark }) =>
+const AddCharacter = reaction(({ user, tag, item, date, benchmark }: ReactionVars) =>
   when(Tagging.addItemTag({ user, tag, item, date }))
     .where(
       Tagging._tags({ user }).is({ tag, name: "Studied" }),
@@ -73,7 +74,7 @@ const AddCharacter = reaction(({ user, tag, item, date, benchmark }) =>
     .then(Benchmarking.checkBenchmarkItem({ benchmark, item })),
 );
 
-const RemoveCharacter = reaction(({ user, tag, item, benchmark }) =>
+const RemoveCharacter = reaction(({ user, tag, item, benchmark }: ReactionVars) =>
   when(Tagging.removeItemTag({ user, tag, item }))
     .where(
       Tagging._tags({ user }).is({ tag, name: "Studied" }),

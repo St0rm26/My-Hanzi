@@ -50,6 +50,17 @@ const endpointMessages: Record<string, Record<string, string>> = {
   },
 };
 
+export type ApiError = { error: string; detail?: string };
+
+export function isApiError(result: unknown): result is ApiError {
+  return (
+    typeof result === "object" &&
+    result !== null &&
+    "error" in result &&
+    typeof result.error === "string"
+  );
+}
+
 export function messageFor(path: string, error: string): string {
   return (
     endpointMessages[path]?.[error] ??
