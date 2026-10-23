@@ -1,6 +1,7 @@
 import { ref } from "vue";
 import type { MyHanziWireHttp } from "../../generated/wire.ts";
 import { api } from "./api/client.ts";
+import { unavailableCharacterInformation } from "./api/characterDictionaries.ts";
 import { preferDictionaryInformation } from "./api/characterInformation.ts";
 import type { CharacterEntry } from "./api/characters.ts";
 import { isApiError, messageFor } from "./api/errors.ts";
@@ -11,6 +12,12 @@ type Path = keyof Wire;
 type CallResult<T> =
   | { ok: true; value: T }
   | { ok: false; error: string; code?: string };
+type InformationFields = {
+  pinyin: string;
+  meaning: string;
+  radical: string;
+  strokeCount: string;
+};
 
 const { sessionEnded } = useSession();
 const loading = ref(false);
@@ -43,13 +50,12 @@ async function call<P extends Path>(
   }
 }
 
-function fieldsFor(character: CharacterEntry): Record<string, string> {
+function fieldsFor(character: CharacterEntry): InformationFields {
   return {
     pinyin: character.pinyin,
     meaning: character.meaning,
     radical: character.radical,
-    strokeCount:
-      character.strokeCount === null ? "" : String(character.strokeCount),
+    strokeCount: character.strokeCount?.toString() ?? "",
   };
 }
 
@@ -78,26 +84,32 @@ function toCharacterEntry(
       fields.pinyin,
       dictionaryFields.pinyin,
       "",
+      character.simplifiedFallback?.pinyin,
     ),
     meaning: preferDictionaryInformation(
       fields.meaning,
       dictionaryFields.meaning,
       "No definition available.",
+      character.simplifiedFallback?.meaning,
     ),
-    radical: preferDictionaryInformation(
-      fields.radical,
-      dictionaryFields.radical,
-      "Not listed",
-    ),
+    radical: character.traditionalFallback
+      ? unavailableCharacterInformation
+      : preferDictionaryInformation(
+          fields.radical,
+          dictionaryFields.radical,
+          "Not listed",
+          character.simplifiedFallback?.radical,
+        ),
     strokeCount: preferDictionaryInformation(
       fields.strokeCount,
       dictionaryFields.strokeCount,
       "",
+      character.simplifiedFallback?.strokeCount?.toString(),
     ),
   };
-  const strokeCountText = currentFields.strokeCount;
   let strokeCount = character.strokeCount;
-  if (strokeCountText !== undefined) {
+  if (!character.traditionalFallback) {
+    const strokeCountText = currentFields.strokeCount;
     if (strokeCountText === "") {
       strokeCount = null;
     } else {

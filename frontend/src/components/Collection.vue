@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { lookupCharacters, normalizePinyin } from "../api/characters.ts";
+import {
+  lookupCharacters,
+  normalizePinyin,
+} from "../api/characters.ts";
+import { scriptForCharacter } from "../api/characterScripts.ts";
 import type { CharacterEntry } from "../api/characters.ts";
 import {
   personalRatingColor,
@@ -530,7 +534,14 @@ function formatAddedDate(value: string) {
             />
             <path v-else d="m18 18 12 12m0-12L18 30" />
           </svg>
-          <span class="character">{{ item.item }}</span>
+          <span
+            class="character"
+            :class="{
+              'traditional-hanzi':
+                scriptForCharacter(item.item) === 'traditional',
+            }"
+            >{{ item.item }}</span
+          >
           <span class="pinyin">{{ pinyinFor(item.item) }}</span>
           <span class="item-rating">
             Rating:

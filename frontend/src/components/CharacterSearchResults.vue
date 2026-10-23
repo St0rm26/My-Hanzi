@@ -1,8 +1,13 @@
 <script setup lang="ts">
+import {
+  scriptForCharacter,
+  type CharacterSearchScript,
+} from "../api/characterScripts.ts";
 import type { CharacterEntry } from "../api/characters.ts";
 
 defineProps<{
   query: string;
+  script: CharacterSearchScript;
   characters: CharacterEntry[];
   loading: boolean;
   error: string | null;
@@ -19,11 +24,15 @@ const emit = defineEmits<{
     <button type="button" class="rounded-action" @click="emit('back')">
       Back
     </button>
-    <h1>Results for “{{ query }}”</h1>
+    <h1>
+      {{
+        `${script === "simplified" ? "Simplified" : "Traditional"} results for "${query}"`
+      }}
+    </h1>
     <p v-if="loading" role="status">Searching characters...</p>
     <p v-else-if="error" role="alert">{{ error }}</p>
     <p v-else-if="characters.length === 0">
-      No matching simplified characters.
+      No matching {{ script }} characters.
     </p>
 
     <div v-else class="character-grid">
@@ -34,7 +43,14 @@ const emit = defineEmits<{
         type="button"
         @click="emit('select', character)"
       >
-        <span class="result-character">{{ character.character }}</span>
+        <span
+          class="result-character"
+          :class="{
+            'traditional-hanzi':
+              scriptForCharacter(character.character) === 'traditional',
+          }"
+          >{{ character.character }}</span
+        >
         <span>{{ character.pinyin || "Pinyin unavailable" }}</span>
       </button>
     </div>

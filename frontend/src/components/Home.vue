@@ -8,8 +8,9 @@ import SharedCollectionsPage from "./SharedCollections.vue";
 import {
   type CharacterEntry,
   lookupCharacters,
-  searchSimplifiedCharacters,
+  searchCharacters,
 } from "../api/characters.ts";
+import type { CharacterSearchScript } from "../api/characterScripts.ts";
 import {
   type Collection,
   type CollectionId,
@@ -99,7 +100,9 @@ const page = ref<
   | "public-collection"
 >("home");
 const searchQuery = ref("");
+const searchScript = ref<CharacterSearchScript>("simplified");
 const lastSearch = ref("");
+const lastSearchScript = ref<CharacterSearchScript>("simplified");
 const characters = ref<CharacterEntry[]>([]);
 const activeCharacter = ref<CharacterEntry | null>(null);
 const activeCollection = ref<Collection | null>(null);
@@ -147,18 +150,19 @@ function openCreateForm() {
   isEditing.value = true;
 }
 
-async function searchCharacters() {
+async function submitCharacterSearch() {
   const query = searchQuery.value.trim();
   if (!query) return;
 
   const sequence = ++searchSequence;
   lastSearch.value = query;
+  lastSearchScript.value = searchScript.value;
   characters.value = [];
   searchError.value = null;
   searching.value = true;
   page.value = "results";
   try {
-    characters.value = await searchSimplifiedCharacters(query);
+    characters.value = await searchCharacters(query, lastSearchScript.value);
   } catch (cause) {
     searchError.value =
       cause instanceof Error ? cause.message : "Character search failed.";
@@ -539,13 +543,21 @@ onMounted(() => {
   <div class="home">
     <header class="navbar">
       <a class="brand" href="/">MyHanzi</a>
-      <form class="search-form" @submit.prevent="searchCharacters">
+      <form class="search-form" @submit.prevent="submitCharacterSearch">
         <input
           v-model="searchQuery"
           type="search"
           placeholder="Pinyin or character (note: type v for ü)"
           aria-label="Search by pinyin or character"
         />
+        <select
+          v-model="searchScript"
+          aria-label="Character script"
+          class="search-script"
+        >
+          <option value="simplified">Simplified (简体字)</option>
+          <option value="traditional">Traditional (繁體字)</option>
+        </select>
       </form>
       <div class="account">
         <button
@@ -577,6 +589,7 @@ onMounted(() => {
     <CharacterSearchResults
       v-if="page === 'results'"
       :query="lastSearch"
+      :script="lastSearchScript"
       :characters="characters"
       :loading="searching"
       :error="searchError"
@@ -845,6 +858,21 @@ onMounted(() => {
   box-sizing: border-box;
   width: min(24rem, 65vw);
   padding: 0.45rem 0.6rem;
+}
+
+.search-form {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.search-script {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 15px;
+  background: #fff;
+  color: var(--color-text);
+  font: inherit;
 }
 
 .account {
