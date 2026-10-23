@@ -77,7 +77,11 @@ onMounted(() => {
     showCharacter: false,
     strokeAnimationSpeed: 1.5,
     delayBetweenStrokes: 250,
-    onLoadCharDataSuccess: () => void writer?.animateCharacter(),
+    onLoadCharDataSuccess: () => {
+      void writer?.animateCharacter().catch(() => {
+        strokeError.value = true;
+      });
+    },
     onLoadCharDataError: () => {
       strokeError.value = true;
     },
@@ -85,12 +89,15 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  if (strokeError.value) return;
   void writer?.pauseAnimation();
 });
 
 function replayStrokeOrder() {
-  strokeError.value = false;
-  void writer?.animateCharacter();
+  if (strokeError.value) return;
+  void writer?.animateCharacter().catch(() => {
+    strokeError.value = true;
+  });
 }
 
 function updateSelectedCollection(tag: CollectionId, event: Event) {
