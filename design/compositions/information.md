@@ -20,4 +20,4 @@ The app can [add an info field](reaction:information.AddField) for an item.
 information.AddField at /information/add-field
 ```
 
-When dictionary data becomes available for a character after placeholder values were saved, the frontend uses the dictionary values instead of the known unavailable placeholders. Other saved information remains unchanged.
+When dictionary data becomes available for a character after placeholder values were saved, the frontend uses the dictionary values instead of the known unavailable placeholders. For traditional characters, an exact dictionary record takes precedence over values previously populated from a simplified character; other saved information remains unchanged. If no exact traditional record exists, the frontend uses the simplified pronunciation and meaning, and shows "No information available" for radical and stroke count as those are the only fields dependent on the traditional character's structure.
