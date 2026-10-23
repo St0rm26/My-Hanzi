@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import {
-  lookupCharacters,
-  normalizePinyin,
-} from "../api/characters.ts";
+import { lookupCharacters, normalizePinyin } from "../api/characters.ts";
 import { scriptForCharacter } from "../api/characterScripts.ts";
 import type { CharacterEntry } from "../api/characters.ts";
 import {
@@ -14,6 +11,7 @@ import {
 import type {
   Collection,
   CollectionItem,
+  CollectionId,
   SharedUser,
 } from "../useCollections.ts";
 import type { ShareCandidate } from "../useSharing.ts";
@@ -24,6 +22,10 @@ const props = withDefaults(
   defineProps<{
     collection: Collection;
     items: CollectionItem[];
+    destinationCollections?: Collection[];
+    addingItems?: boolean;
+    addItemsError?: string | null;
+    addItemsStatus?: string | null;
     ratings?: ReadonlyMap<string, PersonalRating | null>;
     ratingsLoading?: boolean;
     ratingError?: string | null;
@@ -43,6 +45,10 @@ const props = withDefaults(
   }>(),
   {
     shared: false,
+    destinationCollections: () => [],
+    addingItems: false,
+    addItemsError: null,
+    addItemsStatus: null,
     sharedUsers: () => [],
     searchResults: () => [],
     searchingUsers: false,
@@ -66,6 +72,7 @@ const emit = defineEmits<{
   searchUsers: [term: string];
   saveAudience: [users: SharedUser[]];
   togglePublic: [isPublic: boolean];
+  addItems: [targets: Collection[]];
 }>();
 
 type RatingFilterValue = PersonalRating | "None";
@@ -84,6 +91,13 @@ const sharePanelOpen = ref(false);
 const searchTerm = ref("");
 const searchSubmitted = ref(false);
 const selectedAudience = ref<SharedUser[]>([]);
+const addItemsOpen = ref(false);
+const selectedDestinations = ref<CollectionId[]>([]);
+const availableDestinations = computed(() =>
+  props.destinationCollections.filter(
+    ({ tag }) => tag !== props.collection.tag,
+  ),
+);
 
 watch(
   () => props.sharedUsers,
@@ -96,6 +110,8 @@ watch(
 watch(
   () => props.collection.tag,
   () => {
+    addItemsOpen.value = false;
+    selectedDestinations.value = [];
     sharePanelOpen.value = false;
     searchTerm.value = "";
     searchSubmitted.value = false;
@@ -261,6 +277,21 @@ function togglePublic() {
 function formatAddedDate(value: string) {
   return new Date(value).toLocaleDateString();
 }
+
+function cancelAddItems() {
+  selectedDestinations.value = [];
+  addItemsOpen.value = false;
+}
+
+function saveAddItems() {
+  const selectedIds = new Set(selectedDestinations.value);
+  const targets = availableDestinations.value.filter(({ tag }) =>
+    selectedIds.has(tag),
+  );
+  if (targets.length === 0) return;
+  emit("addItems", targets);
+  addItemsOpen.value = false;
+}
 </script>
 
 <template>
@@ -272,6 +303,66 @@ function formatAddedDate(value: string) {
       }}
     </button>
     <h1>{{ collection.name }}</h1>
+    <section class="add-items-panel">
+      <button
+        type="button"
+        class="rounded-action"
+        :aria-expanded="addItemsOpen"
+        aria-controls="add-items-options"
+        :disabled="loading || items.length === 0 || addingItems"
+        @click="addItemsOpen = !addItemsOpen"
+      >
+        Add all characters to another collection
+      </button>
+      <div
+        v-if="addItemsOpen"
+        id="add-items-options"
+        class="add-items-options"
+        role="group"
+        aria-label="Destination collections"
+      >
+        <p>
+          This action will add all characters from this collection to the
+          selected collections, except for repeated characters.
+        </p>
+        <label
+          v-for="target in availableDestinations"
+          :key="target.tag"
+          class="destination-option"
+        >
+          <input
+            v-model="selectedDestinations"
+            type="checkbox"
+            :value="target.tag"
+            :disabled="addingItems"
+          />
+          <span>{{ target.name }}</span>
+        </label>
+        <p v-if="availableDestinations.length === 0">
+          There are no other collections to add characters to.
+        </p>
+        <div class="add-items-actions">
+          <button
+            type="button"
+            class="rounded-action"
+            :disabled="selectedDestinations.length === 0 || addingItems"
+            @click="saveAddItems"
+          >
+            {{ addingItems ? "Adding..." : "Save" }}
+          </button>
+          <button
+            type="button"
+            class="rounded-action"
+            :disabled="addingItems"
+            @click="cancelAddItems"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+      <p v-if="addItemsError" role="alert">{{ addItemsError }}</p>
+      <p v-if="addItemsStatus" role="status">{{ addItemsStatus }}</p>
+    </section>
     <section v-if="!shared" class="sharing-panel">
       <div class="sharing-buttons">
         <button
@@ -585,6 +676,37 @@ h1 {
   justify-items: start;
   gap: 0.75rem;
   margin: 1rem 0 1.5rem;
+}
+
+.add-items-panel {
+  position: relative;
+  display: grid;
+  justify-items: start;
+  gap: 0.75rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.add-items-options {
+  display: grid;
+  width: min(100%, 28rem);
+  gap: 0.55rem;
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
+}
+
+.destination-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.add-items-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
 }
 
 .sharing-buttons {

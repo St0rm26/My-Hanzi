@@ -43,6 +43,7 @@ const {
   getCollectionItems,
   getCollectionAudience,
   saveCharacterCollections,
+  addItemsToCollections,
 } = useCollections();
 const {
   searchResults: userSearchResults,
@@ -138,6 +139,9 @@ const searching = ref(false);
 const searchError = ref<string | null>(null);
 const saveStatus = ref<string | null>(null);
 const shareStatus = ref<string | null>(null);
+const transferringItems = ref(false);
+const transferError = ref<string | null>(null);
+const transferStatus = ref<string | null>(null);
 let searchSequence = 0;
 let characterSequence = 0;
 let collectionSequence = 0;
@@ -333,6 +337,8 @@ function openEditForm(collection: Collection) {
 
 async function openCollection(collection: Collection) {
   const sequence = ++collectionSequence;
+  transferError.value = null;
+  transferStatus.value = null;
   activeCollection.value = collection;
   collectionItems.value = [];
   collectionRatings.value = new Map();
@@ -466,6 +472,8 @@ async function openPublicCollections() {
 async function openPublicCollection(collection: SharedCollection) {
   if (collection.tag === null || collection.name === null) return;
   const sequence = ++collectionSequence;
+  transferError.value = null;
+  transferStatus.value = null;
   collectionRatings.value = new Map();
   collectionRatingsError.value = null;
   collectionRatingsLoading.value = false;
@@ -486,6 +494,8 @@ async function openPublicCollection(collection: SharedCollection) {
 async function openSharedCollection(collection: SharedCollection) {
   if (collection.tag === null || collection.name === null) return;
   const sequence = ++collectionSequence;
+  transferError.value = null;
+  transferStatus.value = null;
   collectionRatings.value = new Map();
   collectionRatingsError.value = null;
   collectionRatingsLoading.value = false;
@@ -509,6 +519,56 @@ function openSharedCollectionCharacter(character: string) {
 
 function openPublicCollectionCharacter(character: string) {
   return openCharacterById(character, "public-collection");
+}
+
+async function addCollectionItemsToTargets(targets: Collection[]) {
+  let items: string[];
+  let sourceTag: CollectionId | undefined;
+
+  if (page.value === "collection" && activeCollection.value) {
+    items = collectionItems.value.map(({ item }) => item);
+    sourceTag = activeCollection.value.tag;
+  } else if (
+    page.value === "shared-collection" &&
+    activeSharedCollection.value
+  ) {
+    items = sharedCollectionItems.value.map(({ item }) => item);
+    sourceTag = activeSharedCollection.value.tag;
+  } else if (
+    page.value === "public-collection" &&
+    activePublicCollection.value
+  ) {
+    items = publicCollectionItems.value.map(({ item }) => item);
+    sourceTag = activePublicCollection.value.tag;
+  } else {
+    return;
+  }
+
+  transferringItems.value = true;
+  transferError.value = null;
+  transferStatus.value = null;
+  try {
+    const result = await addItemsToCollections(items, targets, sourceTag);
+    if (!result) {
+      transferError.value =
+        "Another collection change is in progress. Try again shortly.";
+      return;
+    }
+
+    transferStatus.value =
+      `Added ${result.added} character${result.added === 1 ? "" : "s"}; ` +
+      `skipped ${result.skipped} repeated character${result.skipped === 1 ? "" : "s"}.`;
+    if (result.errors.length > 0) {
+      transferError.value = result.errors.join(" ");
+    }
+  } catch (cause) {
+    transferError.value =
+      cause instanceof Error
+        ? cause.message
+        : "Could not add characters to the selected collections.";
+  } finally {
+    transferringItems.value = false;
+  }
 }
 
 function cancelForm() {
@@ -648,6 +708,10 @@ onMounted(() => {
       v-else-if="page === 'collection' && activeCollection"
       :collection="activeCollection"
       :items="collectionItems"
+      :destination-collections="collections"
+      :adding-items="transferringItems"
+      :add-items-error="transferError"
+      :add-items-status="transferStatus"
       :ratings="collectionRatings"
       :ratings-loading="collectionRatingsLoading"
       :rating-error="collectionRatingsError"
@@ -668,6 +732,7 @@ onMounted(() => {
       @search-users="searchForShareUsers"
       @save-audience="saveCollectionAudience"
       @toggle-public="toggleCollectionPublic"
+      @add-items="addCollectionItemsToTargets"
     />
 
     <SharedCollectionsPage
@@ -694,6 +759,10 @@ onMounted(() => {
       v-else-if="page === 'shared-collection' && activeSharedCollection"
       :collection="activeSharedCollection"
       :items="sharedCollectionItems"
+      :destination-collections="collections"
+      :adding-items="transferringItems"
+      :add-items-error="transferError"
+      :add-items-status="transferStatus"
       :ratings="collectionRatings"
       :ratings-loading="collectionRatingsLoading"
       :rating-error="collectionRatingsError"
@@ -702,12 +771,17 @@ onMounted(() => {
       shared
       @back="page = 'shared'"
       @select="openSharedCollectionCharacter"
+      @add-items="addCollectionItemsToTargets"
     />
 
     <CollectionPage
       v-else-if="page === 'public-collection' && activePublicCollection"
       :collection="activePublicCollection"
       :items="publicCollectionItems"
+      :destination-collections="collections"
+      :adding-items="transferringItems"
+      :add-items-error="transferError"
+      :add-items-status="transferStatus"
       :ratings="collectionRatings"
       :ratings-loading="collectionRatingsLoading"
       :rating-error="collectionRatingsError"
@@ -717,6 +791,7 @@ onMounted(() => {
       back-label="Back to public collections"
       @back="page = 'public'"
       @select="openPublicCollectionCharacter"
+      @add-items="addCollectionItemsToTargets"
     />
 
     <main v-else>
