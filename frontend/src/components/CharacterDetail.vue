@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import HanziWriter from "hanzi-writer";
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import type { CharacterEntry } from "../api/characters.ts";
+import { scriptForCharacter } from "../api/characterScripts.ts";
 import {
   personalRatingColor,
   ratingOptions,
@@ -40,6 +41,16 @@ const collectionPickerOpen = ref(false);
 const strokeError = ref(false);
 let writer: HanziWriter | undefined;
 const ratings = ratingOptions;
+const characterScript = computed(() =>
+  scriptForCharacter(props.character.character),
+);
+const characterScriptLabel = computed(() =>
+  characterScript.value === "simplified-and-traditional"
+    ? "Simplified and Traditional"
+    : characterScript.value === "traditional"
+      ? "Traditional"
+      : "Simplified",
+);
 
 function openRatingPicker() {
   if (!props.ratingLoading && !props.ratingSaving) {
@@ -66,7 +77,11 @@ onMounted(() => {
     showCharacter: false,
     strokeAnimationSpeed: 1.5,
     delayBetweenStrokes: 250,
-    onLoadCharDataSuccess: () => void writer?.animateCharacter(),
+    onLoadCharDataSuccess: () => {
+      void writer?.animateCharacter().catch(() => {
+        strokeError.value = true;
+      });
+    },
     onLoadCharDataError: () => {
       strokeError.value = true;
     },
@@ -74,12 +89,15 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  if (strokeError.value) return;
   void writer?.pauseAnimation();
 });
 
 function replayStrokeOrder() {
-  strokeError.value = false;
-  void writer?.animateCharacter();
+  if (strokeError.value) return;
+  void writer?.animateCharacter().catch(() => {
+    strokeError.value = true;
+  });
 }
 
 function updateSelectedCollection(tag: CollectionId, event: Event) {
@@ -113,8 +131,15 @@ function cancelCollectionChanges() {
       {{ backLabel ?? "Back to results" }}
     </button>
     <header class="character-heading">
-      <h1>{{ character.character }}</h1>
+      <h1
+        :class="{
+          'traditional-hanzi': characterScript === 'traditional',
+        }"
+      >
+        {{ character.character }}
+      </h1>
       <p>{{ character.pinyin || "Pinyin unavailable" }}</p>
+      <span class="script-badge">{{ characterScriptLabel }}</span>
     </header>
 
     <div class="detail-layout">
@@ -191,7 +216,13 @@ function cancelCollectionChanges() {
         <dl>
           <div>
             <dt>Character</dt>
-            <dd>{{ character.character }}</dd>
+            <dd
+              :class="{
+                'traditional-hanzi': characterScript === 'traditional',
+              }"
+            >
+              {{ character.character }}
+            </dd>
           </div>
           <div>
             <dt>Pinyin</dt>
@@ -335,6 +366,15 @@ main {
 
 .character-heading p {
   font-size: 1.25rem;
+}
+
+.script-badge {
+  padding: 0.25rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  white-space: nowrap;
 }
 
 .detail-layout {

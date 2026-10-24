@@ -21,6 +21,15 @@ describe("preferDictionaryInformation", () => {
     expect(preferDictionaryInformation(undefined, "zhe", "")).toBe("zhe");
   });
 
+  test("replaces previously stored simplified fallback data with Traditional data", () => {
+    expect(preferDictionaryInformation("爫", "心", "Not listed", "爫")).toBe(
+      "心",
+    );
+    expect(preferDictionaryInformation("custom", "心", "Not listed", "爫")).toBe(
+      "custom",
+    );
+  });
+
   test("preserves saved values and placeholders without better dictionary data", () => {
     expect(preferDictionaryInformation("custom meaning", "definition", "")).toBe(
       "custom meaning",

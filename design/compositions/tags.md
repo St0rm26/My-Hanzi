@@ -1,8 +1,8 @@
 # Tags
 
-Every endpoint below requires a signed-in session, as described in [accounts](accounts.md). Each one passes the session to `Sessioning.use`, which returns the user, and is refused with `NOT_SIGNED_IN` otherwise. The user is never read from the request's inputs, so people can only see, change, and share their own collections.
+Every endpoint below requires a signed-in session, as described in [accounts](accounts.md). Each one passes the session to `Sessioning.use`, which returns the user, and is refused with `NOT_SIGNED_IN` otherwise. The user is never read from the request's inputs, so people can only see, change, and share their own tags. In terms of the app, tags are collections.
 
-When a user registers, [a reaction creates a tag called "Studied"](reaction:tags.Initialize) for them. The [collections list](reaction:tags.List) returns all tags the signed-in user has.
+When a user registers, [a reaction creates a collection called "Studied"](reaction:tags.Initialize) for them. The [collections list](reaction:tags.List) returns all collections the signed-in user has.
 
 ```endpoints
 tags.List at /tags/list
@@ -72,3 +72,5 @@ tags.RemoveItem at /tags/remove-item
 ```
 
 Benchmark progress regarding the "Studied" tag is handled by the [benchmarks composition](./benchmarks.md).
+
+From any collection, the user can add all of its characters to their own selected collections. Characters already in a destination collection are skipped. The source collection cannot be selected as a destination.

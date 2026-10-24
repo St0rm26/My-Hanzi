@@ -17,7 +17,12 @@ export type CollectionSharingState = {
 };
 type CallResult<T> =
   | { ok: true; value: T }
-  | { ok: false; error: string };
+  | { ok: false; error: string; code: string };
+export type AddItemsResult = {
+  added: number;
+  skipped: number;
+  errors: string[];
+};
 
 const { sessionEnded } = useSession();
 const collections = ref<Collection[]>([]);
@@ -33,7 +38,11 @@ async function call<P extends Path>(
   const result = await request;
   if (isApiError(result)) {
     if (result.error === "UNAUTHORIZED") sessionEnded();
-    return { ok: false, error: messageFor(path, result.error) };
+    return {
+      ok: false,
+      error: messageFor(path, result.error),
+      code: result.error,
+    };
   }
   return { ok: true, value: result as Wire[P]["output"] };
 }
@@ -233,6 +242,69 @@ async function saveCharacterCollections(
   }
 }
 
+async function addItemsToCollections(
+  items: string[],
+  targets: Collection[],
+  sourceTag?: CollectionId,
+): Promise<AddItemsResult | null> {
+  if (working.value) return null;
+  working.value = true;
+  const result: AddItemsResult = { added: 0, skipped: 0, errors: [] };
+  const uniqueItems = [...new Set(items)];
+
+  try {
+    for (const target of targets) {
+      if (target.tag === sourceTag) continue;
+
+      try {
+        const current = await call(
+          "/tags/items",
+          api["/tags/items"]({ tag: target.tag }),
+        );
+        if (!current.ok) {
+          result.errors.push(
+            `Could not load "${target.name}": ${current.error}`,
+          );
+          continue;
+        }
+
+        const existing = new Set(
+          current.value.items.map(({ item }) => item),
+        );
+        for (const item of uniqueItems) {
+          if (existing.has(item)) {
+            result.skipped++;
+            continue;
+          }
+
+          const added = await call(
+            "/tags/add-item",
+            api["/tags/add-item"]({ tag: target.tag, item }),
+          );
+          if (!added.ok) {
+            if (added.code === "CONFLICT") {
+              result.skipped++;
+              continue;
+            }
+            result.errors.push(
+              `Could not add ${item} to "${target.name}": ${added.error}`,
+            );
+            continue;
+          }
+          result.added++;
+        }
+      } catch (cause) {
+        const message =
+          cause instanceof Error ? cause.message : "The request failed.";
+        result.errors.push(`Could not update "${target.name}": ${message}`);
+      }
+    }
+    return result;
+  } finally {
+    working.value = false;
+  }
+}
+
 export function useCollections() {
   return {
     collections,
@@ -250,5 +322,6 @@ export function useCollections() {
     getCollectionItems,
     getCollectionAudience,
     saveCharacterCollections,
+    addItemsToCollections,
   };
 }

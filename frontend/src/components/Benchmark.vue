@@ -5,6 +5,7 @@ import {
   normalizePinyin,
   type CharacterEntry,
 } from "../api/characters.ts";
+import { scriptForCharacter } from "../api/characterScripts.ts";
 import {
   personalRatingColor,
   ratingOptions,
@@ -290,7 +291,13 @@ function confirmRatingFilter() {
               />
               <path v-else d="m18 18 12 12m0-12L18 30" />
             </svg>
-            <span class="character">{{ item }}</span>
+            <span
+              class="character"
+              :class="{
+                'traditional-hanzi': scriptForCharacter(item) === 'traditional',
+              }"
+              >{{ item }}</span
+            >
             <span class="pinyin">
               {{ entries.get(item)?.pinyin || "Pinyin unavailable" }}
             </span>

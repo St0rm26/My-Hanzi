@@ -1,13 +1,13 @@
-import OpenCC from "opencc-js/t2cn";
 import dictionaryUrl from "../dictionary.txt?url";
-
-export interface CharacterEntry {
-  character: string;
-  pinyin: string;
-  meaning: string;
-  radical: string;
-  strokeCount: number | null;
-}
+import {
+  type CharacterSearchScript,
+  isSimplifiedDictionaryCharacter,
+} from "./characterScripts.ts";
+import {
+  buildTraditionalDictionary,
+  type CharacterEntry,
+} from "./characterDictionaries.ts";
+export type { CharacterEntry } from "./characterDictionaries.ts";
 
 interface DictionaryRecord {
   character?: unknown;
@@ -17,16 +17,9 @@ interface DictionaryRecord {
   matches?: unknown;
 }
 
-const toSimplified = OpenCC.Converter({ from: "tw", to: "cn" });
-const simplifiedCharacterExceptions = new Set(["么", "著"]);
-let dictionaryPromise: Promise<CharacterEntry[]> | undefined;
-
-function isSimplified(character: string) {
-  return (
-    simplifiedCharacterExceptions.has(character) ||
-    toSimplified(character) === character
-  );
-}
+let rawDictionaryPromise: Promise<CharacterEntry[]> | undefined;
+let simplifiedDictionaryPromise: Promise<CharacterEntry[]> | undefined;
+let traditionalDictionaryPromise: Promise<CharacterEntry[]> | undefined;
 
 export function normalizePinyin(value: string) {
   return value
@@ -38,8 +31,8 @@ export function normalizePinyin(value: string) {
     .replace(/\s+/g, "");
 }
 
-async function loadDictionary(): Promise<CharacterEntry[]> {
-  dictionaryPromise ??= fetch(dictionaryUrl)
+async function loadRawDictionary(): Promise<CharacterEntry[]> {
+  rawDictionaryPromise ??= fetch(dictionaryUrl)
     .then(async (response) => {
       if (!response.ok) {
         throw new Error(
@@ -64,8 +57,7 @@ async function loadDictionary(): Promise<CharacterEntry[]> {
 
         if (
           typeof record.character !== "string" ||
-          [...record.character].length !== 1 ||
-          !isSimplified(record.character)
+          [...record.character].length !== 1
         ) {
           continue;
         }
@@ -94,31 +86,62 @@ async function loadDictionary(): Promise<CharacterEntry[]> {
       return [...entries.values()];
     })
     .catch((error: unknown) => {
-      dictionaryPromise = undefined;
+      rawDictionaryPromise = undefined;
       throw error;
     });
-  return dictionaryPromise;
+  return rawDictionaryPromise;
+}
+
+async function loadSimplifiedDictionary(): Promise<CharacterEntry[]> {
+  simplifiedDictionaryPromise ??= loadRawDictionary()
+    .then((entries) =>
+      entries.filter((entry) =>
+        isSimplifiedDictionaryCharacter(entry.character),
+      ),
+    )
+    .catch((error: unknown) => {
+      simplifiedDictionaryPromise = undefined;
+      throw error;
+    });
+  return simplifiedDictionaryPromise;
 }
 
 export async function lookupCharacters(
   characters: string[],
 ): Promise<Map<string, CharacterEntry>> {
   const wanted = new Set(characters);
-  const dictionary = await loadDictionary();
+  const [simplified, traditional] = await Promise.all([
+    loadSimplifiedDictionary(),
+    loadTraditionalDictionary(),
+  ]);
   return new Map(
-    dictionary
+    [...traditional, ...simplified]
       .filter((entry) => wanted.has(entry.character))
       .map((entry) => [entry.character, entry]),
   );
 }
 
-export async function searchSimplifiedCharacters(
+async function loadTraditionalDictionary(): Promise<CharacterEntry[]> {
+  traditionalDictionaryPromise ??= loadRawDictionary()
+    .then(buildTraditionalDictionary)
+    .catch((error: unknown) => {
+      traditionalDictionaryPromise = undefined;
+      throw error;
+    });
+  return traditionalDictionaryPromise;
+}
+
+export async function searchCharacters(
   query: string,
+  script: CharacterSearchScript = "simplified",
 ): Promise<CharacterEntry[]> {
   const term = query.trim();
   if (!term) return [];
 
-  const dictionary = await loadDictionary();
+  const dictionary =
+    script === "simplified"
+      ? await loadSimplifiedDictionary()
+      : await loadTraditionalDictionary();
   if (/\p{Script=Han}/u.test(term)) {
     const requested = new Set([...term]);
     return dictionary.filter((entry) => requested.has(entry.character));
