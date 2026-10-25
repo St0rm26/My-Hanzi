@@ -81,6 +81,16 @@ const hskBenchmarks = computed(() =>
 const frequencyBenchmarks = computed(() =>
   benchmarks.value.filter(({ name }) => name.startsWith("Most Common ")),
 );
+const simplifiedFrequencyBenchmarks = computed(() =>
+  frequencyBenchmarks.value.filter(({ name }) =>
+    name.endsWith(" (Simplified)"),
+  ),
+);
+const traditionalFrequencyBenchmarks = computed(() =>
+  frequencyBenchmarks.value.filter(({ name }) =>
+    name.endsWith(" (Traditional)"),
+  ),
+);
 const {
   loading: informationLoading,
   error: informationError,
@@ -309,13 +319,17 @@ async function openBenchmark(benchmark: Benchmark) {
 }
 
 function benchmarkNumber(benchmark: Benchmark) {
-  const frequencyRange = benchmark.name.match(/^Most Common (\d+-\d+)$/u);
+  const frequencyRange = benchmark.name.match(
+    /^Most Common (\d+-\d+)(?: \((?:Simplified|Traditional)\))?$/u,
+  );
   if (frequencyRange) return frequencyRange[1];
   return benchmark.name.match(/\d+/u)?.[0] ?? "";
 }
 
 function benchmarkColor(benchmark: Benchmark) {
-  const frequencyRange = benchmark.name.match(/^Most Common \d+-(\d+)$/u);
+  const frequencyRange = benchmark.name.match(
+    /^Most Common \d+-(\d+)(?: \((?:Simplified|Traditional)\))?$/u,
+  );
   if (frequencyRange) {
     const end = Number(frequencyRange[1]);
     const level = [100, 200, 300, 400, 500, 1000].indexOf(end) + 1;
@@ -914,13 +928,13 @@ onMounted(() => {
               </button>
             </li>
           </ul>
-          <h2 class="frequency-heading">Most common characters</h2>
-          <p v-if="frequencyBenchmarks.length === 0">
-            No frequency benchmarks are available.
+          <h2 class="frequency-heading">Most common characters (Simplified)</h2>
+          <p v-if="simplifiedFrequencyBenchmarks.length === 0">
+            No simplified frequency benchmarks are available.
           </p>
           <ul v-else class="benchmark-grid">
             <li
-              v-for="benchmark in frequencyBenchmarks"
+              v-for="benchmark in simplifiedFrequencyBenchmarks"
               :key="benchmark.benchmark"
             >
               <button
@@ -930,6 +944,33 @@ onMounted(() => {
               >
                 <span
                   class="benchmark-icon frequency-icon"
+                  :style="{ backgroundColor: benchmarkColor(benchmark) }"
+                  aria-hidden="true"
+                >
+                  {{ benchmarkNumber(benchmark) }}
+                </span>
+                <span class="benchmark-name">{{ benchmark.name }}</span>
+              </button>
+            </li>
+          </ul>
+          <h2 class="frequency-heading">
+            Most common characters (Traditional)
+          </h2>
+          <p v-if="traditionalFrequencyBenchmarks.length === 0">
+            No traditional frequency benchmarks are available.
+          </p>
+          <ul v-else class="benchmark-grid">
+            <li
+              v-for="benchmark in traditionalFrequencyBenchmarks"
+              :key="benchmark.benchmark"
+            >
+              <button
+                type="button"
+                class="benchmark-card"
+                @click="openBenchmark(benchmark)"
+              >
+                <span
+                  class="benchmark-icon frequency-icon traditional-hanzi"
                   :style="{ backgroundColor: benchmarkColor(benchmark) }"
                   aria-hidden="true"
                 >

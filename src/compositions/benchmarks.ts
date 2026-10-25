@@ -14,7 +14,10 @@ import HSK3 from "./benchmarks/HSK3.ts";
 import HSK4 from "./benchmarks/HSK4.ts";
 import HSK5 from "./benchmarks/HSK5.ts";
 import HSK6 from "./benchmarks/HSK6.ts";
-import { frequencyBenchmarks } from "./benchmarks/Frequency.ts";
+import {
+  frequencyBenchmarks,
+  traditionalFrequencyBenchmarks,
+} from "./benchmarks/Frequency.ts";
 
 const { Registering, Benchmarking, Sessioning, Tagging } = concepts;
 type ReactionVars = Record<string, symbol>;
@@ -103,6 +106,48 @@ const Initialize = reaction(({ user }: ReactionVars) =>
         user,
         name: frequencyBenchmarks[5].name,
         items: frequencyBenchmarks[5].items,
+      }),
+    )
+    .then(
+      Benchmarking.createBenchmark({
+        user,
+        name: traditionalFrequencyBenchmarks[0].name,
+        items: traditionalFrequencyBenchmarks[0].items,
+      }),
+    )
+    .then(
+      Benchmarking.createBenchmark({
+        user,
+        name: traditionalFrequencyBenchmarks[1].name,
+        items: traditionalFrequencyBenchmarks[1].items,
+      }),
+    )
+    .then(
+      Benchmarking.createBenchmark({
+        user,
+        name: traditionalFrequencyBenchmarks[2].name,
+        items: traditionalFrequencyBenchmarks[2].items,
+      }),
+    )
+    .then(
+      Benchmarking.createBenchmark({
+        user,
+        name: traditionalFrequencyBenchmarks[3].name,
+        items: traditionalFrequencyBenchmarks[3].items,
+      }),
+    )
+    .then(
+      Benchmarking.createBenchmark({
+        user,
+        name: traditionalFrequencyBenchmarks[4].name,
+        items: traditionalFrequencyBenchmarks[4].items,
+      }),
+    )
+    .then(
+      Benchmarking.createBenchmark({
+        user,
+        name: traditionalFrequencyBenchmarks[5].name,
+        items: traditionalFrequencyBenchmarks[5].items,
       }),
     ),
 );
@@ -263,6 +308,48 @@ const List = endpoint(
           user,
           name: frequencyBenchmarks[5].name,
           items: frequencyBenchmarks[5].items,
+        }),
+      )
+      .then(
+        Benchmarking.ensureBenchmark({
+          user,
+          name: traditionalFrequencyBenchmarks[0].name,
+          items: traditionalFrequencyBenchmarks[0].items,
+        }),
+      )
+      .then(
+        Benchmarking.ensureBenchmark({
+          user,
+          name: traditionalFrequencyBenchmarks[1].name,
+          items: traditionalFrequencyBenchmarks[1].items,
+        }),
+      )
+      .then(
+        Benchmarking.ensureBenchmark({
+          user,
+          name: traditionalFrequencyBenchmarks[2].name,
+          items: traditionalFrequencyBenchmarks[2].items,
+        }),
+      )
+      .then(
+        Benchmarking.ensureBenchmark({
+          user,
+          name: traditionalFrequencyBenchmarks[3].name,
+          items: traditionalFrequencyBenchmarks[3].items,
+        }),
+      )
+      .then(
+        Benchmarking.ensureBenchmark({
+          user,
+          name: traditionalFrequencyBenchmarks[4].name,
+          items: traditionalFrequencyBenchmarks[4].items,
+        }),
+      )
+      .then(
+        Benchmarking.ensureBenchmark({
+          user,
+          name: traditionalFrequencyBenchmarks[5].name,
+          items: traditionalFrequencyBenchmarks[5].items,
         }),
       )
       .then(respond({ benchmarks: UserBenchmarks({ user }) })),
