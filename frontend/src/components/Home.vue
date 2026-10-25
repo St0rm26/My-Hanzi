@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import BenchmarkPage from "./Benchmark.vue";
 import CollectionPage from "./Collection.vue";
 import CharacterDetail from "./CharacterDetail.vue";
@@ -75,6 +75,12 @@ const {
   loadBenchmarks,
   getBenchmarkItems,
 } = useBenchmarks();
+const hskBenchmarks = computed(() =>
+  benchmarks.value.filter(({ name }) => !name.startsWith("Most Common ")),
+);
+const frequencyBenchmarks = computed(() =>
+  benchmarks.value.filter(({ name }) => name.startsWith("Most Common ")),
+);
 const {
   loading: informationLoading,
   error: informationError,
@@ -303,10 +309,18 @@ async function openBenchmark(benchmark: Benchmark) {
 }
 
 function benchmarkNumber(benchmark: Benchmark) {
+  const frequencyRange = benchmark.name.match(/^Most Common (\d+-\d+)$/u);
+  if (frequencyRange) return frequencyRange[1];
   return benchmark.name.match(/\d+/u)?.[0] ?? "";
 }
 
 function benchmarkColor(benchmark: Benchmark) {
+  const frequencyRange = benchmark.name.match(/^Most Common \d+-(\d+)$/u);
+  if (frequencyRange) {
+    const end = Number(frequencyRange[1]);
+    const level = [100, 200, 300, 400, 500, 1000].indexOf(end) + 1;
+    return level > 0 ? `var(--color-hsk-${level})` : "#fff";
+  }
   const level = Number(benchmarkNumber(benchmark));
   return level >= 1 && level <= 6 ? `var(--color-hsk-${level})` : "#fff";
 }
@@ -873,29 +887,59 @@ onMounted(() => {
 
       <section class="benchmarks-section" aria-labelledby="benchmarks-heading">
         <div class="section-heading">
-          <h1 id="benchmarks-heading">Benchmarks</h1>
+          <h1 class="benchmarks-heading" id="benchmarks-heading">Benchmarks</h1>
         </div>
         <p v-if="benchmarksLoading" role="status">Loading benchmarks...</p>
         <p v-else-if="benchmarksError" role="alert">{{ benchmarksError }}</p>
-        <p v-else-if="benchmarks.length === 0">No benchmarks are available.</p>
-        <ul v-else class="benchmark-grid">
-          <li v-for="benchmark in benchmarks" :key="benchmark.benchmark">
-            <button
-              type="button"
-              class="benchmark-card"
-              @click="openBenchmark(benchmark)"
-            >
-              <span
-                class="benchmark-icon"
-                :style="{ backgroundColor: benchmarkColor(benchmark) }"
-                aria-hidden="true"
+        <template v-else>
+          <h2>HSK</h2>
+          <p v-if="hskBenchmarks.length === 0">
+            No HSK benchmarks are available.
+          </p>
+          <ul v-else class="benchmark-grid">
+            <li v-for="benchmark in hskBenchmarks" :key="benchmark.benchmark">
+              <button
+                type="button"
+                class="benchmark-card"
+                @click="openBenchmark(benchmark)"
               >
-                {{ benchmarkNumber(benchmark) }}
-              </span>
-              <span class="benchmark-name">{{ benchmark.name }}</span>
-            </button>
-          </li>
-        </ul>
+                <span
+                  class="benchmark-icon"
+                  :style="{ backgroundColor: benchmarkColor(benchmark) }"
+                  aria-hidden="true"
+                >
+                  {{ benchmarkNumber(benchmark) }}
+                </span>
+                <span class="benchmark-name">{{ benchmark.name }}</span>
+              </button>
+            </li>
+          </ul>
+          <h2 class="frequency-heading">Most common characters</h2>
+          <p v-if="frequencyBenchmarks.length === 0">
+            No frequency benchmarks are available.
+          </p>
+          <ul v-else class="benchmark-grid">
+            <li
+              v-for="benchmark in frequencyBenchmarks"
+              :key="benchmark.benchmark"
+            >
+              <button
+                type="button"
+                class="benchmark-card"
+                @click="openBenchmark(benchmark)"
+              >
+                <span
+                  class="benchmark-icon frequency-icon"
+                  :style="{ backgroundColor: benchmarkColor(benchmark) }"
+                  aria-hidden="true"
+                >
+                  {{ benchmarkNumber(benchmark) }}
+                </span>
+                <span class="benchmark-name">{{ benchmark.name }}</span>
+              </button>
+            </li>
+          </ul>
+        </template>
       </section>
     </main>
   </div>
@@ -991,6 +1035,14 @@ main {
   margin-top: 2.5rem;
 }
 
+.benchmarks-heading {
+  padding-bottom: 1.5rem;
+}
+
+.frequency-heading {
+  margin-top: 1.5rem;
+}
+
 .benchmark-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
@@ -1023,6 +1075,11 @@ main {
   color: #111;
   font-size: 2.75rem;
   font-weight: 700;
+}
+
+.frequency-icon {
+  font-size: 1.25rem;
+  white-space: nowrap;
 }
 
 .benchmark-name {
