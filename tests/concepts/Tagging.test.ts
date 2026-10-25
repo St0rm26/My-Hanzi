@@ -168,6 +168,41 @@ describe("Tagging", () => {
     ).rejects.toBeInstanceOf(TagNotFound);
   });
 
+  test("_taggedItemsByName resolves the user's tag and returns its items newest first", async () => {
+    const studied = await createTag("alice", "Studied");
+    const bobStudied = await createTag("bob", "Studied");
+    const older = new Date("2026-01-01T00:00:00.000Z");
+    const newer = new Date("2026-01-03T00:00:00.000Z");
+    await tagging.addItemTag({
+      user: "alice",
+      tag: studied,
+      item: "你",
+      date: older,
+    });
+    await tagging.addItemTag({
+      user: "alice",
+      tag: studied,
+      item: "我",
+      date: newer,
+    });
+    await tagging.addItemTag({
+      user: "bob",
+      tag: bobStudied,
+      item: "她",
+      date: newer,
+    });
+
+    expect(
+      await tagging._taggedItemsByName({ user: "alice", tagName: "Studied" }),
+    ).toEqual([
+      { item: "我", addedDate: newer },
+      { item: "你", addedDate: older },
+    ]);
+    expect(
+      await tagging._taggedItemsByName({ user: "alice", tagName: "Missing" }),
+    ).toEqual([]);
+  });
+
   test("renameTag preserves identity, permits its current name, and rejects another tag's name", async () => {
     const tag = await createTag();
     await createTag("alice", "favorites");
