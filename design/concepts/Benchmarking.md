@@ -42,7 +42,7 @@ a set of BenchmarkedItems with
 createBenchmark (user: User, items: Items, name: String) : returns (benchmark: Benchmark)
     where the user exists and the number of items is at least one and all distinct
     then
-        create a benchmark with the given user and benchmarked items with every item and a false finished field
+        create a benchmark with the given user and benchmarked items with every item having a false finished field
         returns benchmark
     where the number of items is zero
     then
@@ -53,6 +53,21 @@ createBenchmark (user: User, items: Items, name: String) : returns (benchmark: B
     where the benchmark already exists for the user
     then
         refuses BENCHMARK_ALREADY_EXISTS "This user already has a benchmark with that name."
+
+ensureBenchmark (user: User, items: Items, name: String) : returns (benchmark: Benchmark)
+    where the user already has a benchmark with the given name
+    then
+        returns benchmark
+    where the user does not have a benchmark with the given name and the number of items is at least one and all distinct
+    then
+        create a benchmark with the given user and benchmarked items with every item having a false finished field
+        returns benchmark
+    where the number of items is zero
+    then
+        refuses BENCHMARK_REQUIRES_ITEMS "A benchmark must contain at least one item."
+    where not all items are distinct
+    then
+        refuses BENCHMARK_REQUIRES_DISTINCT_ITEMS "All items must be distinct."
 
 deleteBenchmark (benchmark: Benchmark) : returns ()
     where the benchmark exists
