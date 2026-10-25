@@ -53,6 +53,31 @@ describe("Benchmarking", () => {
     expect(await benchmarking._benchmarks({ user: "alice" })).toHaveLength(2);
   });
 
+  test("ensures benchmarks without resetting existing progress", async () => {
+    const ensured = await benchmarking.ensureBenchmark({
+      user: "alice",
+      name: "Frequency",
+      items: ["你", "好"],
+    });
+
+    expect(await benchmarking._finishedItems(ensured)).toEqual([]);
+    expect(await benchmarking._unfinishedItems(ensured)).toEqual([
+      { item: "你" },
+      { item: "好" },
+    ]);
+
+    await benchmarking.checkBenchmarkItem({ ...ensured, item: "好" });
+    const existing = await benchmarking.ensureBenchmark({
+      user: "alice",
+      name: "Frequency",
+      items: ["你", "好"],
+    });
+    expect(existing).toEqual(ensured);
+    expect(await benchmarking._finishedItems(ensured)).toEqual([
+      { item: "好" },
+    ]);
+  });
+
   test("_benchmarks returns only the user's benchmarks unordered", async () => {
     const travel = await createBenchmark("alice", "Travel");
     const basics = await createBenchmark("alice", "Basics");

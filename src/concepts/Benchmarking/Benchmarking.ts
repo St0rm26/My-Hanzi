@@ -110,6 +110,35 @@ export class BenchmarkingConcept<User extends string, Item extends string> {
     return { benchmark };
   }
 
+  async ensureBenchmark({
+    user,
+    items,
+    name,
+  }: {
+    user: User;
+    items: readonly Item[];
+    name: string;
+  }) {
+    await this.#ready();
+    const existing = await this.benchmarks.findOne(
+      { user, name },
+      { projection: { _id: 1 } },
+    );
+    if (existing !== null) return { benchmark: existing._id };
+
+    try {
+      return await this.createBenchmark({ user, items, name });
+    } catch (error) {
+      if (!(error instanceof BenchmarkAlreadyExists)) throw error;
+      const createdElsewhere = await this.benchmarks.findOne(
+        { user, name },
+        { projection: { _id: 1 } },
+      );
+      if (createdElsewhere === null) throw error;
+      return { benchmark: createdElsewhere._id };
+    }
+  }
+
   async deleteBenchmark({ benchmark }: { benchmark: Benchmark }) {
     await this.#ready();
     const deleted = await this.benchmarks.findOneAndDelete({ _id: benchmark });
