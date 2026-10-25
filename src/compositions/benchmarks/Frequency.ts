@@ -1,3 +1,5 @@
+import OpenCCToTraditional from "opencc-js/cn2t";
+
 // Simplified characters ranked by frequency, sourced from https://hanzicraft.com/lists/frequency.
 const rankedCharacters = [
   ..."的一是不了在人有我他这个们中来上大为和国地到以说时要就出会可也你对生能而子那得于着下自之年过发后作里用道行所然家种事成方多经么去法学如都同现当没动面起看定天分还进好小部其些主样理心她本前开但因只从想实",
@@ -12,42 +14,66 @@ const rankedCharacters = [
 
 export const frequencyBenchmarks = [
   {
-    name: "Most Common 1-100",
+    name: "Most Common 1-100 (Simplified)",
     start: 1,
     end: 100,
     items: rankedCharacters.slice(0, 100),
   },
   {
-    name: "Most Common 101-200",
+    name: "Most Common 101-200 (Simplified)",
     start: 101,
     end: 200,
     items: rankedCharacters.slice(100, 200),
   },
   {
-    name: "Most Common 201-300",
+    name: "Most Common 201-300 (Simplified)",
     start: 201,
     end: 300,
     items: rankedCharacters.slice(200, 300),
   },
   {
-    name: "Most Common 301-400",
+    name: "Most Common 301-400 (Simplified)",
     start: 301,
     end: 400,
     items: rankedCharacters.slice(300, 400),
   },
   {
-    name: "Most Common 401-500",
+    name: "Most Common 401-500 (Simplified)",
     start: 401,
     end: 500,
     items: rankedCharacters.slice(400, 500),
   },
   {
-    name: "Most Common 501-1000",
+    name: "Most Common 501-1000 (Simplified)",
     start: 501,
     end: 1000,
     items: rankedCharacters.slice(500, 1000),
   },
 ] as const;
+
+const toTraditional = OpenCCToTraditional.Converter({ from: "cn", to: "tw" });
+const traditionalCharacters = rankedCharacters.map((character) => {
+  const traditional = toTraditional(character);
+  return [...traditional].length === 1 ? traditional : character;
+});
+
+export const traditionalFrequencyBenchmarks = frequencyBenchmarks.map(
+  ({ name, start, end }) => {
+    const startIndex = start - 1;
+    const items = traditionalCharacters.slice(startIndex, end);
+    if (new Set(items).size !== items.length) {
+      throw new Error(
+        `The Traditional frequency range ${start}-${end} must contain unique characters.`,
+      );
+    }
+    return {
+      name: `${name.replace(/ \(Simplified\)$/u, "")} (Traditional)`,
+      start,
+      end,
+      items,
+    };
+  },
+);
 
 if (
   rankedCharacters.length !== 1000 ||
