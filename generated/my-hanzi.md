@@ -567,9 +567,9 @@ then
   Benchmarking.checkBenchmarkItem (benchmark, item)
 ```
 
-### benchmarks.CompleteStudiedItems
+### benchmarks.CompleteStudied
 
-Authored path: `benchmarks.CompleteStudiedItems`.
+Authored path: `benchmarks.CompleteStudied`.
 - Covered by [Benchmarks](../design/compositions/benchmarks.md), line 5.
 
 ```reaction

@@ -175,7 +175,7 @@ const RemoveCharacter = reaction(
       .then(Benchmarking.uncheckBenchmarkItem({ benchmark, item })),
 );
 
-const CompleteStudiedItems = reaction(
+const CompleteStudied = reaction(
   ({ user, item, benchmark, name, items }: ReactionVars) =>
     when(
       Benchmarking.ensureBenchmark({ user, name, items }).responds({
@@ -415,7 +415,7 @@ export const composition = {
   Initialize,
   AddCharacter,
   RemoveCharacter,
-  CompleteStudiedItems,
+  CompleteStudied,
   List,
   Items,
   Completed,
