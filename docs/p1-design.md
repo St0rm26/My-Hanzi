@@ -135,17 +135,6 @@ actions
         then return a set of all IDs of items in the tagged items set
 ```
 
-<!-- ```
-concept InformationTemplateCreating
-
-purpose create a template info field to store information for related items
-
-principle after specifying what info fields an item type needs, the template lists the required fields to prevent manual user input
-
-state
-    a set of Templates
-``` -->
-
 ```
 concept InformationCollecting [Item, Information]
 
