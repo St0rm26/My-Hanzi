@@ -126,7 +126,7 @@ export type MyHanziWire = {
         "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_benchmarks"]>>>, ["name"]>>;
       }[];
     };
-    error: { error: AppWideError | "BENCHMARK_ALREADY_EXISTS" | "BENCHMARK_ITEM_ALREADY_FINISHED" | "BENCHMARK_ITEM_NOT_FOUND" | "BENCHMARK_NOT_FOUND" | "BENCHMARK_REQUIRES_DISTINCT_ITEMS" | "BENCHMARK_REQUIRES_ITEMS" | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+    error: { error: AppWideError | "BENCHMARK_ITEM_ALREADY_FINISHED" | "BENCHMARK_ITEM_NOT_FOUND" | "BENCHMARK_NOT_FOUND" | "BENCHMARK_REQUIRES_DISTINCT_ITEMS" | "BENCHMARK_REQUIRES_ITEMS" | "INVALID_INPUT" | "NOT_SIGNED_IN" };
   };
   "/benchmarks/not-completed": {
     input: {
@@ -499,7 +499,7 @@ export type MyHanziWireHttp = {
         "name": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Benchmarking"]["_benchmarks"]>>>, ["name"]>>;
       }[];
     };
-    error: { error: HttpAppWideError | "CONFLICT" | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+    error: { error: HttpAppWideError | "INTERNAL_ERROR" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
   "/benchmarks/not-completed": {
     input: {
