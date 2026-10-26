@@ -38,7 +38,8 @@ const allRatingValues: RatingFilterValue[] = [
   "None",
 ];
 const query = ref("");
-const ratingFilterOpen = ref(false);
+const studyFilter = ref<"all" | "studied" | "unstudied">("all");
+const openFilter = ref<"study" | "rating" | null>(null);
 const selectedRatingDraft = ref<RatingFilterValue[]>([...allRatingValues]);
 const selectedRatings = ref<RatingFilterValue[]>([...allRatingValues]);
 let lookupSequence = 0;
@@ -79,6 +80,14 @@ const orderedItems = computed(() =>
 const visibleItems = computed(() => {
   const term = query.value.trim();
   let result = orderedItems.value;
+  if (studyFilter.value !== "all") {
+    const isStudied = new Set(props.studiedItems);
+    result = result.filter((item) =>
+      studyFilter.value === "studied"
+        ? isStudied.has(item)
+        : !isStudied.has(item),
+    );
+  }
   if (term) {
     const normalized = normalizePinyin(term);
     result = result.filter(
@@ -115,7 +124,7 @@ function ratingIconForFilter(rating: RatingFilterValue) {
 
 function confirmRatingFilter() {
   selectedRatings.value = [...selectedRatingDraft.value];
-  ratingFilterOpen.value = false;
+  openFilter.value = null;
 }
 </script>
 
@@ -148,94 +157,135 @@ function confirmRatingFilter() {
           placeholder="Search by pinyin or character"
           aria-label="Search this benchmark"
         />
-        <div class="rating-filter">
-          <button
-            type="button"
-            class="rounded-action"
-            :aria-expanded="ratingFilterOpen"
-            aria-controls="benchmark-rating-filter-options"
-            @click="ratingFilterOpen = !ratingFilterOpen"
-          >
-            Filter by Rating
-          </button>
-          <div
-            v-if="ratingFilterOpen"
-            id="benchmark-rating-filter-options"
-            class="rating-filter-options"
-            role="group"
-            aria-label="Show ratings"
-          >
-            <span class="rating-filter-heading">Show ratings</span>
-            <label
-              v-for="rating in allRatingValues"
-              :key="rating"
-              class="rating-filter-option"
-              :style="
-                rating === 'None'
-                  ? undefined
-                  : { color: personalRatingColor(rating) }
-              "
-            >
-              <input
-                v-model="selectedRatingDraft"
-                type="checkbox"
-                :value="rating"
-              />
-              <span class="rating-filter-icon-slot" aria-hidden="true">
-                <svg
-                  v-if="rating !== 'None'"
-                  class="rating-filter-icon"
-                  viewBox="0 0 48 48"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <circle cx="24" cy="24" r="21" />
-                  <path
-                    v-if="ratingIconForFilter(rating) === 'star'"
-                    d="m24 12 3.7 7.5 8.3 1.2-6 5.9 1.4 8.3-7.4-3.9-7.4 3.9 1.4-8.3-6-5.9 8.3-1.2z"
-                  />
-                  <g
-                    v-else-if="
-                      ratingIconForFilter(rating) === 'thumbs-up' ||
-                      ratingIconForFilter(rating) === 'thumbs-down'
-                    "
-                    transform="translate(12 12)"
-                  >
-                    <path
-                      :transform="
-                        ratingIconForFilter(rating) === 'thumbs-down'
-                          ? 'rotate(180 12 12)'
-                          : undefined
-                      "
-                      d="M7 10v12m0-12h2.5c1 0 1.8-.6 2.2-1.5l2-5.2c.4-1.1 2-1.1 2.4 0 .5 1.2.6 2.6.2 3.9L15.5 10H20a2 2 0 0 1 1.9 2.6l-2.2 7A2 2 0 0 1 17.8 21H7m-3-11h3v12H4z"
-                    />
-                  </g>
-                  <path
-                    v-else-if="
-                      ratingIconForFilter(rating) === 'horizontal-line'
-                    "
-                    d="M17 24h14"
-                  />
-                  <path v-else d="m18 18 12 12m0-12L18 30" />
-                </svg>
-              </span>
-              <span>({{ rating }})</span>
-            </label>
+        <div class="filters">
+          <div class="rating-filter">
             <button
               type="button"
               class="rounded-action"
-              :disabled="ratingsLoading"
-              @click="confirmRatingFilter"
+              :aria-expanded="openFilter === 'study'"
+              aria-controls="benchmark-study-filter-options"
+              @click="openFilter = openFilter === 'study' ? null : 'study'"
             >
-              Confirm
+              Filter by Study Status
             </button>
+            <div
+              v-if="openFilter === 'study'"
+              id="benchmark-study-filter-options"
+              class="rating-filter-options study-filter-options"
+              role="radiogroup"
+              aria-label="Filter characters by study status"
+            >
+              <span class="rating-filter-heading">Show characters</span>
+              <label
+                v-for="option in [
+                  { value: 'all', label: 'All characters' },
+                  { value: 'studied', label: 'Studied' },
+                  { value: 'unstudied', label: 'Unstudied' },
+                ]"
+                :key="option.value"
+                class="study-filter-option"
+              >
+                <input
+                  v-model="studyFilter"
+                  type="radio"
+                  name="benchmark-study-filter"
+                  :value="option.value"
+                />
+                <span>{{ option.label }}</span>
+              </label>
+            </div>
+          </div>
+          <div class="rating-filter">
+            <button
+              type="button"
+              class="rounded-action"
+              :aria-expanded="openFilter === 'rating'"
+              aria-controls="benchmark-rating-filter-options"
+              @click="openFilter = openFilter === 'rating' ? null : 'rating'"
+            >
+              Filter by Rating
+            </button>
+            <div
+              v-if="openFilter === 'rating'"
+              id="benchmark-rating-filter-options"
+              class="rating-filter-options"
+              role="group"
+              aria-label="Show ratings"
+            >
+              <span class="rating-filter-heading">Show ratings</span>
+              <label
+                v-for="rating in allRatingValues"
+                :key="rating"
+                class="rating-filter-option"
+                :style="
+                  rating === 'None'
+                    ? undefined
+                    : { color: personalRatingColor(rating) }
+                "
+              >
+                <input
+                  v-model="selectedRatingDraft"
+                  type="checkbox"
+                  :value="rating"
+                />
+                <span class="rating-filter-icon-slot" aria-hidden="true">
+                  <svg
+                    v-if="rating !== 'None'"
+                    class="rating-filter-icon"
+                    viewBox="0 0 48 48"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="24" cy="24" r="21" />
+                    <path
+                      v-if="ratingIconForFilter(rating) === 'star'"
+                      d="m24 12 3.7 7.5 8.3 1.2-6 5.9 1.4 8.3-7.4-3.9-7.4 3.9 1.4-8.3-6-5.9 8.3-1.2z"
+                    />
+                    <g
+                      v-else-if="
+                        ratingIconForFilter(rating) === 'thumbs-up' ||
+                        ratingIconForFilter(rating) === 'thumbs-down'
+                      "
+                      transform="translate(12 12)"
+                    >
+                      <path
+                        :transform="
+                          ratingIconForFilter(rating) === 'thumbs-down'
+                            ? 'rotate(180 12 12)'
+                            : undefined
+                        "
+                        d="M7 10v12m0-12h2.5c1 0 1.8-.6 2.2-1.5l2-5.2c.4-1.1 2-1.1 2.4 0 .5 1.2.6 2.6.2 3.9L15.5 10H20a2 2 0 0 1 1.9 2.6l-2.2 7A2 2 0 0 1 17.8 21H7m-3-11h3v12H4z"
+                      />
+                    </g>
+                    <path
+                      v-else-if="
+                        ratingIconForFilter(rating) === 'horizontal-line'
+                      "
+                      d="M17 24h14"
+                    />
+                    <path v-else d="m18 18 12 12m0-12L18 30" />
+                  </svg>
+                </span>
+                <span>({{ rating }})</span>
+              </label>
+              <button
+                type="button"
+                class="rounded-action"
+                :disabled="ratingsLoading"
+                @click="confirmRatingFilter"
+              >
+                Confirm
+              </button>
+            </div>
           </div>
         </div>
       </div>
-      <p v-if="visibleItems.length === 0">No matching characters.</p>
+      <p v-if="visibleItems.length === 0" class="no-items">
+        No matching characters.
+      </p>
       <ul
         v-if="visibleItems.length > 0"
         class="character-grid"
@@ -336,9 +386,21 @@ h1 {
   gap: 0.75rem;
 }
 
-.controls input {
+.controls > input[type="search"] {
   flex: 1 1 12rem;
   max-width: 20rem;
+}
+
+.filters {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.study-filter-option {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .rating-filter {
@@ -394,6 +456,10 @@ h1 {
 
 .rating-filter-options > button {
   width: 100%;
+}
+
+.no-items {
+  padding-top: 1rem;
 }
 
 .character-grid {
