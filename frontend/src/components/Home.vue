@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import BenchmarkPage from "./Benchmark.vue";
 import CollectionPage from "./Collection.vue";
 import CharacterDetail from "./CharacterDetail.vue";
@@ -75,6 +75,30 @@ const {
   loadBenchmarks,
   getBenchmarkItems,
 } = useBenchmarks();
+const collectionSearchQuery = ref("");
+const hskBenchmarks = computed(() =>
+  benchmarks.value.filter(({ name }) => !name.startsWith("Most Common ")),
+);
+const frequencyBenchmarks = computed(() =>
+  benchmarks.value.filter(({ name }) => name.startsWith("Most Common ")),
+);
+const simplifiedFrequencyBenchmarks = computed(() =>
+  frequencyBenchmarks.value.filter(({ name }) =>
+    name.endsWith(" (Simplified)"),
+  ),
+);
+const traditionalFrequencyBenchmarks = computed(() =>
+  frequencyBenchmarks.value.filter(({ name }) =>
+    name.endsWith(" (Traditional)"),
+  ),
+);
+const filteredCollections = computed(() => {
+  const query = collectionSearchQuery.value.trim().toLocaleLowerCase();
+  if (!query) return collections.value;
+  return collections.value.filter(({ name }) =>
+    name.toLocaleLowerCase().includes(query),
+  );
+});
 const {
   loading: informationLoading,
   error: informationError,
@@ -303,10 +327,22 @@ async function openBenchmark(benchmark: Benchmark) {
 }
 
 function benchmarkNumber(benchmark: Benchmark) {
+  const frequencyRange = benchmark.name.match(
+    /^Most Common (\d+-\d+)(?: \((?:Simplified|Traditional)\))?$/u,
+  );
+  if (frequencyRange) return frequencyRange[1];
   return benchmark.name.match(/\d+/u)?.[0] ?? "";
 }
 
 function benchmarkColor(benchmark: Benchmark) {
+  const frequencyRange = benchmark.name.match(
+    /^Most Common \d+-(\d+)(?: \((?:Simplified|Traditional)\))?$/u,
+  );
+  if (frequencyRange) {
+    const end = Number(frequencyRange[1]);
+    const level = [100, 200, 300, 400, 500, 1000].indexOf(end) + 1;
+    return level > 0 ? `var(--color-hsk-${level})` : "#fff";
+  }
   const level = Number(benchmarkNumber(benchmark));
   return level >= 1 && level <= 6 ? `var(--color-hsk-${level})` : "#fff";
 }
@@ -835,10 +871,27 @@ onMounted(() => {
             </button>
           </div>
         </form>
-
-        <ul class="collection-list">
+        <input
+          v-model="collectionSearchQuery"
+          class="collection-search"
+          type="search"
+          placeholder="Search collections"
+          aria-label="Search your collections"
+        />
+        <p
+          v-if="
+            !loading &&
+            !error &&
+            collections.length > 0 &&
+            filteredCollections.length === 0
+          "
+          class="no-matches"
+        >
+          No collections match your search.
+        </p>
+        <ul v-if="filteredCollections.length > 0" class="collection-list">
           <li
-            v-for="collection in collections"
+            v-for="collection in filteredCollections"
             :key="collection.tag"
             class="collection-row"
           >
@@ -873,29 +926,86 @@ onMounted(() => {
 
       <section class="benchmarks-section" aria-labelledby="benchmarks-heading">
         <div class="section-heading">
-          <h1 id="benchmarks-heading">Benchmarks</h1>
+          <h1 class="benchmarks-heading" id="benchmarks-heading">Benchmarks</h1>
         </div>
         <p v-if="benchmarksLoading" role="status">Loading benchmarks...</p>
         <p v-else-if="benchmarksError" role="alert">{{ benchmarksError }}</p>
-        <p v-else-if="benchmarks.length === 0">No benchmarks are available.</p>
-        <ul v-else class="benchmark-grid">
-          <li v-for="benchmark in benchmarks" :key="benchmark.benchmark">
-            <button
-              type="button"
-              class="benchmark-card"
-              @click="openBenchmark(benchmark)"
-            >
-              <span
-                class="benchmark-icon"
-                :style="{ backgroundColor: benchmarkColor(benchmark) }"
-                aria-hidden="true"
+        <template v-else>
+          <h2>HSK</h2>
+          <p v-if="hskBenchmarks.length === 0">
+            No HSK benchmarks are available.
+          </p>
+          <ul v-else class="benchmark-grid">
+            <li v-for="benchmark in hskBenchmarks" :key="benchmark.benchmark">
+              <button
+                type="button"
+                class="benchmark-card"
+                @click="openBenchmark(benchmark)"
               >
-                {{ benchmarkNumber(benchmark) }}
-              </span>
-              <span class="benchmark-name">{{ benchmark.name }}</span>
-            </button>
-          </li>
-        </ul>
+                <span
+                  class="benchmark-icon"
+                  :style="{ backgroundColor: benchmarkColor(benchmark) }"
+                  aria-hidden="true"
+                >
+                  {{ benchmarkNumber(benchmark) }}
+                </span>
+                <span class="benchmark-name">{{ benchmark.name }}</span>
+              </button>
+            </li>
+          </ul>
+          <h2 class="frequency-heading">Most common characters (Simplified)</h2>
+          <p v-if="simplifiedFrequencyBenchmarks.length === 0">
+            No simplified frequency benchmarks are available.
+          </p>
+          <ul v-else class="benchmark-grid">
+            <li
+              v-for="benchmark in simplifiedFrequencyBenchmarks"
+              :key="benchmark.benchmark"
+            >
+              <button
+                type="button"
+                class="benchmark-card"
+                @click="openBenchmark(benchmark)"
+              >
+                <span
+                  class="benchmark-icon frequency-icon"
+                  :style="{ backgroundColor: benchmarkColor(benchmark) }"
+                  aria-hidden="true"
+                >
+                  {{ benchmarkNumber(benchmark) }}
+                </span>
+                <span class="benchmark-name">{{ benchmark.name }}</span>
+              </button>
+            </li>
+          </ul>
+          <h2 class="frequency-heading">
+            Most common characters (Traditional)
+          </h2>
+          <p v-if="traditionalFrequencyBenchmarks.length === 0">
+            No traditional frequency benchmarks are available.
+          </p>
+          <ul v-else class="benchmark-grid">
+            <li
+              v-for="benchmark in traditionalFrequencyBenchmarks"
+              :key="benchmark.benchmark"
+            >
+              <button
+                type="button"
+                class="benchmark-card"
+                @click="openBenchmark(benchmark)"
+              >
+                <span
+                  class="benchmark-icon frequency-icon traditional-hanzi"
+                  :style="{ backgroundColor: benchmarkColor(benchmark) }"
+                  aria-hidden="true"
+                >
+                  {{ benchmarkNumber(benchmark) }}
+                </span>
+                <span class="benchmark-name">{{ benchmark.name }}</span>
+              </button>
+            </li>
+          </ul>
+        </template>
       </section>
     </main>
   </div>
@@ -991,6 +1101,14 @@ main {
   margin-top: 2.5rem;
 }
 
+.benchmarks-heading {
+  padding-bottom: 1.5rem;
+}
+
+.frequency-heading {
+  margin-top: 1.5rem;
+}
+
 .benchmark-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
@@ -1025,6 +1143,11 @@ main {
   font-weight: 700;
 }
 
+.frequency-icon {
+  font-size: 1.25rem;
+  white-space: nowrap;
+}
+
 .benchmark-name {
   font-weight: 600;
 }
@@ -1042,6 +1165,16 @@ main form {
   margin: 1rem 0;
   padding: 0;
   list-style: none;
+}
+
+.collection-search {
+  box-sizing: border-box;
+  width: min(100%, 28rem);
+  margin-top: 1.1rem;
+}
+
+.no-matches {
+  padding-top: 1rem;
 }
 
 .collection-list li {

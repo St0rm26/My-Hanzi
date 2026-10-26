@@ -64,7 +64,7 @@ const sortedCollections = computed(() => {
         placeholder="Search by collection or author name"
         aria-label="Search by collection or author name"
       />
-      <p v-if="sortedCollections.length === 0">
+      <p v-if="sortedCollections.length === 0" class="no-match">
         No collections match your search.
       </p>
       <ul v-else class="shared-collection-list">
@@ -103,6 +103,10 @@ h1 {
   box-sizing: border-box;
   width: min(100%, 28rem);
   margin: 0.5rem 0;
+}
+
+.no-match {
+  padding-top: 1rem;
 }
 
 .shared-collection-list {

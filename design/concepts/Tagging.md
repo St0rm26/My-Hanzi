@@ -152,8 +152,11 @@ _tags (user: User) : many (tag: Tag, name: String)
 _tagsContainingItem (user: User, item: Item) : many (tag: Tag)
     Returns the user's tags that contain the given item.
 
+_taggedItemsByName (user: User, tagName: String) : many (item: Item, addedDate: Date)
+  Returns every item under the user's tag with the given name, newest added first.
+
 _taggedItems (user: User, tag: Tag) : many (item: Item, addedDate: Date)
-  Returns every item under the user's tag, newest added first.
+  Returns every item under the user's tag with the given tag ID, newest added first.
 
 _tagOfItem (id: ID) : optional (tag: Tag)
   Returns the tag of the item with the given ID if it exists.
@@ -162,7 +165,7 @@ _tagDetails (tag: Tag) : optional (author: User, name: String)
   Returns the owner and name of the tag if it exists.
 
 _tagDetailsOfItem (id: ID) : optional (tag: Tag, author: User, name: String, item: Item, addedDate: Date)
-  Returns the tag, owner, name, and tagged item with its added date of the given ID, or no row if the item does not exist.
+  Returns the tag, owner, name, and tagged item with its added date of the given item ID, or no row if the item does not exist.
 
 _audience (user: User, tag: Tag) : many (audience: User)
   Returns each user in the audience with which the user's tag is shared.

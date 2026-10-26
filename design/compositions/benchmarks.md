@@ -2,9 +2,9 @@
 
 Every endpoint below requires a signed-in session, as described in [accounts](accounts.md). Each one passes the session to `Sessioning.use`, which returns the user, and is refused with `NOT_SIGNED_IN` otherwise. The user is never read from the request's inputs, so people can only update their own benchmarks.
 
-When a user registers, [a reaction creates benchmarks for character lists from HSK levels 1-6](reaction:benchmarks.Initialize) for them. The lists are sourced from [HanziDB](http://hanzidb.org/character-list/hsk).
+When a user registers, [a reaction](reaction:benchmarks.Initialize) creates benchmarks for character lists from HSK levels 1-6 and the HanziCraft frequency ranges 1-100, 101-200, 201-300, 301-400, 401-500, and 501-1000 in both simplified and traditional. HSK lists are sourced from [HanziDB](http://hanzidb.org/character-list/hsk); simplified frequencies are sourced from [HanziCraft](https://hanzicraft.com/lists/frequency). The frequencies of traditional characters are converted from the simplified version. Existing users receive any missing benchmarks when their benchmark list is loaded. A reaction [marks Studied characters complete in newly created benchmarks](reaction:benchmarks.CompleteStudiedItems).
 
-On the home page, the user sees their HSK 1-6 benchmarks below the Collections section. Selecting a card opens its characters, ordered alphabetically by pinyin; selecting a character opens its detail page. A benchmark character has a gray background until it has been studied, then the color of their rating (or white if no rating has been assigned).
+On the home page, the user sees their HSK 1-6 benchmarks below the Collections section, followed by the frequency benchmarks. Selecting a card opens its characters, ordered alphabetically by pinyin; selecting a character opens its detail page. A benchmark character has a gray background until it has been studied, then the color of their rating is shown (or white if no rating has been assigned).
 
 The user can [view their benchmarks](reaction:benchmarks.List), including each benchmark's identifier and name.
 
