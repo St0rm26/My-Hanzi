@@ -31,15 +31,18 @@ README.md                               # This file
 ...
 ```
 
-## Design
+## App Design
 
-The [detailed design](docs/p1-design.md) document outlines the initial project's background and design information for P1. Note that the current design might slightly differ (e.g. new concepts).
+The [detailed design](docs/p1-design.md) document outlines the initial project's background and design information for P1. Note that the current design differs from this document (e.g. new concepts). The most significant design changes are noted in the final [design document](docs/design-document.md)
 
 The current built-in benchmarks include:
 
 - HSK 1-6 character lists, referenced from [hanziDB](http://hanzidb.org/character-list/hsk)
+- Character frequency lists, referenced from [HanziCraft](https://hanzicraft.com/lists/frequency)
 
-The visual design study collages are located under the `docs/` folder.
+The visual design study collages are located under the `docs/` folder. There is both a [color](docs/visual-design-study-colors.png) and [typography](docs/visual-design-study-typography.png) collage.
+
+Concept, composition, and reaction designs are found in `design/`.
 
 ## User Journey
 
