@@ -46,9 +46,54 @@ Concept, composition, and reaction designs are found in `design/`.
 
 ## User Journey
 
-The user journey for this app follows a Mandarin learner who wants an easy interface to track studied characters for an upcoming benchmark exam. More information can be found in the [detailed document](docs/user-journey.md).
+The user journey for this app follows a Mandarin learner who wants an easy interface to track studied characters for an upcoming benchmark HSK exam. More information can be found in [here](docs/user-journey.md).
 
-## Tests
+## Building, Running, and Testing
+
+### Building the App
+
+To build the app:
+
+```bash
+bun run build
+```
+
+### Running the App
+
+To run the app locally with MongoDB, ensure that there is a running Podman machine on your device. If there is no Podman machine, run:
+
+```bash
+podman machine init
+```
+
+Then, to start the machine, run:
+
+```bash
+podman machine start
+```
+
+After the podman machine is running, run:
+
+```bash
+bun run preview
+```
+
+The backend will be ready at http://127.0.0.1:3000.
+
+If you want to run the app in dev mode, run:
+
+```bash
+bun run dev
+```
+
+The frontend will be ready at http://127.0.0.1:8080; the backend will be ready at http://127.0.0.1:3000. Whilst making concept and composition design changes, check its validity and then update the `generated/` files:
+
+```bash
+bun run check:design
+bun run generate
+```
+
+### Testing the App
 
 There are plentiful tests available in the `tests` directory. To run all tests in the directory, run:
 
