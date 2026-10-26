@@ -1,6 +1,6 @@
 # My-Hanzi
 
-Personal Simplified Hanzi (Chinese character) tracking app with detailed information about each character and sharable collections.
+Personal Hanzi (Chinese character) tracking app with detailed information about each character and sharable collections. Supports both Simplified and Traditional characters.
 
 ## Design
 
