@@ -75,6 +75,7 @@ const {
   loadBenchmarks,
   getBenchmarkItems,
 } = useBenchmarks();
+const collectionSearchQuery = ref("");
 const hskBenchmarks = computed(() =>
   benchmarks.value.filter(({ name }) => !name.startsWith("Most Common ")),
 );
@@ -91,6 +92,13 @@ const traditionalFrequencyBenchmarks = computed(() =>
     name.endsWith(" (Traditional)"),
   ),
 );
+const filteredCollections = computed(() => {
+  const query = collectionSearchQuery.value.trim().toLocaleLowerCase();
+  if (!query) return collections.value;
+  return collections.value.filter(({ name }) =>
+    name.toLocaleLowerCase().includes(query),
+  );
+});
 const {
   loading: informationLoading,
   error: informationError,
@@ -863,10 +871,27 @@ onMounted(() => {
             </button>
           </div>
         </form>
-
-        <ul class="collection-list">
+        <input
+          v-model="collectionSearchQuery"
+          class="collection-search"
+          type="search"
+          placeholder="Search collections"
+          aria-label="Search your collections"
+        />
+        <p
+          v-if="
+            !loading &&
+            !error &&
+            collections.length > 0 &&
+            filteredCollections.length === 0
+          "
+          class="no-matches"
+        >
+          No collections match your search.
+        </p>
+        <ul v-if="filteredCollections.length > 0" class="collection-list">
           <li
-            v-for="collection in collections"
+            v-for="collection in filteredCollections"
             :key="collection.tag"
             class="collection-row"
           >
@@ -1140,6 +1165,16 @@ main form {
   margin: 1rem 0;
   padding: 0;
   list-style: none;
+}
+
+.collection-search {
+  box-sizing: border-box;
+  width: min(100%, 28rem);
+  margin-top: 1.1rem;
+}
+
+.no-matches {
+  padding-top: 1rem;
 }
 
 .collection-list li {
