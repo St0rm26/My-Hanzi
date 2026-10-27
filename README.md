@@ -48,6 +48,10 @@ Concept, composition, and reaction designs are found in `design/`.
 
 The user journey for this app follows a Mandarin learner who wants an easy interface to track studied characters for an upcoming benchmark HSK exam. More information can be found in [here](docs/user-journey.md).
 
+### Demo Video
+
+A demo video that illustrates the user journey is linked [here](https://youtu.be/-29vpvES0ik).
+
 ## Building, Running, and Testing
 
 ### Building the App
