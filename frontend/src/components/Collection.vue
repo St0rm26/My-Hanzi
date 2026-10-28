@@ -290,13 +290,17 @@ function saveAddItems() {
   );
   if (targets.length === 0) return;
   emit("addItems", targets);
-  addItemsOpen.value = false;
 }
 </script>
 
 <template>
   <main>
-    <button type="button" class="rounded-action" @click="emit('back')">
+    <button
+      type="button"
+      class="rounded-action"
+      :disabled="addingItems"
+      @click="emit('back')"
+    >
       {{
         backLabel ??
         (shared ? "Back to shared collections" : "Back to collections")
@@ -320,11 +324,18 @@ function saveAddItems() {
         class="add-items-options"
         role="group"
         aria-label="Destination collections"
+        :aria-busy="addingItems"
       >
         <p>
           This action will add all characters from this collection to the
           selected collections, except for repeated characters.
         </p>
+        <p v-if="addingItems" role="status" aria-live="polite">
+          Adding characters to the selected collections. Please do not leave
+          this page.
+        </p>
+        <p v-if="addItemsError" role="alert">{{ addItemsError }}</p>
+        <p v-if="addItemsStatus" role="status">{{ addItemsStatus }}</p>
         <label
           v-for="target in availableDestinations"
           :key="target.tag"
@@ -356,12 +367,10 @@ function saveAddItems() {
             :disabled="addingItems"
             @click="cancelAddItems"
           >
-            Cancel
+            {{ addItemsStatus || addItemsError ? "Done" : "Cancel" }}
           </button>
         </div>
       </div>
-      <p v-if="addItemsError" role="alert">{{ addItemsError }}</p>
-      <p v-if="addItemsStatus" role="status">{{ addItemsStatus }}</p>
     </section>
     <section v-if="!shared" class="sharing-panel">
       <div class="sharing-buttons">
