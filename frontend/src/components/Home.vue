@@ -349,21 +349,30 @@ function benchmarkColor(benchmark: Benchmark) {
   return level >= 1 && level <= 6 ? `var(--color-hsk-${level})` : "#fff";
 }
 
-function updateSelectedCollections(tagIds: CollectionId[]) {
-  selectedCollectionIds.value = tagIds;
-  saveStatus.value = null;
-}
+async function updateSelectedCollection(tag: CollectionId, selected: boolean) {
+  const character = activeCharacter.value?.character;
+  if (!character || working.value) return;
 
-async function saveSelectedCollections() {
-  if (!activeCharacter.value) return;
-  const saved = await saveCharacterCollections(
-    activeCharacter.value.character,
-    initialCollectionIds.value,
-    selectedCollectionIds.value,
-  );
+  const previous = [...initialCollectionIds.value];
+  const alreadySelected = previous.includes(tag);
+  if (alreadySelected === selected) return;
+
+  const next = selected
+    ? [...previous, tag]
+    : previous.filter((selectedTag) => selectedTag !== tag);
+  const sequence = characterSequence;
+  selectedCollectionIds.value = next;
+  saveStatus.value = null;
+  const saved = await saveCharacterCollections(character, previous, next);
+  if (sequence !== characterSequence) return;
   if (saved) {
-    initialCollectionIds.value = [...selectedCollectionIds.value];
-    saveStatus.value = "Collection membership saved.";
+    initialCollectionIds.value = next;
+    const name = collections.value.find(({ tag: id }) => id === tag)?.name;
+    saveStatus.value = selected
+      ? `Added to ${name ?? "collection"}.`
+      : `Removed from ${name ?? "collection"}.`;
+  } else {
+    selectedCollectionIds.value = previous;
   }
 }
 
@@ -716,7 +725,6 @@ onMounted(() => {
       :information-error="informationError"
       :collections="collections"
       :selected-tags="selectedCollectionIds"
-      :saved-tags="initialCollectionIds"
       :membership-loading="membershipLoading"
       :working="working"
       :error="error"
@@ -737,8 +745,7 @@ onMounted(() => {
                 : 'Back to results'
       "
       @back="closeDetail"
-      @selection="updateSelectedCollections"
-      @save="saveSelectedCollections"
+      @selection="updateSelectedCollection"
       @rate="savePersonalRating"
     />
 
