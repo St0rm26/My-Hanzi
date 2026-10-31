@@ -31,6 +31,50 @@ export function normalizePinyin(value: string) {
     .replace(/\s+/g, "");
 }
 
+const pinyinToneNumbers: Readonly<Record<string, string>> = {
+  "\u0304": "1",
+  "\u0301": "2",
+  "\u030c": "3",
+  "\u0300": "4",
+};
+
+export function normalizePinyinForSearch(value: string) {
+  let normalized = "";
+  for (const character of value.toLowerCase()) {
+    const decomposed = [...character.normalize("NFD")];
+    const [base, ...marks] = decomposed;
+    if (/\p{M}/u.test(character)) {
+      normalized += pinyinToneNumbers[character] ?? "";
+      continue;
+    }
+
+    if (/^[a-z]$/u.test(base)) {
+      normalized += base === "u" && marks.includes("\u0308") ? "v" : base;
+    } else if (/^[0-9]$/u.test(character)) {
+      normalized += character;
+    }
+    normalized += marks.map((mark) => pinyinToneNumbers[mark] ?? "").join("");
+  }
+  return normalized;
+}
+
+export function pinyinMatchesQuery(
+  pronunciation: string,
+  query: string,
+  mode: "includes" | "startsWith" = "includes",
+) {
+  const normalizedPronunciation = normalizePinyinForSearch(pronunciation);
+  const normalizedQuery = normalizePinyinForSearch(query);
+  if (!normalizedQuery) return false;
+
+  if (normalizedQuery.endsWith("5")) {
+    return normalizedPronunciation === normalizedQuery.slice(0, -1);
+  }
+  return mode === "startsWith"
+    ? normalizedPronunciation.startsWith(normalizedQuery)
+    : normalizedPronunciation.includes(normalizedQuery);
+}
+
 async function loadRawDictionary(): Promise<CharacterEntry[]> {
   rawDictionaryPromise ??= fetch(dictionaryUrl)
     .then(async (response) => {
@@ -147,12 +191,11 @@ export async function searchCharacters(
     return dictionary.filter((entry) => requested.has(entry.character));
   }
 
-  const normalizedQuery = normalizePinyin(term);
   return dictionary
     .filter((entry) =>
       entry.pinyin
         .split(", ")
-        .some((pinyin) => normalizePinyin(pinyin).startsWith(normalizedQuery)),
+        .some((pinyin) => pinyinMatchesQuery(pinyin, term, "startsWith")),
     )
     .sort(
       (left, right) =>

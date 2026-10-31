@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { lookupCharacters, normalizePinyin } from "../api/characters.ts";
+import {
+  lookupCharacters,
+  normalizePinyin,
+  pinyinMatchesQuery,
+} from "../api/characters.ts";
 import { scriptForCharacter } from "../api/characterScripts.ts";
 import type { CharacterEntry } from "../api/characters.ts";
 import {
@@ -184,14 +188,12 @@ const visibleItems = computed(() => {
   const term = query.value.trim();
   let result = props.items;
   if (term) {
-    const normalized = normalizePinyin(term);
     result = result.filter(
       ({ item }) =>
         item.includes(term) ||
-        (normalized !== "" &&
-          pinyinFor(item)
-            .split(", ")
-            .some((pinyin) => normalizePinyin(pinyin).includes(normalized))),
+        pinyinFor(item)
+          .split(", ")
+          .some((pinyin) => pinyinMatchesQuery(pinyin, term)),
     );
   }
   if (!props.ratingsLoading && !props.ratingError) {
