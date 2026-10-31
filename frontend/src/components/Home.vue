@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, nextTick, ref } from "vue";
 import BenchmarkPage from "./Benchmark.vue";
 import CollectionPage from "./Collection.vue";
 import CharacterDetail from "./CharacterDetail.vue";
@@ -167,11 +167,49 @@ const shareStatus = ref<string | null>(null);
 const transferringItems = ref(false);
 const transferError = ref<string | null>(null);
 const transferStatus = ref<string | null>(null);
+type NavbarItem = "shared" | "public" | "username" | "signOut";
+const navbarRef = ref<HTMLElement | null>(null);
+const overflowedNavbarItems = ref<NavbarItem[]>([]);
+const navbarMenuOpen = ref(false);
+const navbarItemOrder: NavbarItem[] = [
+  "public",
+  "shared",
+  "username",
+  "signOut",
+];
+let navbarResizeObserver: ResizeObserver | undefined;
+let navbarMeasureSequence = 0;
 let searchSequence = 0;
 let characterSequence = 0;
 let collectionSequence = 0;
 const isEditing = ref(false);
 const collectionName = ref("");
+
+async function updateNavbarOverflow() {
+  const sequence = ++navbarMeasureSequence;
+  overflowedNavbarItems.value = [];
+  await nextTick();
+  const navbar = navbarRef.value;
+  if (!navbar || sequence !== navbarMeasureSequence) return;
+
+  const overflowed: NavbarItem[] = [];
+  for (const item of navbarItemOrder) {
+    if (navbar.scrollWidth <= navbar.clientWidth) break;
+    overflowed.push(item);
+    overflowedNavbarItems.value = [...overflowed];
+    await nextTick();
+    if (sequence !== navbarMeasureSequence) return;
+  }
+  if (overflowed.length === 0) closeNavbarMenu();
+}
+
+function isNavbarItemOverflowed(item: NavbarItem) {
+  return overflowedNavbarItems.value.includes(item);
+}
+
+function closeNavbarMenu() {
+  navbarMenuOpen.value = false;
+}
 
 function openCreateForm() {
   activeCollection.value = null;
@@ -643,12 +681,21 @@ async function removeCollection(collection: Collection) {
 onMounted(() => {
   void refresh();
   void loadBenchmarks();
+  navbarResizeObserver = new ResizeObserver(() => {
+    void updateNavbarOverflow();
+  });
+  if (navbarRef.value) navbarResizeObserver.observe(navbarRef.value);
+  void updateNavbarOverflow();
+});
+
+onBeforeUnmount(() => {
+  navbarResizeObserver?.disconnect();
 });
 </script>
 
 <template>
   <div class="home">
-    <header class="navbar">
+    <header ref="navbarRef" class="navbar">
       <a class="brand" href="/">MyHanzi</a>
       <form class="search-form" @submit.prevent="submitCharacterSearch">
         <input
@@ -670,6 +717,8 @@ onMounted(() => {
         <button
           type="button"
           class="shared-with-me"
+          data-navbar-item="shared"
+          :hidden="isNavbarItemOverflowed('shared')"
           @click="openSharedCollections"
         >
           Shared with me
@@ -677,19 +726,75 @@ onMounted(() => {
         <button
           type="button"
           class="shared-with-me"
+          data-navbar-item="public"
+          :hidden="isNavbarItemOverflowed('public')"
           @click="openPublicCollections"
         >
           Public collections
         </button>
-        <span>{{ me?.username }}</span>
+        <span
+          data-navbar-item="username"
+          :hidden="isNavbarItemOverflowed('username')"
+          >{{ me?.username }}</span
+        >
         <button
           type="button"
           class="sign-out"
+          data-navbar-item="signOut"
+          :hidden="isNavbarItemOverflowed('signOut')"
           :disabled="working"
           @click="signOut"
         >
           Sign out
         </button>
+        <div v-if="overflowedNavbarItems.length > 0" class="navbar-overflow">
+          <button
+            type="button"
+            class="navbar-overflow-toggle"
+            aria-label="More navigation options"
+            aria-haspopup="true"
+            :aria-expanded="navbarMenuOpen"
+            aria-controls="navbar-overflow-menu"
+            @click="navbarMenuOpen = !navbarMenuOpen"
+          >
+            More
+            <span aria-hidden="true">▾</span>
+          </button>
+          <div
+            v-if="navbarMenuOpen"
+            id="navbar-overflow-menu"
+            class="navbar-overflow-menu"
+          >
+            <span
+              v-if="isNavbarItemOverflowed('username') && me?.username"
+              class="navbar-overflow-username"
+            >
+              {{ me.username }}
+            </span>
+            <button
+              v-if="isNavbarItemOverflowed('shared')"
+              type="button"
+              @click="closeNavbarMenu(); openSharedCollections()"
+            >
+              Shared with me
+            </button>
+            <button
+              v-if="isNavbarItemOverflowed('public')"
+              type="button"
+              @click="closeNavbarMenu(); openPublicCollections()"
+            >
+              Public collections
+            </button>
+            <button
+              v-if="isNavbarItemOverflowed('signOut')"
+              type="button"
+              :disabled="working"
+              @click="closeNavbarMenu(); signOut()"
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -1030,14 +1135,16 @@ onMounted(() => {
 .navbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: initial;
   gap: 1rem;
+  min-width: 0;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid #ccc;
   background: var(--palette-red);
 }
 
 .brand {
+  flex: 0 0 auto;
   color: rgb(255, 255, 255);
   font-weight: 800;
   text-decoration: none;
@@ -1050,7 +1157,9 @@ onMounted(() => {
 
 .navbar input {
   box-sizing: border-box;
-  width: min(24rem, 65vw);
+  width: auto;
+  min-width: 0;
+  flex: 1 1 12rem;
   padding: 0.45rem 0.6rem;
 }
 
@@ -1058,6 +1167,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  flex: 1 1 24rem;
+  min-width: 18rem;
 }
 
 .search-script {
@@ -1067,13 +1178,90 @@ onMounted(() => {
   background: #fff;
   color: var(--color-text);
   font: inherit;
+  flex: 0 1 11rem;
+  min-width: 8rem;
 }
 
 .account {
+  position: relative;
   color: rgb(255, 255, 255);
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex: 0 0 auto;
+}
+
+.account [hidden] {
+  display: none;
+}
+
+.navbar-overflow {
+  position: relative;
+}
+
+.navbar-overflow-toggle,
+.navbar-overflow-menu button {
+  border: 0;
+  border-radius: 6px;
+  background: #fff;
+  color: #111;
+  font: inherit;
+  font-weight: 600;
+}
+
+.navbar-overflow-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  white-space: nowrap;
+}
+
+.navbar-overflow-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  display: grid;
+  min-width: 12rem;
+  gap: 0.35rem;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 18%);
+}
+
+.navbar-overflow-menu button {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  text-align: left;
+}
+
+.navbar-overflow-menu button:hover,
+.navbar-overflow-toggle:hover {
+  background: #f0f0f0;
+}
+
+.navbar-overflow-username {
+  padding: 0.55rem 0.7rem;
+  color: #555;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 48rem) {
+  .navbar {
+    flex-wrap: wrap;
+  }
+
+  .search-form {
+    order: 1;
+    flex-basis: 100%;
+    min-width: 0;
+  }
+
+  .account {
+    margin-left: auto;
+  }
 }
 
 .sign-out {
