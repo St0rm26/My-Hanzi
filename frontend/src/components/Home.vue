@@ -653,8 +653,8 @@ onMounted(() => {
           aria-label="Character script"
           class="search-script"
         >
-          <option value="simplified">Simplified (简体字)</option>
-          <option value="traditional">Traditional (繁體字)</option>
+          <option value="simplified">Search Simplified</option>
+          <option value="traditional">Search Traditional</option>
         </select>
       </form>
       <div class="account">
