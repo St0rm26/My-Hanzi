@@ -9,6 +9,7 @@ import {
   type CharacterEntry,
   lookupCharacters,
   searchCharacters,
+  singleCharacterSearchTerm,
 } from "../api/characters.ts";
 import type { CharacterSearchScript } from "../api/characterScripts.ts";
 import {
@@ -179,9 +180,10 @@ function openCreateForm() {
 }
 
 async function submitCharacterSearch() {
-  const query = searchQuery.value.trim();
+  const query = singleCharacterSearchTerm(searchQuery.value);
   if (!query) return;
 
+  searchQuery.value = query;
   const sequence = ++searchSequence;
   lastSearch.value = query;
   lastSearchScript.value = searchScript.value;
@@ -643,7 +645,7 @@ onMounted(() => {
         <input
           v-model="searchQuery"
           type="search"
-          placeholder="Pinyin or character (note: type v for ü)"
+          placeholder="One Pinyin syllable or character (note: type v for ü)"
           aria-label="Search by pinyin or character"
         />
         <select

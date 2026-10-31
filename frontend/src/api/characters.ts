@@ -48,7 +48,7 @@ export function normalizePinyinForSearch(value: string) {
       continue;
     }
 
-    if (/^[a-z]$/u.test(base)) {
+    if (base && /^[a-z]$/u.test(base)) {
       normalized += base === "u" && marks.includes("\u0308") ? "v" : base;
     } else if (/^[0-9]$/u.test(character)) {
       normalized += character;
@@ -73,6 +73,14 @@ export function pinyinMatchesQuery(
   return mode === "startsWith"
     ? normalizedPronunciation.startsWith(normalizedQuery)
     : normalizedPronunciation.includes(normalizedQuery);
+}
+
+export function singleCharacterSearchTerm(query: string) {
+  const term = query.trim();
+  const firstHanzi = [...term].find((character) =>
+    /\p{Script=Han}/u.test(character),
+  );
+  return firstHanzi ?? term.split(/[\s,]+/u)[0] ?? "";
 }
 
 async function loadRawDictionary(): Promise<CharacterEntry[]> {
@@ -179,7 +187,7 @@ export async function searchCharacters(
   query: string,
   script: CharacterSearchScript = "simplified",
 ): Promise<CharacterEntry[]> {
-  const term = query.trim();
+  const term = singleCharacterSearchTerm(query);
   if (!term) return [];
 
   const dictionary =

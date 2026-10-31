@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   normalizePinyinForSearch,
   pinyinMatchesQuery,
+  singleCharacterSearchTerm,
 } from "../../frontend/src/api/characters.ts";
 
 describe("Pinyin search", () => {
@@ -24,5 +25,13 @@ describe("Pinyin search", () => {
   test("supports neutral-tone numeric queries", () => {
     expect(pinyinMatchesQuery("ma", "ma5")).toBe(true);
     expect(pinyinMatchesQuery("mǎ", "ma5")).toBe(false);
+  });
+
+  test("limits a search to one Hanzi or Pinyin syllable", () => {
+    expect(singleCharacterSearchTerm("你好")).toBe("你");
+    expect(singleCharacterSearchTerm("  你好  ")).toBe("你");
+    expect(singleCharacterSearchTerm("ma3 ni3")).toBe("ma3");
+    expect(singleCharacterSearchTerm("ma3, ni3")).toBe("ma3");
+    expect(singleCharacterSearchTerm("")).toBe("");
   });
 });
