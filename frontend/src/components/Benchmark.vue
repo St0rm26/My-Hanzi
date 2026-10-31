@@ -3,6 +3,7 @@ import { computed, ref, watch } from "vue";
 import {
   lookupCharacters,
   normalizePinyin,
+  pinyinMatchesQuery,
   type CharacterEntry,
 } from "../api/characters.ts";
 import { scriptForCharacter } from "../api/characterScripts.ts";
@@ -89,14 +90,12 @@ const visibleItems = computed(() => {
     );
   }
   if (term) {
-    const normalized = normalizePinyin(term);
     result = result.filter(
       (item) =>
         item.includes(term) ||
-        (normalized !== "" &&
-          (entries.value.get(item)?.pinyin ?? "")
-            .split(", ")
-            .some((pinyin) => normalizePinyin(pinyin).includes(normalized))),
+        (entries.value.get(item)?.pinyin ?? "")
+          .split(", ")
+          .some((pinyin) => pinyinMatchesQuery(pinyin, term)),
     );
   }
   if (!props.ratingsLoading && !props.ratingError) {

@@ -16,7 +16,6 @@ const props = defineProps<{
   informationError: string | null;
   collections: Collection[];
   selectedTags: CollectionId[];
-  savedTags: CollectionId[];
   membershipLoading: boolean;
   working: boolean;
   error: string | null;
@@ -30,8 +29,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   back: [];
-  selection: [tagIds: CollectionId[]];
-  save: [];
+  selection: [tag: CollectionId, selected: boolean];
   rate: [rating: PersonalRating];
 }>();
 
@@ -102,15 +100,7 @@ function replayStrokeOrder() {
 
 function updateSelectedCollection(tag: CollectionId, event: Event) {
   const checked = (event.target as HTMLInputElement).checked;
-  const selected = new Set(props.selectedTags);
-  if (checked) selected.add(tag);
-  else selected.delete(tag);
-  emit("selection", [...selected]);
-}
-
-function cancelCollectionChanges() {
-  emit("selection", [...props.savedTags]);
-  collectionPickerOpen.value = false;
+  emit("selection", tag, checked);
 }
 </script>
 
@@ -160,6 +150,7 @@ function cancelCollectionChanges() {
             class="rounded-action"
             :aria-expanded="collectionPickerOpen"
             aria-controls="collection-picker-options"
+            :disabled="working || membershipLoading"
             @click="collectionPickerOpen = !collectionPickerOpen"
           >
             Add to collections
@@ -181,23 +172,9 @@ function cancelCollectionChanges() {
               />
               {{ collection.name }}
             </label>
-            <div class="collection-picker-actions">
-              <button
-                type="button"
-                class="rounded-action"
-                :disabled="working || membershipLoading"
-                @click="emit('save')"
-              >
-                {{ working ? "Saving..." : "Save" }}
-              </button>
-              <button
-                type="button"
-                class="rounded-action"
-                @click="cancelCollectionChanges"
-              >
-                Cancel
-              </button>
-            </div>
+            <p v-if="working" role="status" aria-live="polite">
+              Updating collection...
+            </p>
             <p v-if="saveStatus" role="status">{{ saveStatus }}</p>
             <p v-if="error" role="alert">{{ error }}</p>
           </div>
@@ -431,11 +408,6 @@ dd {
   box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
 }
 
-.collection-picker-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
 .rating-picker {
   display: grid;
   justify-items: start;
@@ -508,11 +480,6 @@ dd {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.collection-picker-options button {
-  justify-self: start;
-  margin-top: 0.35rem;
 }
 
 @media (max-width: 42rem) {
