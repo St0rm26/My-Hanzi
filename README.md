@@ -13,6 +13,7 @@ design/                                 # Contains all design specs
   reactions/                            # Reaction design specs
   ...
 docs/                                   # App design documents; not specs
+  user_testing/                         # User testing files
   design-document.md                    # The final design document
   user-journey.md                       # An example user journey
   visual-design-study-colors.png        # Visual design color study collage
@@ -52,7 +53,7 @@ The user journey for this app follows a Mandarin learner who wants an easy inter
 
 User testing was conducted on 2 participants to identify flaws and possible points of confusion that could arise whilst using the app. The relevant files, linked below, are all in the `docs/user_testing` folder:
 
-- [Task list](docs/user_testing/task-list.md): defines _n_ tasks that participants were asked to do
+- [Task list](docs/user_testing/task-list.md): defines 8 tasks that participants were asked to do
 - [Study reports](docs/user_testing/study-reports.md) detail interesting observations made during the two user tests
 - [Flaws and opportunities](docs/user_testing/flaws-and-opportunities.md) lists a few flaws and opportunities for improvement based on observations during the user tests
 
