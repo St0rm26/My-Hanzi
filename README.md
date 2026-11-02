@@ -13,6 +13,7 @@ design/                                 # Contains all design specs
   reactions/                            # Reaction design specs
   ...
 docs/                                   # App design documents; not specs
+  user_testing/                         # User testing files
   design-document.md                    # The final design document
   user-journey.md                       # An example user journey
   visual-design-study-colors.png        # Visual design color study collage
