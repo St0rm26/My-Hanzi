@@ -48,6 +48,14 @@ Concept, composition, and reaction designs are found in `design/`.
 
 The user journey for this app follows a Mandarin learner who wants an easy interface to track studied characters for an upcoming benchmark HSK exam. More information can be found in [here](docs/user-journey.md).
 
+## User Testing
+
+User testing was conducted on 2 participants to identify flaws and possible points of confusion that could arise whilst using the app. The relevant files, linked below, are all in the `docs/user_testing` folder:
+
+- [Task list](docs/user_testing/task-list.md): defines _n_ tasks that participants were asked to do
+- [Study reports](docs/user_testing/study-reports.md) detail interesting observations made during the two user tests
+- [Flaws and opportunities](docs/user_testing/flaws-and-opportunities.md) lists a few flaws and opportunities for improvement based on observations during the user tests
+
 ### Demo Video
 
 A demo video that illustrates the user journey is linked [here](https://youtu.be/-29vpvES0ik).
