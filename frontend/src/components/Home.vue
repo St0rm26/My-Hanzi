@@ -774,14 +774,20 @@ onBeforeUnmount(() => {
             <button
               v-if="isNavbarItemOverflowed('shared')"
               type="button"
-              @click="closeNavbarMenu(); openSharedCollections()"
+              @click="
+                closeNavbarMenu();
+                openSharedCollections();
+              "
             >
               Shared with me
             </button>
             <button
               v-if="isNavbarItemOverflowed('public')"
               type="button"
-              @click="closeNavbarMenu(); openPublicCollections()"
+              @click="
+                closeNavbarMenu();
+                openPublicCollections();
+              "
             >
               Public collections
             </button>
@@ -789,7 +795,10 @@ onBeforeUnmount(() => {
               v-if="isNavbarItemOverflowed('signOut')"
               type="button"
               :disabled="working"
-              @click="closeNavbarMenu(); signOut()"
+              @click="
+                closeNavbarMenu();
+                signOut();
+              "
             >
               Sign out
             </button>
@@ -1008,6 +1017,7 @@ onBeforeUnmount(() => {
             v-for="collection in filteredCollections"
             :key="collection.tag"
             class="collection-row"
+            :class="{ 'studied-collection-row': collection.name === 'Studied' }"
           >
             <button
               type="button"
@@ -1384,6 +1394,15 @@ main form {
 
 .collection-row:hover {
   background: #e1e0e0;
+}
+
+.studied-collection-row {
+  background: var(--palette-yellow);
+}
+
+.studied-collection-row:hover {
+  background: var(--palette-yellow);
+  filter: brightness(0.92);
 }
 
 .new-collection {
