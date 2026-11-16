@@ -67,61 +67,96 @@ A demo video that illustrates the user journey is linked [here](https://youtu.be
 
 ## Building, Running, and Testing
 
-### Building the App
+### Prerequisites and setup
 
-To build the app:
+Run these commands from the repository root:
+
+1. Install [Bun](https://bun.sh/) (the version specified in `package.json` is 1.4.2).
+2. Install the project dependencies:
+
+   ```bash
+   bun install --frozen-lockfile
+   ```
+
+3. To run the app locally, install [Podman](https://podman.io/) and a working Podman Compose provider. On Windows and macOS, initialize a Podman machine once and start it before running container commands:
+
+   ```bash
+   podman machine init
+   podman machine start
+   ```
+
+   Skip initialization if the machine already exists. On Linux, use a running Podman service instead. Podman is not required just to build the frontend.
+
+4. For local development or preview, copy `.env.example` to `.env` in the repository root:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   In PowerShell, use `Copy-Item .env.example .env` instead. The example sets `MONGODB_URL` for the local MongoDB container. If using another MongoDB instance, set `MONGODB_URL` to that instance's connection string instead. Do not commit `.env`.
+
+### Building the app
 
 ```bash
 bun run build
 ```
 
-### Running the App
+This builds the production frontend into `frontend/dist/`. It does not start MongoDB or the app, and does not compile the backend: Bun runs the backend TypeScript directly.
 
-To run the app locally with MongoDB, ensure that there is a running Podman machine on your device. If there is no Podman machine, run:
+### Running locally
 
-```bash
-podman machine init
-```
-
-Then, to start the machine, run:
-
-```bash
-podman machine start
-```
-
-After the podman machine is running, run:
-
-```bash
-bun run preview
-```
-
-The backend will be ready at http://127.0.0.1:3000.
-
-If you want to run the app in dev mode, run:
+For development with automatic reloads:
 
 ```bash
 bun run dev
 ```
 
-The frontend will be ready at http://127.0.0.1:8080; the backend will be ready at http://127.0.0.1:3000. Whilst making concept and composition design changes, check its validity and then update the `generated/` files:
+This starts the MongoDB container, the backend at http://127.0.0.1:3000, and the Vite frontend at http://localhost:8080. Open the frontend URL in your browser. The frontend proxies API requests to the backend. Stop the development processes with Ctrl+C; MongoDB continues running in its container.
+
+To build the frontend and serve it from the backend without watch mode:
+
+```bash
+bun run preview
+```
+
+Open http://127.0.0.1:3000. Preview also starts the MongoDB container. To run the backend separately, first build the frontend, ensure MongoDB is available and `MONGODB_URL` is set, then run `bun run start`.
+
+### Running in containers
+
+Alternatively, run MongoDB, the backend, and the frontend in containers:
+
+```bash
+bun run up
+```
+
+This builds the images, starts the services, and checks the API. Open http://localhost:8080. The Compose configuration supplies the backend's MongoDB connection; the local `.env` file is not needed for this workflow.
+
+Useful container commands:
+
+```bash
+bun run logs      # View backend and frontend logs
+bun run db:logs   # View MongoDB logs
+bun run down      # Stop the containers; keep MongoDB data
+```
+
+`bun run db:reset` stops the containers **and deletes the local MongoDB volume**. Use it only when you want to discard all local app data.
+
+### Checking and testing changes
+
+After changing concept or composition designs, validate the designs, regenerate artifacts, and run the project checks:
 
 ```bash
 bun run check:design
 bun run generate
+bun run check
 ```
 
-### Testing the App
-
-There are plentiful tests available in the `tests` directory. To run all tests in the directory, run:
+`bun run check` checks concept source, generated artifacts, and TypeScript. To run tests:
 
 ```bash
-bun test
+bun test                # All tests
+bun run test:concepts   # Concept tests, with a longer timeout
+bun test tests/frontend # Frontend tests
 ```
 
-To just run the concept tests in `tests/concepts`, run:
-
-```bash
-bun run test:concepts
-```
-
-The test outputs are stored [here](tests/output.txt).
+The concept tests use an in-memory MongoDB server and may download a MongoDB binary on the first run. The test outputs are stored [here](tests/output.txt).
