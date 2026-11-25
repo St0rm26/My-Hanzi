@@ -75,6 +75,7 @@ const {
   error: benchmarksError,
   loadBenchmarks,
   getBenchmarkItems,
+  getCompletedItems,
 } = useBenchmarks();
 const collectionSearchQuery = ref("");
 const hskBenchmarks = computed(() =>
@@ -113,6 +114,7 @@ const {
   loadRating,
   loadRatings,
   saveRating,
+  saveRatings,
 } = usePersonalRating();
 const page = ref<
   | "home"
@@ -167,6 +169,9 @@ const shareStatus = ref<string | null>(null);
 const transferringItems = ref(false);
 const transferError = ref<string | null>(null);
 const transferStatus = ref<string | null>(null);
+const bulkBusy = ref(false);
+const bulkStatus = ref<string | null>(null);
+const bulkError = ref<string | null>(null);
 type NavbarItem = "shared" | "public" | "username" | "signOut";
 const navbarRef = ref<HTMLElement | null>(null);
 const overflowedNavbarItems = ref<NavbarItem[]>([]);
@@ -322,6 +327,100 @@ async function openCharacter(
 async function savePersonalRating(rating: PersonalRating) {
   if (activeCharacter.value) {
     await saveRating(activeCharacter.value.character, rating);
+  }
+}
+
+async function addSelectedCharactersToCollection(
+  items: string[],
+  target: Collection,
+) {
+  if (bulkBusy.value || items.length === 0) return;
+  const benchmark =
+    page.value === "benchmark" && target.name === "Studied"
+      ? activeBenchmark.value
+      : null;
+  const sequence = benchmarkSequence.value;
+  bulkBusy.value = true;
+  bulkStatus.value = null;
+  bulkError.value = null;
+  try {
+    const result = await addItemsToCollections(items, [target]);
+    if (!result) {
+      bulkError.value =
+        "Another collection change is in progress. Try again shortly.";
+      return;
+    }
+
+    bulkStatus.value =
+      `Added ${result.added} character${result.added === 1 ? "" : "s"} to ${target.name}; ` +
+      `skipped ${result.skipped} already present.`;
+    const errors = [...result.errors];
+    if (
+      benchmark &&
+      page.value === "benchmark" &&
+      sequence === benchmarkSequence.value
+    ) {
+      const completed = await getCompletedItems(benchmark);
+      if (page.value === "benchmark" && sequence === benchmarkSequence.value) {
+        if (completed.error !== null) {
+          errors.push(`Could not refresh benchmark progress: ${completed.error}`);
+        } else {
+          benchmarkStudiedItems.value = completed.items;
+        }
+      }
+    }
+    if (errors.length > 0) bulkError.value = errors.join(" ");
+  } catch (cause) {
+    bulkError.value =
+      cause instanceof Error
+        ? cause.message
+        : "Could not add the selected characters to the collection.";
+  } finally {
+    bulkBusy.value = false;
+  }
+}
+
+async function assignRatingToSelectedCharacters(
+  items: string[],
+  rating: PersonalRating,
+) {
+  if (bulkBusy.value || items.length === 0) return;
+  bulkBusy.value = true;
+  bulkStatus.value = null;
+  bulkError.value = null;
+  try {
+    const result = await saveRatings(items, rating);
+    const updatedItems = result.updatedItems;
+    bulkStatus.value =
+      `Assigned ${rating} to ${updatedItems.length} character${updatedItems.length === 1 ? "" : "s"}.`;
+    const errors = [...result.errors];
+
+    const updates = new Map(
+      updatedItems.map((item) => [item, rating] as const),
+    );
+    if (page.value === "benchmark") {
+      benchmarkRatings.value = new Map([
+        ...benchmarkRatings.value,
+        ...updates,
+      ]);
+    } else if (
+      page.value === "collection" ||
+      page.value === "shared-collection" ||
+      page.value === "public-collection"
+    ) {
+      collectionRatings.value = new Map([
+        ...collectionRatings.value,
+        ...updates,
+      ]);
+    }
+    if (errors.length > 0) bulkError.value = errors.join(" ");
+  } catch (cause) {
+    bulkError.value =
+      cause instanceof Error
+        ? cause.message
+        : "Could not assign a rating to the selected characters.";
+  } finally {
+    bulkBusy.value = false;
   }
 }
 
@@ -814,8 +913,14 @@ onBeforeUnmount(() => {
       :characters="characters"
       :loading="searching"
       :error="searchError"
+      :collections="collections"
+      :bulk-busy="bulkBusy"
+      :bulk-status="bulkStatus"
+      :bulk-error="bulkError"
       @back="page = 'home'"
       @select="openCharacter"
+      @add-to-collection="addSelectedCharactersToCollection"
+      @assign-rating="assignRatingToSelectedCharacters"
     />
 
     <BenchmarkPage
@@ -828,8 +933,14 @@ onBeforeUnmount(() => {
       :rating-error="benchmarkRatingsError"
       :loading="benchmarkLoading"
       :error="benchmarksError"
+      :collections="collections"
+      :bulk-busy="bulkBusy"
+      :bulk-status="bulkStatus"
+      :bulk-error="bulkError"
       @back="page = 'home'"
       @select="openCharacterById($event, 'benchmark')"
+      @add-to-collection="addSelectedCharactersToCollection"
+      @assign-rating="assignRatingToSelectedCharacters"
     />
 
     <CharacterDetail
@@ -885,6 +996,9 @@ onBeforeUnmount(() => {
       :sharing="working"
       :share-status="shareStatus"
       :is-public="collectionIsPublic"
+      :bulk-busy="bulkBusy"
+      :bulk-status="bulkStatus"
+      :bulk-error="bulkError"
       @back="page = 'home'"
       @select="openCollectionCharacter"
       @remove-character="removeCollectionCharacter"
@@ -892,6 +1006,8 @@ onBeforeUnmount(() => {
       @save-audience="saveCollectionAudience"
       @toggle-public="toggleCollectionPublic"
       @add-items="addCollectionItemsToTargets"
+      @add-selected-to-collection="addSelectedCharactersToCollection"
+      @assign-selected-rating="assignRatingToSelectedCharacters"
     />
 
     <SharedCollectionsPage
@@ -927,10 +1043,15 @@ onBeforeUnmount(() => {
       :rating-error="collectionRatingsError"
       :loading="sharedCollectionItemsLoading"
       :error="sharedCollectionItemsError"
+      :bulk-busy="bulkBusy"
+      :bulk-status="bulkStatus"
+      :bulk-error="bulkError"
       shared
       @back="page = 'shared'"
       @select="openSharedCollectionCharacter"
       @add-items="addCollectionItemsToTargets"
+      @add-selected-to-collection="addSelectedCharactersToCollection"
+      @assign-selected-rating="assignRatingToSelectedCharacters"
     />
 
     <CollectionPage
@@ -946,11 +1067,16 @@ onBeforeUnmount(() => {
       :rating-error="collectionRatingsError"
       :loading="publicCollectionItemsLoading"
       :error="publicCollectionItemsError"
+      :bulk-busy="bulkBusy"
+      :bulk-status="bulkStatus"
+      :bulk-error="bulkError"
       shared
       back-label="Back to public collections"
       @back="page = 'public'"
       @select="openPublicCollectionCharacter"
       @add-items="addCollectionItemsToTargets"
+      @add-selected-to-collection="addSelectedCharactersToCollection"
+      @assign-selected-rating="assignRatingToSelectedCharacters"
     />
 
     <main v-else>

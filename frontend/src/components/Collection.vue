@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import MultiCharacterActions from "./MultiCharacterActions.vue";
 import {
   lookupCharacters,
   normalizePinyin,
@@ -46,6 +47,9 @@ const props = withDefaults(
     isPublic?: boolean;
     backLabel?: string;
     removingItem?: string | null;
+    bulkBusy?: boolean;
+    bulkStatus?: string | null;
+    bulkError?: string | null;
   }>(),
   {
     shared: false,
@@ -66,6 +70,9 @@ const props = withDefaults(
     ratingsLoading: false,
     ratingError: null,
     removingItem: null,
+    bulkBusy: false,
+    bulkStatus: null,
+    bulkError: null,
   },
 );
 
@@ -77,6 +84,8 @@ const emit = defineEmits<{
   saveAudience: [users: SharedUser[]];
   togglePublic: [isPublic: boolean];
   addItems: [targets: Collection[]];
+  addSelectedToCollection: [characters: string[], collection: Collection];
+  assignSelectedRating: [characters: string[], rating: PersonalRating];
 }>();
 
 type RatingFilterValue = PersonalRating | "None";
@@ -97,7 +106,14 @@ const searchSubmitted = ref(false);
 const selectedAudience = ref<SharedUser[]>([]);
 const addItemsOpen = ref(false);
 const selectedDestinations = ref<CollectionId[]>([]);
+const selectionMode = ref(false);
+const selectedCharacters = ref<string[]>([]);
 const availableDestinations = computed(() =>
+  props.destinationCollections.filter(
+    ({ tag }) => tag !== props.collection.tag,
+  ),
+);
+const multiActionCollections = computed(() =>
   props.destinationCollections.filter(
     ({ tag }) => tag !== props.collection.tag,
   ),
@@ -116,12 +132,24 @@ watch(
   () => {
     addItemsOpen.value = false;
     selectedDestinations.value = [];
+    selectionMode.value = false;
+    selectedCharacters.value = [];
     sharePanelOpen.value = false;
     searchTerm.value = "";
     searchSubmitted.value = false;
     ratingFilterOpen.value = false;
     selectedRatingDraft.value = [...allRatingValues];
     selectedRatings.value = [...allRatingValues];
+  },
+);
+
+watch(
+  () => props.items,
+  (items) => {
+    const available = new Set(items.map(({ item }) => item));
+    selectedCharacters.value = selectedCharacters.value.filter((item) =>
+      available.has(item),
+    );
   },
 );
 
@@ -182,6 +210,17 @@ function ratingColorFor(item: string) {
 
 function ratingIconForFilter(rating: RatingFilterValue) {
   return ratingOptions.find((option) => option.value === rating)?.icon;
+}
+
+function toggleSelection(enabled: boolean) {
+  selectionMode.value = enabled;
+  selectedCharacters.value = [];
+}
+
+function toggleCharacter(character: string) {
+  selectedCharacters.value = selectedCharacters.value.includes(character)
+    ? selectedCharacters.value.filter((selected) => selected !== character)
+    : [...selectedCharacters.value, character];
 }
 
 const visibleItems = computed(() => {
@@ -297,17 +336,35 @@ function saveAddItems() {
 
 <template>
   <main>
-    <button
-      type="button"
-      class="rounded-action"
-      :disabled="addingItems"
-      @click="emit('back')"
-    >
-      {{
-        backLabel ??
-        (shared ? "Back to shared collections" : "Back to collections")
-      }}
-    </button>
+    <div class="page-actions">
+      <button
+        type="button"
+        class="rounded-action"
+        :disabled="addingItems"
+        @click="emit('back')"
+      >
+        {{
+          backLabel ??
+          (shared ? "Back to shared collections" : "Back to collections")
+        }}
+      </button>
+      <MultiCharacterActions
+        v-if="!loading && !error && items.length > 0"
+        :selection-mode="selectionMode"
+        :selected-count="selectedCharacters.length"
+        :collections="multiActionCollections"
+        :busy="bulkBusy || addingItems"
+        :status="bulkStatus"
+        :error="bulkError"
+        @toggle-selection="toggleSelection"
+        @add-to-collection="
+          emit('addSelectedToCollection', selectedCharacters, $event)
+        "
+        @assign-rating="
+          emit('assignSelectedRating', selectedCharacters, $event)
+        "
+      />
+    </div>
     <h1>{{ collection.name }}</h1>
     <section class="add-items-panel">
       <button
@@ -593,8 +650,19 @@ function saveAddItems() {
         <button
           type="button"
           class="character-card"
+          :disabled="bulkBusy || addingItems"
+          :class="{
+            'is-selected': selectedCharacters.includes(item.item),
+          }"
           :style="{ backgroundColor: ratingColorFor(item.item) ?? '#ffffff' }"
-          @click="emit('select', item.item)"
+          :aria-pressed="
+            selectionMode ? selectedCharacters.includes(item.item) : undefined
+          "
+          @click="
+            selectionMode
+              ? toggleCharacter(item.item)
+              : emit('select', item.item)
+          "
         >
           <svg
             v-if="ratingIconFor(item.item)"
@@ -676,6 +744,13 @@ function saveAddItems() {
 main {
   width: min(100% - 2rem, 48rem);
   margin: 2rem auto;
+}
+
+.page-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 h1 {
@@ -922,6 +997,11 @@ h1 {
   color: #000000;
   cursor: pointer;
   padding: 2.1rem 0.4rem 0.4rem;
+}
+
+.character-card.is-selected {
+  outline: 4px solid var(--palette-yellow);
+  outline-offset: -4px;
 }
 
 .character {

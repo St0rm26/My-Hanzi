@@ -47,6 +47,38 @@ async function loadBenchmarks(): Promise<boolean> {
   }
 }
 
+async function getCompletedItems(
+  benchmark: Benchmark,
+): Promise<{ items: string[]; error: null } | { items: null; error: string }> {
+  try {
+    const result = await api["/benchmarks/completed"]({
+      benchmark: benchmark.benchmark,
+    });
+    if ("error" in result) {
+      if (result.error === "UNAUTHORIZED") sessionEnded();
+      return {
+        items: null,
+        error: messageFor("/benchmarks/completed", result.error),
+      };
+    }
+    return {
+      items: result.items.map(
+        (row: Wire["/benchmarks/completed"]["output"]["items"][number]) =>
+          row.item,
+      ),
+      error: null,
+    };
+  } catch (cause) {
+    return {
+      items: null,
+      error:
+        cause instanceof Error
+          ? cause.message
+          : "Could not load studied benchmark characters.",
+    };
+  }
+}
+
 async function getBenchmarkItems(
   benchmark: Benchmark,
 ): Promise<{ items: string[]; studiedItems: string[] } | null> {
@@ -54,26 +86,22 @@ async function getBenchmarkItems(
   try {
     const [itemsResult, completedResult] = await Promise.all([
       api["/benchmarks/items"]({ benchmark: benchmark.benchmark }),
-      api["/benchmarks/completed"]({ benchmark: benchmark.benchmark }),
+      getCompletedItems(benchmark),
     ]);
     if ("error" in itemsResult) {
       if (itemsResult.error === "UNAUTHORIZED") sessionEnded();
       error.value = messageFor("/benchmarks/items", itemsResult.error);
       return null;
     }
-    if ("error" in completedResult) {
-      if (completedResult.error === "UNAUTHORIZED") sessionEnded();
-      error.value = messageFor("/benchmarks/completed", completedResult.error);
+    if (completedResult.error !== null) {
+      error.value = completedResult.error;
       return null;
     }
     return {
       items: itemsResult.items.map(
         (row: Wire["/benchmarks/items"]["output"]["items"][number]) => row.item,
       ),
-      studiedItems: completedResult.items.map(
-        (row: Wire["/benchmarks/completed"]["output"]["items"][number]) =>
-          row.item,
-      ),
+      studiedItems: completedResult.items,
     };
   } catch (cause) {
     error.value =
@@ -85,5 +113,12 @@ async function getBenchmarkItems(
 }
 
 export function useBenchmarks() {
-  return { benchmarks, loading, error, loadBenchmarks, getBenchmarkItems };
+  return {
+    benchmarks,
+    loading,
+    error,
+    loadBenchmarks,
+    getBenchmarkItems,
+    getCompletedItems,
+  };
 }

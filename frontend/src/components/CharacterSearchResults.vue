@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { ref } from "vue";
+import MultiCharacterActions from "./MultiCharacterActions.vue";
+import type { Collection } from "../useCollections.ts";
+import type { PersonalRating } from "../api/ratings.ts";
 import {
   scriptForCharacter,
   type CharacterSearchScript,
@@ -11,19 +15,55 @@ defineProps<{
   characters: CharacterEntry[];
   loading: boolean;
   error: string | null;
+  collections: Collection[];
+  bulkBusy: boolean;
+  bulkStatus: string | null;
+  bulkError: string | null;
 }>();
 
 const emit = defineEmits<{
   back: [];
   select: [character: CharacterEntry];
+  addToCollection: [characters: string[], collection: Collection];
+  assignRating: [characters: string[], rating: PersonalRating];
 }>();
+
+const selectionMode = ref(false);
+const selectedCharacters = ref<string[]>([]);
+
+function toggleSelection(enabled: boolean) {
+  selectionMode.value = enabled;
+  selectedCharacters.value = [];
+}
+
+function toggleCharacter(character: string) {
+  selectedCharacters.value = selectedCharacters.value.includes(character)
+    ? selectedCharacters.value.filter((selected) => selected !== character)
+    : [...selectedCharacters.value, character];
+}
 </script>
 
 <template>
   <main>
-    <button type="button" class="rounded-action" @click="emit('back')">
-      Back
-    </button>
+    <div class="page-actions">
+      <button type="button" class="rounded-action" @click="emit('back')">
+        Back
+      </button>
+      <MultiCharacterActions
+        v-if="!loading && !error && characters.length > 0"
+        :selection-mode="selectionMode"
+        :selected-count="selectedCharacters.length"
+        :collections="collections"
+        :busy="bulkBusy"
+        :status="bulkStatus"
+        :error="bulkError"
+        @toggle-selection="toggleSelection"
+        @add-to-collection="
+          emit('addToCollection', selectedCharacters, $event)
+        "
+        @assign-rating="emit('assignRating', selectedCharacters, $event)"
+      />
+    </div>
     <h1>
       {{
         `${script === "simplified" ? "Simplified" : "Traditional"} results for "${query}"`
@@ -40,8 +80,19 @@ const emit = defineEmits<{
         v-for="character in characters"
         :key="character.character"
         class="character-result"
+        :disabled="bulkBusy"
+        :class="{
+          'is-selected': selectedCharacters.includes(character.character),
+        }"
         type="button"
-        @click="emit('select', character)"
+        :aria-pressed="
+          selectionMode ? selectedCharacters.includes(character.character) : undefined
+        "
+        @click="
+          selectionMode
+            ? toggleCharacter(character.character)
+            : emit('select', character)
+        "
       >
         <span
           class="result-character"
@@ -89,5 +140,18 @@ h1 {
 
 .result-character {
   font-size: 1.8rem;
+}
+
+.page-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.character-result.is-selected {
+  outline: 3px solid var(--palette-yellow);
+  outline-offset: -3px;
+  background: #fff7d6;
 }
 </style>
