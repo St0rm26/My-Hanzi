@@ -2,7 +2,7 @@
 
 Personal Simplified and Traditional Hanzi (Chinese character) tracking and collecting app with detailed information about each character. Collections sharable and HSK and character frequency benchmarks help users check their progress.
 
-## Delployed URL
+## Deployed URL
 
 This app is deployed at this [URL](https://myhanzi.mit-sdg.dev).
 
