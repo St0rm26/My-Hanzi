@@ -48,6 +48,13 @@ const characterScriptLabel = computed(() =>
       : "Simplified",
 );
 
+const isStudied = computed(() =>
+  props.collections.some(
+    (collection) =>
+      collection.name === "Studied" && props.selectedTags.includes(collection.tag),
+  ),
+);
+
 function openRatingPicker() {
   if (!props.ratingLoading && !props.ratingSaving) {
     ratingDialog.value?.showModal();
@@ -128,6 +135,14 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
       </h1>
       <p>{{ character.pinyin || "Pinyin unavailable" }}</p>
       <span class="script-badge">{{ characterScriptLabel }}</span>
+      <span
+        v-if="!membershipLoading"
+        class="script-badge study-badge"
+        :class="isStudied ? 'studied' : 'not-studied'"
+        role="status"
+      >
+        {{ isStudied ? "✓ Studied" : "✗ Not studied" }}
+      </span>
     </header>
 
     <div class="detail-layout">
@@ -346,6 +361,18 @@ main {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
   white-space: nowrap;
+}
+
+.study-badge.studied {
+  border-color: #2e7d32;
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.study-badge.not-studied {
+  border-color: var(--color-danger);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 
 .detail-layout {
