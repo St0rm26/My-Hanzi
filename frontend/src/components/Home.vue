@@ -355,7 +355,9 @@ async function addSelectedCharactersToCollection(
       const completed = await getCompletedItems(benchmark);
       if (page.value === "benchmark" && sequence === benchmarkSequence.value) {
         if (completed.error !== null) {
-          errors.push(`Could not refresh benchmark progress: ${completed.error}`);
+          errors.push(
+            `Could not refresh benchmark progress: ${completed.error}`,
+          );
         } else {
           benchmarkStudiedItems.value = completed.items;
         }
@@ -383,18 +385,14 @@ async function assignRatingToSelectedCharacters(
   try {
     const result = await saveRatings(items, rating);
     const updatedItems = result.updatedItems;
-    bulkStatus.value =
-      `Assigned ${rating} to ${updatedItems.length} character${updatedItems.length === 1 ? "" : "s"}.`;
+    bulkStatus.value = `Assigned ${rating} to ${updatedItems.length} character${updatedItems.length === 1 ? "" : "s"}.`;
     const errors = [...result.errors];
 
     const updates = new Map(
       updatedItems.map((item) => [item, rating] as const),
     );
     if (page.value === "benchmark") {
-      benchmarkRatings.value = new Map([
-        ...benchmarkRatings.value,
-        ...updates,
-      ]);
+      benchmarkRatings.value = new Map([...benchmarkRatings.value, ...updates]);
     } else if (
       page.value === "collection" ||
       page.value === "shared-collection" ||
@@ -1168,6 +1166,9 @@ onBeforeUnmount(() => {
         <div class="section-heading">
           <h1 class="benchmarks-heading" id="benchmarks-heading">Benchmarks</h1>
         </div>
+        <p class="benchmarks-note">
+          Note: Benchmarks read from the "Studied" collection.
+        </p>
         <p v-if="benchmarksLoading" role="status">Loading benchmarks...</p>
         <p v-else-if="benchmarksError" role="alert">{{ benchmarksError }}</p>
         <template v-else>
@@ -1425,7 +1426,11 @@ main {
 }
 
 .benchmarks-heading {
-  padding-bottom: 1.5rem;
+  padding-bottom: 1rem;
+}
+
+.benchmarks-note {
+  padding-bottom: 1rem;
 }
 
 .frequency-heading {
