@@ -209,6 +209,59 @@ async function saveRating(item: string, rating: PersonalRating) {
   }
 }
 
+async function saveRatings(
+  items: string[],
+  rating: PersonalRating,
+): Promise<{ updatedItems: string[]; errors: string[] }> {
+  const result = { updatedItems: [] as string[], errors: [] as string[] };
+  if (saving.value) {
+    result.errors.push("Another rating update is already in progress.");
+    return result;
+  }
+
+  saving.value = true;
+  try {
+    const definitionsFailure = await ensureDefinedRatings();
+    if (definitionsFailure !== null) {
+      if ("category" in definitionsFailure) {
+        if (definitionsFailure.category === "UNAUTHORIZED") sessionEnded();
+        result.errors.push(
+          messageFor(
+            "/rating/add-defined-ratings",
+            definitionsFailure.category,
+          ),
+        );
+      } else {
+        result.errors.push(definitionsFailure.message);
+      }
+      return result;
+    }
+
+    for (const item of new Set(items)) {
+      try {
+        const response = await api["/rating/rate"]({ item, rating });
+        if ("error" in response) {
+          if (response.error === "UNAUTHORIZED") sessionEnded();
+          result.errors.push(
+            `${item}: ${messageFor("/rating/rate", response.error)}`,
+          );
+          continue;
+        }
+        result.updatedItems.push(item);
+      } catch (cause) {
+        const message =
+          cause instanceof Error
+            ? cause.message
+            : "Could not save this character's personal rating.";
+        result.errors.push(`${item}: ${message}`);
+      }
+    }
+    return result;
+  } finally {
+    saving.value = false;
+  }
+}
+
 export function usePersonalRating() {
   return {
     currentRating,
@@ -218,5 +271,6 @@ export function usePersonalRating() {
     loadRating,
     loadRatings,
     saveRating,
+    saveRatings,
   };
 }

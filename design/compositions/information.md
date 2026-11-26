@@ -14,10 +14,4 @@ If they are interested in looking at a certain info field, they can choose to ju
 information.ViewField at /information/view-field
 ```
 
-The app can [add an info field](reaction:information.AddField) for an item.
-
-```endpoints
-information.AddField at /information/add-field
-```
-
-When dictionary data becomes available for a character after placeholder values were saved, the frontend uses the dictionary values instead of the known unavailable placeholders. For traditional characters, an exact dictionary record takes precedence over values previously populated from a simplified character; other saved information remains unchanged. If no exact traditional record exists, the frontend uses the simplified pronunciation and meaning, and shows "No information available" for radical and stroke count as those are the only fields dependent on the traditional character's structure.
+The information endpoints are read-only: no public endpoint creates or changes fields. Previously stored fields remain available through these endpoints but are not trusted as dictionary data. Character detail pages use the local dictionary instead and do not read or populate the shared information store. For traditional characters without an exact dictionary record, the frontend uses the simplified pronunciation and meaning, and shows "No information available" for radical and stroke count.

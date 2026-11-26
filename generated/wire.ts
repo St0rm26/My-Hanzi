@@ -140,18 +140,6 @@ export type MyHanziWire = {
     };
     error: { error: AppWideError | "BENCHMARK_NOT_FOUND" | "INVALID_INPUT" | "NOT_SIGNED_IN" };
   };
-  "/information/add-field": {
-    input: {
-      "description": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["addInfoField"]>[0], ["description"]>>;
-      "fieldName": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["addInfoField"]>[0], ["fieldName"]>>;
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["addInfoField"]>[0], ["item"]>>;
-      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
-    };
-    output: {
-      "infoField": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["addInfoField"]>>, ["infoField"]>>;
-    };
-    error: { error: AppWideError | "ALREADY_COLLECTED_INFORMATION" | "INVALID_INPUT" | "NOT_SIGNED_IN" };
-  };
   "/information/view": {
     input: {
       "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["_allInformation"]>[0], ["item"]>>;
@@ -511,17 +499,6 @@ export type MyHanziWireHttp = {
       }[];
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
-  };
-  "/information/add-field": {
-    input: {
-      "description": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["addInfoField"]>[0], ["description"]>>;
-      "fieldName": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["addInfoField"]>[0], ["fieldName"]>>;
-      "item": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["addInfoField"]>[0], ["item"]>>;
-    };
-    output: {
-      "infoField": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["InformationCollecting"]["addInfoField"]>>, ["infoField"]>>;
-    };
-    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "UNAUTHORIZED" };
   };
   "/information/view": {
     input: {

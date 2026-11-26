@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import MultiCharacterActions from "./MultiCharacterActions.vue";
 import {
   lookupCharacters,
   normalizePinyin,
@@ -12,6 +13,7 @@ import {
   ratingOptions,
   type PersonalRating,
 } from "../api/ratings.ts";
+import type { Collection } from "../useCollections.ts";
 import type { Benchmark } from "../useBenchmarks.ts";
 
 const props = defineProps<{
@@ -23,11 +25,17 @@ const props = defineProps<{
   ratingError: string | null;
   loading: boolean;
   error: string | null;
+  collections: Collection[];
+  bulkBusy: boolean;
+  bulkStatus: string | null;
+  bulkError: string | null;
 }>();
 
 const emit = defineEmits<{
   back: [];
   select: [character: string];
+  addToCollection: [characters: string[], collection: Collection];
+  assignRating: [characters: string[], rating: PersonalRating];
 }>();
 
 const entries = ref(new Map<string, CharacterEntry>());
@@ -43,7 +51,25 @@ const studyFilter = ref<"all" | "studied" | "unstudied">("all");
 const openFilter = ref<"study" | "rating" | null>(null);
 const selectedRatingDraft = ref<RatingFilterValue[]>([...allRatingValues]);
 const selectedRatings = ref<RatingFilterValue[]>([...allRatingValues]);
+const selectionMode = ref(false);
+const selectedCharacters = ref<string[]>([]);
 let lookupSequence = 0;
+
+function toggleSelection(enabled: boolean) {
+  selectionMode.value = enabled;
+  selectedCharacters.value = [];
+}
+
+function toggleCharacter(character: string) {
+  selectedCharacters.value = selectedCharacters.value.includes(character)
+    ? selectedCharacters.value.filter((selected) => selected !== character)
+    : [...selectedCharacters.value, character];
+}
+
+watch(
+  () => props.benchmark.benchmark,
+  () => toggleSelection(false),
+);
 
 watch(
   () => props.items,
@@ -129,13 +155,29 @@ function confirmRatingFilter() {
 
 <template>
   <main class="benchmark-page">
-    <button
-      type="button"
-      class="back-button rounded-action"
-      @click="emit('back')"
-    >
-      Back to benchmarks
-    </button>
+    <div class="page-actions">
+      <button
+        type="button"
+        class="back-button rounded-action"
+        @click="emit('back')"
+      >
+        Back to benchmarks
+      </button>
+      <MultiCharacterActions
+        v-if="!loading && !error && items.length > 0"
+        :selection-mode="selectionMode"
+        :selected-count="selectedCharacters.length"
+        :collections="collections"
+        :busy="bulkBusy"
+        :status="bulkStatus"
+        :error="bulkError"
+        @toggle-selection="toggleSelection"
+        @add-to-collection="
+          emit('addToCollection', selectedCharacters, $event)
+        "
+        @assign-rating="emit('assignRating', selectedCharacters, $event)"
+      />
+    </div>
     <h1>{{ benchmark.name }}</h1>
     <p v-if="loading" role="status">Loading characters...</p>
     <p v-else-if="error" role="alert">{{ error }}</p>
@@ -294,12 +336,21 @@ function confirmRatingFilter() {
           <button
             type="button"
             class="character-card"
+            :disabled="bulkBusy"
+            :class="{
+              'is-selected': selectedCharacters.includes(item),
+            }"
             :style="{
               backgroundColor: !studiedItems.includes(item)
                 ? '#c7c7c7'
                 : (ratingColorFor(item) ?? '#ffffff'),
             }"
-            @click="emit('select', item)"
+            :aria-pressed="
+              selectionMode ? selectedCharacters.includes(item) : undefined
+            "
+            @click="
+              selectionMode ? toggleCharacter(item) : emit('select', item)
+            "
           >
             <svg
               v-if="ratingIconFor(item)"
@@ -371,6 +422,13 @@ function confirmRatingFilter() {
 
 .back-button {
   margin-bottom: 1rem;
+}
+
+.page-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 h1 {
@@ -493,6 +551,11 @@ h1 {
   background: #c7c7c7;
   color: #000;
   padding: 2.25rem 0.75rem 0.75rem;
+}
+
+.character-card.is-selected {
+  outline: 4px solid var(--palette-yellow);
+  outline-offset: -4px;
 }
 
 .cell-rating-icon {

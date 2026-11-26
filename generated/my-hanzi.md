@@ -1351,46 +1351,6 @@ then
   RequestBoundary.respond (address, attempt, expiresAt, requestId)
 ```
 
-### information.AddField
-
-Authored path: `information.AddField`.
-- Covered by [Information](../design/compositions/information.md), line 17.
-- Covered by [Information](../design/compositions/information.md), line 20.
-
-```reaction
-when RequestBoundary.request (description, fieldName, item, path: "/information/add-field", requestId, session)
-then
-  Sessioning.use (session)
-```
-
-### information.AddField#2
-
-Authored path: `information.AddField`.
-- Covered by [Information](../design/compositions/information.md), line 17.
-- Covered by [Information](../design/compositions/information.md), line 20.
-
-```reaction
-when Sessioning.use (session), asked by information.AddField
-where
-  earlier, RequestBoundary.request (description, fieldName, item, path: "/information/add-field", requestId, session)
-then
-  InformationCollecting.addInfoField (description, fieldName, item)
-```
-
-### information.AddField#3
-
-Authored path: `information.AddField`.
-- Covered by [Information](../design/compositions/information.md), line 17.
-- Covered by [Information](../design/compositions/information.md), line 20.
-
-```reaction
-when InformationCollecting.addInfoField (description, fieldName, item, infoField), asked by information.AddField#2
-where
-  earlier, RequestBoundary.request (description, fieldName, item, path: "/information/add-field", requestId, session)
-then
-  RequestBoundary.respond (infoField, requestId)
-```
-
 ### information.View
 
 Authored path: `information.View`.
@@ -2527,7 +2487,6 @@ not listed here have no explicit input contract.
 - `/benchmarks/items` — requires `session`, `benchmark`
 - `/benchmarks/list` — requires `session`
 - `/benchmarks/not-completed` — requires `session`, `benchmark`
-- `/information/add-field` — requires `session`, `item`, `fieldName`, `description`
 - `/information/view` — requires `session`, `item`
 - `/information/view-field` — requires `session`, `item`, `fieldName`
 - `/rating/add-defined-ratings` — requires `session`, `ratings`
