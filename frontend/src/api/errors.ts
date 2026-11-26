@@ -16,9 +16,6 @@ const categoryMessages: Record<string, string> = {
 };
 
 const endpointMessages: Record<string, Record<string, string>> = {
-  "/information/add-field": {
-    CONFLICT: "That information field already exists.",
-  },
   "/tags/create-tag": {
     CONFLICT: "A collection with that name already exists.",
   },

@@ -1,7 +1,6 @@
 import { endpoint, receive, respond } from "@mit-sdg/sync-engine/boundary";
 import { each, form, former, where } from "@mit-sdg/sync-engine/language";
 import { concepts } from "../concepts.ts";
-import { textInput } from "./inputs.ts";
 
 const { InformationCollecting, Sessioning } = concepts;
 
@@ -39,34 +38,13 @@ const ViewField = endpoint(
   { input: { required: ["session", "item", "fieldName"] } },
 );
 
-const AddField = endpoint(
-  "/information/add-field",
-  ({ session, item, fieldName, description, infoField }) =>
-    receive({ session, item, fieldName, description })
-      .then(Sessioning.use({ session }).responds({}))
-      .then(
-        InformationCollecting.addInfoField({
-          item,
-          fieldName,
-          description,
-        }).responds({ infoField }),
-      )
-      .then(respond({ infoField })),
-  {
-    input: { required: ["session", "item", "fieldName", "description"] },
-    validators: { input: textInput },
-  },
-);
-
 export const informationHttp = {
   publicErrors: {
-    ALREADY_COLLECTED_INFORMATION: "CONFLICT",
     INFO_FIELD_NOT_FOUND: "NOT_FOUND",
   },
 } as const;
 
 export const composition = {
   View,
-  AddField,
   ViewField,
 };

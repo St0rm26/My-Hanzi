@@ -20,7 +20,6 @@ import {
   useCollections,
 } from "../useCollections.ts";
 import { type SharedCollection, useSharing } from "../useSharing.ts";
-import { useInformation } from "../useInformation.ts";
 import { usePersonalRating } from "../usePersonalRating.ts";
 import type { PersonalRating } from "../api/ratings.ts";
 import { type Benchmark, useBenchmarks } from "../useBenchmarks.ts";
@@ -101,11 +100,6 @@ const filteredCollections = computed(() => {
     name.toLocaleLowerCase().includes(query),
   );
 });
-const {
-  loading: informationLoading,
-  error: informationError,
-  getCharacterInformation,
-} = useInformation();
 const {
   currentRating,
   loading: ratingLoading,
@@ -308,9 +302,8 @@ async function openCharacter(
   page.value = "detail";
   membershipLoading.value = true;
   try {
-    const [containingTags, information] = await Promise.all([
+    const [containingTags] = await Promise.all([
       getCharacterCollections(character.character),
-      getCharacterInformation(character),
       loadRating(character.character),
     ]);
     if (sequence !== characterSequence) return;
@@ -318,7 +311,6 @@ async function openCharacter(
       initialCollectionIds.value = containingTags;
       selectedCollectionIds.value = [...containingTags];
     }
-    if (information !== null) activeCharacter.value = information;
   } finally {
     if (sequence === characterSequence) membershipLoading.value = false;
   }
@@ -946,8 +938,6 @@ onBeforeUnmount(() => {
     <CharacterDetail
       v-else-if="page === 'detail' && activeCharacter"
       :character="activeCharacter"
-      :information-loading="informationLoading"
-      :information-error="informationError"
       :collections="collections"
       :selected-tags="selectedCollectionIds"
       :membership-loading="membershipLoading"

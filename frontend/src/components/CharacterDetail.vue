@@ -12,8 +12,6 @@ import type { Collection, CollectionId } from "../useCollections.ts";
 
 const props = defineProps<{
   character: CharacterEntry;
-  informationLoading: boolean;
-  informationError: string | null;
   collections: Collection[];
   selectedTags: CollectionId[];
   membershipLoading: boolean;
@@ -186,10 +184,6 @@ function updateSelectedCollection(tag: CollectionId, event: Event) {
         aria-labelledby="information-heading"
       >
         <h2 id="information-heading">Character information</h2>
-        <p v-if="informationLoading" role="status">
-          Loading character information...
-        </p>
-        <p v-if="informationError" role="alert">{{ informationError }}</p>
         <dl>
           <div>
             <dt>Character</dt>
